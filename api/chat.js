@@ -1,4 +1,13 @@
 module.exports = async (req, res) => {
+  // CORS — asthl.in website se access ke liye
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -12,16 +21,13 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Messages array required' });
     }
 
-    // Keep last 30 messages for longer case-taking conversations
     const trimmedMessages = messages.slice(-30);
-
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
       return res.status(500).json({ error: 'GEMINI_API_KEY not set on server' });
     }
 
-    // Multiple models — ek fail ho toh dusra try hoga
     const models = [
       'gemini-flash-latest',
       'gemini-2.5-flash',
@@ -29,7 +35,6 @@ module.exports = async (req, res) => {
       'gemini-2.5-flash-lite'
     ];
 
-    let lastError = null;
     let reply = null;
 
     for (const model of models) {
@@ -56,9 +61,7 @@ module.exports = async (req, res) => {
         );
 
         if (!geminiResponse.ok) {
-          const errText = await geminiResponse.text();
-          console.error(`Model ${model} error:`, geminiResponse.status, errText);
-          lastError = `API error: ${geminiResponse.status}`;
+          console.error(`Model ${model} error:`, geminiResponse.status);
           continue;
         }
 
@@ -72,7 +75,6 @@ module.exports = async (req, res) => {
 
       } catch (modelErr) {
         console.error(`Model ${model} failed:`, modelErr.message);
-        lastError = 'Model error';
         continue;
       }
     }
