@@ -12,7 +12,8 @@ module.exports = async (req, res) => {
       return res.status(400).json({ error: 'Messages array required' });
     }
 
-    const trimmedMessages = messages.slice(-20);
+    // Keep last 30 messages for longer case-taking conversations
+    const trimmedMessages = messages.slice(-30);
 
     const apiKey = process.env.GEMINI_API_KEY;
 
@@ -20,7 +21,7 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: 'GEMINI_API_KEY not set on server' });
     }
 
-    // Multiple models - ek fail ho toh dusra try hoga
+    // Multiple models — ek fail ho toh dusra try hoga
     const models = [
       'gemini-flash-latest',
       'gemini-2.5-flash',
@@ -47,7 +48,7 @@ module.exports = async (req, res) => {
               })),
               generationConfig: {
                 temperature: 0.7,
-                maxOutputTokens: 1000,
+                maxOutputTokens: 8192,
                 topP: 0.9
               }
             })
@@ -58,7 +59,7 @@ module.exports = async (req, res) => {
           const errText = await geminiResponse.text();
           console.error(`Model ${model} error:`, geminiResponse.status, errText);
           lastError = `API error: ${geminiResponse.status}`;
-          continue; // Try next model
+          continue;
         }
 
         const data = await geminiResponse.json();
@@ -66,13 +67,13 @@ module.exports = async (req, res) => {
 
         if (reply) {
           console.log('Success with model:', model);
-          break; // Got reply, stop trying
+          break;
         }
 
       } catch (modelErr) {
         console.error(`Model ${model} failed:`, modelErr.message);
         lastError = 'Model error';
-        continue; // Try next model
+        continue;
       }
     }
 
