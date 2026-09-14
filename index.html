@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0d9488">
+  <title>Health Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #f0fdfa;
+      --surface: #ffffff;
+      --border: #ccfbf1;
+      --text: #134e4a;
+      --text-dim: #5eead4;
+      --accent: #0d9488;
+      --accent-dark: #0f766e;
+      --user-bubble: #0d9488;
+      --user-text: #ffffff;
+      --bot-bubble: #ffffff;
+      --bot-text: #134e4a;
+      --error: #e11d48;
+      --shadow: 0 1px 3px rgba(13, 148, 136, 0.08);
+      --shadow-lg: 0 4px 16px rgba(13, 148, 136, 0.12);
+    }
+
+    html { height: 100%; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: var(--shadow);
+      z-index: 10;
+      flex-shrink: 0;
+    }
+
+    .header-avatar {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 20px; flex-shrink: 0;
+    }
+
+    .header-info { flex: 1; min-width: 0; }
+    .header-info h1 { font-size: 16px; font-weight: 700; color: var(--text); }
+    .header-info .status {
+      font-size: 12px; color: var(--accent);
+      display: flex; align-items: center; gap: 5px;
+    }
+    .status-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #22c55e;
+    }
+
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .msg {
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 16px;
+      font-size: 15px;
+      line-height: 1.55;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      white-space: pre-wrap;
+      animation: msgIn 0.25s ease-out;
+    }
+
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg.user {
+      align-self: flex-end;
+      background: var(--user-bubble);
+      color: var(--user-text);
+      border-bottom-right-radius: 4px;
+    }
+
+    .msg.bot {
+      align-self: flex-start;
+      background: var(--bot-bubble);
+      color: var(--bot-text);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+      box-shadow: var(--shadow);
+    }
+
+    .msg.error {
+      align-self: center;
+      background: #fef2f2;
+      color: var(--error);
+      border: 1px solid #fecaca;
+      font-size: 13px;
+      text-align: center;
+    }
+
+    .welcome {
+      text-align: center;
+      padding: 24px 16px;
+      color: var(--text-dim);
+    }
+    .welcome-icon {
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 28px;
+      margin: 0 auto 12px;
+    }
+    .welcome h2 {
+      font-size: 18px; color: var(--text); margin-bottom: 6px; font-weight: 600;
+    }
+    .welcome p { font-size: 14px; color: #64748b; line-height: 1.5; max-width: 320px; margin: 0 auto; }
+
+    .suggestions {
+      display: flex; flex-wrap: wrap; gap: 8px;
+      padding: 0 4px 8px;
+    }
+    .suggestion-chip {
+      padding: 8px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 13px;
+      color: var(--accent);
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .suggestion-chip:hover, .suggestion-chip:active {
+      background: var(--accent);
+      color: white;
+    }
+
+    .typing {
+      align-self: flex-start;
+      background: var(--bot-bubble);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      border-bottom-left-radius: 4px;
+      padding: 14px 18px;
+      box-shadow: var(--shadow);
+      display: flex; gap: 5px;
+    }
+    .typing span {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--text-dim);
+      animation: typing 1.2s infinite;
+    }
+    .typing span:nth-child(2) { animation-delay: 0.2s; }
+    .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+    @keyframes typing {
+      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-5px); opacity: 1; }
+    }
+
+    #input-area {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 10px 12px;
+      padding-bottom: max(10px, env(safe-area-inset-bottom));
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      flex-shrink: 0;
+    }
+
+    #input {
+      flex: 1;
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 12px 16px;
+      font-size: 15px;
+      font-family: inherit;
+      color: var(--text);
+      background: var(--bg);
+      outline: none;
+      resize: none;
+      max-height: 100px;
+      line-height: 1.4;
+      transition: border-color 0.15s;
+    }
+    #input:focus { border-color: var(--accent); }
+    #input::placeholder { color: #94a3b8; }
+
+    #send-btn {
+      width: 44px; height: 44px;
+      border: none;
+      border-radius: 50%;
+      background: var(--accent);
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+    #send-btn:hover { background: var(--accent-dark); transform: scale(1.05); }
+    #send-btn:active { transform: scale(0.95); }
+    #send-btn:disabled { opacity: 0.5; cursor: default; transform: none; }
+
+    #chat::-webkit-scrollbar { width: 4px; }
+    #chat::-webkit-scrollbar-track { background: transparent; }
+    #chat::-webkit-scrollbar-thumb { background: var(--text-dim); border-radius: 4px; }
+
+    .disclaimer {
+      font-size: 11px;
+      color: #94a3b8;
+      text-align: center;
+      padding: 6px 16px 4px;
+      background: var(--surface);
+    }
+
+    @media (min-width: 600px) {
+      body { max-width: 480px; margin: 0 auto; box-shadow: var(--shadow-lg); }
+      .msg { max-width: 75%; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-avatar">&#10024;</div>
+    <div class="header-info">
+      <h1>Health Assistant</h1>
+      <div class="status">
+        <span class="status-dot"></span>
+        <span>Online</span>
+      </div>
+    </div>
+  </header>
+
+  <div id="chat">
+    <div class="welcome" id="welcome">
+      <div class="welcome-icon">&#128137;</div>
+      <h2>Namaste! Main aapki Health Assistant hoon</h2>
+      <p>Apna sawaal niche type karein. Main Hinglish, Hindi, ya English — kisi bhi mein jawab de sakti hoon.</p>
+    </div>
+    <div class="suggestions" id="suggestions">
+      <button class="suggestion-chip" onclick="useSuggestion('Mujhe sir dard ho raha hai, kya karu?')">Sir dard kya karu?</button>
+      <button class="suggestion-chip" onclick="useSuggestion('Sugar mein kya khana chahiye?')">Sugar mein kya khaau?</button>
+      <button class="suggestion-chip" onclick="useSuggestion('BP high hone par kya karein?')">BP high hone par?</button>
+    </div>
+  </div>
+
+  <div id="input-area">
+    <textarea id="input" rows="1" placeholder="Apna sawaal likhein..." autocomplete="off"></textarea>
+    <button id="send-btn" onclick="sendMessage()">&#10148;</button>
+  </div>
+
+  <div class="disclaimer">
+    Yeh AI assistant hai, doctor nahi. Serious problem ke liye doctor se milen.
+  </div>
+
+  <script>
+    const chatEl = document.getElementById('chat');
+    const inputEl = document.getElementById('input');
+    const sendBtn = document.getElementById('send-btn');
+    const welcomeEl = document.getElementById('welcome');
+    const suggestionsEl = document.getElementById('suggestions');
+
+    let messages = [
+      {
+        role: 'user',
+        parts: [{ text: `You are a helpful Health Assistant for Indian patients.
+Respond in the SAME language the patient uses:
+- If they write in Hinglish (Roman script), reply in Hinglish
+- If they write in Hindi (Devanagari), reply in Hindi
+- If they write in English, reply in English
+
+Guidelines:
+- Be warm, empathetic, and practical
+- Give clear, simple advice that a common person can follow
+- Mention home remedies when appropriate
+- Always remind about consulting a real doctor for serious issues
+- Keep responses concise (not too long, not too short)
+- Use bullet points for multiple steps
+- Do not prescribe specific medicines or dosages
+- If symptoms sound serious, urge them to see a doctor immediately
+- You are a health assistant, not a doctor. Always clarify this.` }]
+      },
+      {
+        role: 'model',
+        parts: [{ text: 'Namaste! Main aapki Health Assistant hoon. Apna sawaal poochhiye, main Hinglish, Hindi ya English mein jawab dungi.' }]
+      }
+    ];
+
+    inputEl.addEventListener('input', () => {
+      inputEl.style.height = 'auto';
+      inputEl.style.height = Math.min(inputEl.scrollHeight, 100) + 'px';
+    });
+
+    inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    function useSuggestion(text) {
+      inputEl.value = text;
+      sendMessage();
+    }
+
+    function scrollToBottom() {
+      setTimeout(() => {
+        chatEl.scrollTop = chatEl.scrollHeight;
+      }, 50);
+    }
+
+    function addMessage(text, sender) {
+      if (welcomeEl) {
+        welcomeEl.style.display = 'none';
+        suggestionsEl.style.display = 'none';
+      }
+      const msgEl = document.createElement('div');
+      msgEl.className = `msg ${sender}`;
+      msgEl.textContent = text;
+      chatEl.appendChild(msgEl);
+      scrollToBottom();
+      return msgEl;
+    }
+
+    function showTyping() {
+      const el = document.createElement('div');
+      el.className = 'typing';
+      el.id = 'typing-indicator';
+      el.innerHTML = '<span></span><span></span><span></span>';
+      chatEl.appendChild(el);
+      scrollToBottom();
+    }
+
+    function hideTyping() {
+      const el = document.getElementById('typing-indicator');
+      if (el) el.remove();
+    }
+
+    async function sendMessage() {
+      const text = inputEl.value.trim();
+      if (!text) return;
+
+      sendBtn.disabled = true;
+      inputEl.value = '';
+      inputEl.style.height = 'auto';
+
+      addMessage(text, 'user');
+      messages.push({ role: 'user', parts: [{ text: text }] });
+
+      showTyping();
+
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: messages })
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || `Server error (${response.status})`);
+        }
+
+        const data = await response.json();
+        const reply = data.reply || 'Sorry, samajh nahi aaya. Dobara try karein.';
+
+        addMessage(reply, 'bot');
+        messages.push({ role: 'model', parts: [{ text: reply }] });
+
+      } catch (err) {
+        hideTyping();
+        addMessage(`Error: ${err.message}. Thodi der baad try karein.`, 'error');
+        console.error('Chat error:', err);
+      } finally {
+        hideTyping();
+        sendBtn.disabled = false;
+        inputEl.focus();
+      }
+    }
+
+    inputEl.focus();
+  </script>
+
+</body>
+</html>
