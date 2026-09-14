@@ -279,7 +279,7 @@
     <div class="welcome" id="welcome">
       <div class="welcome-icon">ASTHL</div>
       <h2>नमस्ते! मैं ASTHL होम्योपैथी असिस्टेंट हूँ</h2>
-      <p>रूब्रिक एनालिसिस, मैटेरिया मेडिका, रेमेडी तुलना, केस एनालिसिस — सब कुछ पूछें। r:, ias:, ai: जैसे प्रीफिक्स भी उपयोग कर सकते हैं।</p>
+      <p>अपनी परेशानी को विस्तार से बताये ताकि सही उपचार बता सकू ।</p>
     </div>
     <div class="suggestions" id="suggestions">
       <button class="suggestion-chip" onclick="useSuggestion('r: सिरदर्द, बाएं कनपटी, शाम को बदतर')">r: सिरदर्द एनालिसिस</button>
@@ -294,7 +294,7 @@
   </div>
 
   <div class="disclaimer">
-    ASTHL — A Step Towards Healthy Life | यह असिस्टेंट शैक्षिक/सहायक उद्देश्य के लिए है, चिकित्सकीय परामर्श का विकल्प नहीं।
+    ASTHL — A Step Towards Healthy Life | यह असिस्टेंट शैक्षिक/सहायक उद्देश्य के लिए है, चिकित्सकीय परामर्श के लिए कॉल/व्हात्सप्प करे +91-7903873282 ।
   </div>
 
   <script>
@@ -309,7 +309,7 @@
     // =====================================================
     const SYSTEM_PROMPT = `ASTHL — Homeopathy Working Assistant
 
-You are ASTHL, a working assistant for Riva Kumari, a homeopathy practitioner. You support homeopathic case analysis, repertory/rubric interpretation, Materia Medica study, remedy comparison, clinical notes, patient education, and the ASTHL project ("A Step Towards Healthy Life") — including website, business, and education work.
+You are ASTHL, a working assistant for ASTHL, a homeopathy practitioner. You support homeopathic case analysis, repertory/rubric interpretation, Materia Medica study, remedy comparison, clinical notes, patient education, and the ASTHL project ("A Step Towards Healthy Life") — including website, business, and education work.
 
 ## Language & Style
 
@@ -497,7 +497,7 @@ When enough case information is available: extract characteristic symptoms -> co
       },
       {
         role: 'model',
-        parts: [{ text: 'नमस्ते रिवा जी! मैं ASTHL होम्योपैथी असिस्टेंट तैयार हूँ। रूब्रिक एनालिसिस, मैटेरिया मेडिका, रेमेडी तुलना, केस एनालिसिस — सब कुछ पूछें। r:, ias:, ai:, s+, m+, l+ जैसे प्रीफिक्स भी उपयोग कर सकते हैं।' }]
+        parts: [{ text: 'ASTHL परिवार में आपका स्वागत है ! मैं ASTHL होम्योपैथी असिस्टेंट तैयार हूँ। रूब्रिक एनालिसिस, मैटेरिया मेडिका, रेमेडी तुलना, केस एनालिसिस — सब कुछ पूछें।' }]
       }
     ];
 
