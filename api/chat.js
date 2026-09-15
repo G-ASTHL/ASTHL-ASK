@@ -1,21 +1,15 @@
 module.exports = async (req, res) => {
-  // CORS — asthl.in website se access ke liye
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   res.setHeader('Content-Type', 'application/json');
 
   try {
-    const { messages } = req.body;
+    const { messages, sessionId, patientName, patientAge, patientMobile } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'Messages array required' });
@@ -23,6 +17,7 @@ module.exports = async (req, res) => {
 
     const trimmedMessages = messages.slice(-30);
     const apiKey = process.env.GEMINI_API_KEY;
+    const sheetUrl = process.env.GOOGLE_SHEET_URL;
 
     if (!apiKey) {
       return res.status(500).json({ error: 'GEMINI_API_KEY not set on server' });
@@ -40,7 +35,6 @@ module.exports = async (req, res) => {
     for (const model of models) {
       try {
         console.log('Trying model:', model);
-
         const geminiResponse = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
           {
@@ -51,11 +45,7 @@ module.exports = async (req, res) => {
                 role: m.role === 'assistant' || m.role === 'model' ? 'model' : 'user',
                 parts: m.parts || [{ text: m.content }]
               })),
-              generationConfig: {
-                temperature: 0.7,
-                maxOutputTokens: 8192,
-                topP: 0.9
-              }
+              generationConfig: { temperature: 0.7, maxOutputTokens: 8192, topP: 0.9 }
             })
           }
         );
@@ -72,7 +62,6 @@ module.exports = async (req, res) => {
           console.log('Success with model:', model);
           break;
         }
-
       } catch (modelErr) {
         console.error(`Model ${model} failed:`, modelErr.message);
         continue;
@@ -80,17 +69,42 @@ module.exports = async (req, res) => {
     }
 
     if (reply) {
+      // ===== Google Sheet mein log karo =====
+      const userMessages = trimmedMessages.filter(m => m.role === 'user' || (m.parts && m.role !== 'model'));
+      const lastUserMsg = userMessages[userMessages.length - 1];
+      const userText = lastUserMsg?.parts?.[0]?.text || lastUserMsg?.content || '';
+
+      // System prompt ko skip karo
+      const isSystemPrompt = userText.startsWith('ASTHL') && userText.length > 500;
+      const displayMsg = isSystemPrompt ? '(Session start)' : userText;
+
+      if (sheetUrl && !isSystemPrompt && displayMsg) {
+        try {
+          await fetch(sheetUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sessionId: sessionId || 'unknown',
+              patientName: patientName || '',
+              patientAge: patientAge || '',
+              patientMobile: patientMobile || '',
+              userMessage: displayMsg.slice(0, 500),
+              botReply: reply.slice(0, 500)
+            })
+          });
+          console.log('Logged to Google Sheet:', patientName, patientMobile);
+        } catch (logErr) {
+          console.error('Sheet log error (non-fatal):', logErr.message);
+        }
+      }
+
       return res.status(200).json({ reply: reply });
     } else {
-      return res.status(503).json({
-        error: 'Abhi sab models busy hain. 1-2 minute baad try karein.'
-      });
+      return res.status(503).json({ error: 'Abhi sab models busy hain. 1-2 minute baad try karein.' });
     }
 
   } catch (err) {
     console.error('Server error:', err);
-    return res.status(500).json({
-      error: 'Server error. Thodi der baad try karein.'
-    });
+    return res.status(500).json({ error: 'Server error. Thodi der baad try karein.' });
   }
 };
