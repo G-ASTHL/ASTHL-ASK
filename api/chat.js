@@ -9,7 +9,7 @@ module.exports = async (req, res) => {
   res.setHeader('Content-Type', 'application/json');
 
   try {
-    const { messages, sessionId, patientName, patientAge, patientMobile } = req.body;
+    const { messages, sessionId, patientName, patientAge, patientMobile, mobileVerified, category, clinic, address } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'Messages array required' });
@@ -88,8 +88,12 @@ module.exports = async (req, res) => {
               patientName: patientName || '',
               patientAge: patientAge || '',
               patientMobile: patientMobile || '',
-              userMessage: displayMsg.slice(0, 5000),
-              botReply: reply.slice(0, 5000)
+              mobileVerified: mobileVerified ? 'Yes' : 'No',
+              category: category || '',
+              clinic: clinic || '',
+              address: (address || '').slice(0, 500),
+              userMessage: displayMsg.slice(0, 40000),
+              botReply: reply.slice(0, 40000)
             })
           });
           console.log('Logged to Google Sheet:', patientName, patientMobile);
