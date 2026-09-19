@@ -9,7 +9,7 @@ module.exports = async (req, res) => {
   res.setHeader('Content-Type', 'application/json');
 
   try {
-    const { messages, sessionId, patientName, patientAge, patientMobile, mobileVerified, category, clinic, address } = req.body;
+    const { messages, sessionId, patientName, patientAge, patientMobile } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'Messages array required' });
@@ -88,10 +88,6 @@ module.exports = async (req, res) => {
               patientName: patientName || '',
               patientAge: patientAge || '',
               patientMobile: patientMobile || '',
-              mobileVerified: mobileVerified ? 'Yes' : 'No',
-              category: category || '',
-              clinic: clinic || '',
-              address: (address || '').slice(0, 200),
               userMessage: displayMsg.slice(0, 5000),
               botReply: reply.slice(0, 5000)
             })
