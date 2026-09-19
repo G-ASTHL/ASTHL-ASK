@@ -1,26 +1,69 @@
 // =====================================================
-// ASTHL Flash Chat Widget v4 — Pre-chat Form + Logging
-// Patient pehle naam, umra, mobile dega, phir chat khulega
+// ASTHL Flash Chat Widget v14 — WhatsApp group link + click ke baad button hide
+// Patient/Doctor categories, ek baar OTP, phir seedha chat
 // =====================================================
 
 (function() {
   'use strict';
 
+  // ======== FIREBASE CONFIG (YAHAN APNI VALUES DAALEIN) ========
+  const OTP_ENABLED = false; // false = no Firebase OTP, no billing, seedha chat
+  // ASTHL ke WhatsApp GROUP ka invite link yahan daalein (chat.whatsapp.com/...)
+  const WHATSAPP_URL = 'https://chat.whatsapp.com/E02laQ6fW6CKWRQD5w0kHV';
+
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyArvYDxEHVMs_N8fPIQeSoXv3IT3rOEWvM",
+    authDomain: "asthl-chat-otp.firebaseapp.com",
+    projectId: "asthl-chat-otp",
+    appId: "1:1060361604381:web:7cf9891b7339636c7ca5f4"
+  };
+  // ================================================================
+
   const API_URL = 'https://asthl-ask.vercel.app/api/chat';
+  // Secure fullpage chat page (OTP yahan hamesha chalta hai)
+  const CHAT_PAGE_URL = 'https://asthl-ask.vercel.app/chat.html';
+  // chat.html is widget ko fullpage mode mein render karta hai
+  const FULLPAGE_MODE = window.ASTHL_FULLPAGE === true;
   const FLASH_DELAY = 1500;
   const FLASH_AUTO_CLOSE = 6000;
+  const STORAGE_KEY = 'asthl_user_v8';
   const WELCOME_MSG = '\u0928\u092E\u0938\u094D\u0924\u0947! \u{1F64F} \u0915\u094D\u092F\u093E \u0906\u092A\u0915\u094B \u0915\u094B\u0908 \u0938\u094D\u0935\u093E\u0938\u094D\u0925\u094D\u092F \u0938\u092E\u0938\u094D\u092F\u093E \u0939\u0948? \u092E\u0941\u091D\u0938\u0947 \u092A\u0942\u091B\u0947\u0902 \u2014 \u0939\u094B\u092E\u094D\u092F\u094B\u092A\u0925\u0940 \u092E\u0947\u0902 \u092E\u0926\u0926 \u0915\u0930 \u0938\u0915\u0924\u093E \u0939\u0942\u0901\u0964';
   const DOCTOR_CONTACT = '\u091A\u093F\u0915\u093F\u0924\u094D\u0938\u0915\u0940\u092F \u092A\u0930\u093E\u092E\u0930\u094D\u0936 \u0915\u0947 \u0932\u093F\u090F \u0939\u092E\u093E\u0930\u0947 \u0921\u0949\u0915\u094D\u091F\u0930\u094D\u0938 \u0915\u094B \u0915\u0949\u0932 / \u0935\u094D\u0939\u093E\u091F\u094D\u0938\u092A\u094D\u092A \u0915\u0930\u0947\u0902 +91-7903873282';
 
-  const SESSION_ID = 'P' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
-  let patientInfo = { name: '', age: '', mobile: '' };
+  let SESSION_ID = 'P' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+  let patientInfo = null;
   let isOpen = false;
   let isFlashing = false;
   let chatStarted = false;
 
-  const SYSTEM_PROMPT = `ASTHL \u2014 Homeopathy Working Assistant
+  // ===== Firebase state =====
+  let fbAuth = null;
+  let fbAuthMod = null;
+  let confirmationResult = null;
+  let recaptchaVerifier = null;
+  let resendTimer = null;
+  let otpCooldown = 0;
 
-You are ASTHL, a working assistant for Riva Kumari, a homeopathy practitioner. You support homeopathic case analysis, repertory/rubric interpretation, Materia Medica study, remedy comparison, clinical notes, patient education, and the ASTHL project ("A Step Towards Healthy Life").
+  // ===== localStorage helpers =====
+  function loadSavedUser() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      var u = JSON.parse(raw);
+      if (u && u.mobile && u.name && u.verified) return u;
+      return null;
+    } catch (e) { return null; }
+  }
+  function saveUser(u) {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(u)); } catch (e) {}
+  }
+  function clearUser() {
+    try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+  }
+
+  const SYSTEM_PROMPT_BASE = `ASTHL \u2014 Homeopathy Working Assistant
+
+You are the ASTHL Assistant - the patient-facing chat assistant of ASTHL (A Step Towards Healthy Life), the homeopathy practice of Dr. Riva Kumari. IMPORTANT: the person chatting with you is the CURRENT USER (a patient or a doctor) - NEVER assume the user is Riva Kumari. Always greet and address the current user by their own name in Devanagari. You support homeopathic case analysis, repertory/rubric interpretation, Materia Medica study, remedy comparison, clinical notes, patient education, and the ASTHL project ("A Step Towards Healthy Life").
 
 ## Language & Style
 
@@ -34,7 +77,7 @@ You are ASTHL, a working assistant for Riva Kumari, a homeopathy practitioner. Y
 
 ## Name Rule
 
-- ALWAYS write names in Devanagari script. "Riva" -> "रिवा", "Suresh" -> "सुरेश". Never leave a person's name in Latin script inside a Hindi sentence.
+- ALWAYS write names in Devanagari script. "Riva" -> "\u0930\u093F\u0935\u093E", "Suresh" -> "\u0938\u0941\u0930\u0947\u0936". Never leave a person's name in Latin script inside a Hindi sentence.
 
 ## Size Prefixes (applied to EVERY query)
 
@@ -144,10 +187,22 @@ Clearly label: opening dose, constitutional, supportive. Potency aur dosage bhi 
 - For marketing/health content: avoid unsupported cure claims.
 - Doctor contact: +91-7903873282 (call/WhatsApp). When case seems serious, advise patient to call/WhatsApp this number.`;
 
-  let messages = [
-    { role: 'user', parts: [{ text: SYSTEM_PROMPT }] },
-    { role: 'model', parts: [{ text: '\u0928\u092E\u0938\u094D\u0924\u0947! \u092E\u0948\u0902 ASTHL \u0939\u094B\u092E\u094D\u092F\u094B\u092A\u0925\u0940 \u0905\u0938\u093F\u0938\u094D\u091F\u0947\u0902\u091F \u0939\u0942\u0901\u0964 \u0905\u092A\u0928\u093E \u0938\u0935\u093E\u0932 \u092A\u0942\u091B\u0947\u0902\u0964' }] }
-  ];
+  let messages = [];
+
+  function buildMessages() {
+    var sys = SYSTEM_PROMPT_BASE;
+    if (patientInfo) {
+      if (patientInfo.category === 'doctor') {
+        sys += '\n\n## Current User\nThe current user is a DOCTOR (homeopathy practitioner): ' + patientInfo.name + ', clinic: ' + (patientInfo.clinic || '-') + '. Since the user is a doctor, use technical/clinical language freely. Address the user by their own name in Devanagari - never call the user Riva.';
+      } else {
+        sys += '\n\n## Current User\nThe current user is a PATIENT (non-medical person): ' + patientInfo.name + ', age ' + patientInfo.age + '. Respond in simple, easy-to-understand Hindi. Address the user by their own name in Devanagari - never call the user Riva.';
+      }
+    }
+    messages = [
+      { role: 'user', parts: [{ text: sys }] },
+      { role: 'model', parts: [{ text: '\u0928\u092E\u0938\u094D\u0924\u0947! \u092E\u0948\u0902 ASTHL \u0939\u094B\u092E\u094D\u092F\u094B\u092A\u0925\u0940 \u0905\u0938\u093F\u0938\u094D\u091F\u0947\u0902\u091F \u0939\u0942\u0901\u0964 \u0905\u092A\u0928\u093E \u0938\u0935\u093E\u0932 \u092A\u0942\u091B\u0947\u0902\u0964' }] }
+    ];
+  }
 
   // ===== CSS =====
   const style = document.createElement('style');
@@ -155,27 +210,11 @@ Clearly label: opening dose, constitutional, supportive. Potency aur dosage bhi 
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap');
     #asthl-chat-root * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Noto Sans Devanagari', system-ui, sans-serif; }
     #asthl-chat-root { position: fixed; bottom: 0; right: 0; z-index: 999999; pointer-events: none; }
-
-    #asthl-chat-btn {
-      position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%;
-      background: linear-gradient(135deg, #0d9488, #0f766e); border: none; cursor: pointer;
-      box-shadow: 0 4px 16px rgba(13, 148, 136, 0.4); display: flex; align-items: center; justify-content: center;
-      z-index: 999999; pointer-events: auto; transition: all 0.3s ease; animation: asthl-pulse 2s infinite;
-    }
+    #asthl-chat-btn { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #0d9488, #0f766e); border: none; cursor: pointer; box-shadow: 0 4px 16px rgba(13,148,136,0.4); display: flex; align-items: center; justify-content: center; z-index: 999999; pointer-events: auto; transition: all 0.3s ease; animation: asthl-pulse 2s infinite; }
     #asthl-chat-btn:hover { transform: scale(1.08); }
     #asthl-chat-btn svg { width: 28px; height: 28px; fill: white; }
-    @keyframes asthl-pulse {
-      0% { box-shadow: 0 4px 16px rgba(13, 148, 136, 0.4), 0 0 0 0 rgba(13, 148, 136, 0.4); }
-      70% { box-shadow: 0 4px 16px rgba(13, 148, 136, 0.4), 0 0 0 15px rgba(13, 148, 136, 0); }
-      100% { box-shadow: 0 4px 16px rgba(13, 148, 136, 0.4), 0 0 0 0 rgba(13, 148, 136, 0); }
-    }
-
-    #asthl-flash {
-      position: fixed; bottom: 90px; right: 20px; max-width: 320px; min-width: 260px;
-      background: white; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-      overflow: hidden; z-index: 999998; pointer-events: auto; border: 1px solid #ccfbf1;
-      transform: translateY(20px) scale(0.9); opacity: 0; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
+    @keyframes asthl-pulse { 0% { box-shadow: 0 4px 16px rgba(13,148,136,0.4), 0 0 0 0 rgba(13,148,136,0.4); } 70% { box-shadow: 0 4px 16px rgba(13,148,136,0.4), 0 0 0 15px rgba(13,148,136,0); } 100% { box-shadow: 0 4px 16px rgba(13,148,136,0.4), 0 0 0 0 rgba(13,148,136,0); } }
+    #asthl-flash { position: fixed; bottom: 90px; right: 20px; max-width: 320px; min-width: 260px; background: white; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.15); overflow: hidden; z-index: 999998; pointer-events: auto; border: 1px solid #ccfbf1; transform: translateY(20px) scale(0.9); opacity: 0; transition: all 0.4s cubic-bezier(0.34,1.56,0.64,1); }
     #asthl-flash.show { transform: translateY(0) scale(1); opacity: 1; }
     #asthl-flash-header { background: linear-gradient(135deg, #0d9488, #0f766e); color: white; padding: 10px 14px; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
     #asthl-flash-header .dot { width: 8px; height: 8px; border-radius: 50%; background: #4ade80; flex-shrink: 0; }
@@ -184,51 +223,55 @@ Clearly label: opening dose, constitutional, supportive. Potency aur dosage bhi 
     #asthl-flash-body { padding: 12px 14px; font-size: 14px; color: #134e4a; line-height: 1.5; }
     #asthl-flash-cta { display: inline-block; margin-top: 8px; padding: 6px 16px; background: #0d9488; color: white; border-radius: 20px; font-size: 13px; font-weight: 500; cursor: pointer; border: none; font-family: inherit; }
     #asthl-flash-cta:hover { background: #0f766e; }
-
-    #asthl-chat-window {
-      position: fixed; bottom: 90px; right: 20px; width: 370px; height: 520px; max-height: calc(100dvh - 110px);
-      background: #f0fdfa; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-      display: none; flex-direction: column; overflow: hidden; z-index: 999999; pointer-events: auto; border: 1px solid #ccfbf1;
-    }
+    #asthl-chat-window { position: fixed; bottom: 90px; right: 20px; width: 380px; height: 540px; max-height: calc(100dvh - 110px); background: #f0fdfa; border-radius: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.18); display: none; flex-direction: column; overflow: hidden; z-index: 999999; pointer-events: auto; border: 1px solid #ccfbf1; }
     #asthl-chat-window.open { display: flex; animation: asthl-slide-up 0.3s ease-out; }
     @keyframes asthl-slide-up { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-
     #asthl-chat-window-header { background: linear-gradient(135deg, #0d9488, #0f766e); color: white; padding: 12px 16px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
     #asthl-chat-window-header .avatar { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; }
     #asthl-chat-window-header .info { flex: 1; }
     #asthl-chat-window-header .info .name { font-size: 14px; font-weight: 600; }
     #asthl-chat-window-header .info .status { font-size: 11px; opacity: 0.9; display: flex; align-items: center; gap: 4px; }
     #asthl-chat-window-header .info .status .dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; }
-    #asthl-chat-window-header .close { cursor: pointer; font-size: 20px; line-height: 1; opacity: 0.8; }
+    #asthl-new-chat-btn { background: rgba(255,255,255,0.2); border: none; border-radius: 12px; padding: 5px 10px; font-size: 11px; color: white; cursor: pointer; font-family: inherit; font-weight: 500; display: none; flex-shrink: 0; margin-right: 6px; transition: background 0.15s; } #asthl-new-chat-btn:hover { background: rgba(255,255,255,0.4); } #asthl-chat-window-header .close { cursor: pointer; font-size: 20px; line-height: 1; opacity: 0.8; }
     #asthl-chat-window-header .close:hover { opacity: 1; }
-
-    /* ===== PRE-CHAT FORM ===== */
-    #asthl-form-screen {
-      flex: 1; overflow-y: auto; padding: 20px 18px;
-      display: flex; flex-direction: column; justify-content: center;
-    }
+    #asthl-wa-join { display: flex; align-items: center; justify-content: center; gap: 7px; background: #25d366; color: #ffffff; text-decoration: none; font-size: 12.5px; font-weight: 600; padding: 7px 10px; flex-shrink: 0; font-family: inherit; }
+    #asthl-wa-join:hover { background: #1ebe5b; }
+    #asthl-wa-join svg { width: 16px; height: 16px; flex-shrink: 0; }
+    #asthl-form-screen { flex: 1; overflow-y: auto; padding: 20px 18px; display: flex; flex-direction: column; }
+    .asthl-step { display: flex; flex-direction: column; justify-content: center; flex: 1; }
     #asthl-form-screen h3 { font-size: 16px; color: #134e4a; margin-bottom: 6px; text-align: center; font-weight: 600; }
-    #asthl-form-screen p { font-size: 13px; color: #64748b; text-align: center; margin-bottom: 16px; line-height: 1.5; }
-    .asthl-form-group { margin-bottom: 12px; }
+    #asthl-form-screen p.sub { font-size: 13px; color: #64748b; text-align: center; margin-bottom: 16px; line-height: 1.5; }
+    /* Category buttons */
+    .asthl-cat-grid { display: flex; gap: 10px; margin-bottom: 14px; }
+    .asthl-cat-btn { flex: 1; padding: 18px 10px; background: white; border: 2px solid #ccfbf1; border-radius: 14px; cursor: pointer; text-align: center; transition: all 0.2s; font-family: inherit; }
+    .asthl-cat-btn:hover { border-color: #0d9488; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(13,148,136,0.15); }
+    .asthl-cat-btn .cat-icon { font-size: 30px; margin-bottom: 6px; }
+    .asthl-cat-btn .cat-title { font-size: 15px; font-weight: 600; color: #134e4a; display: block; }
+    .asthl-cat-btn .cat-sub { font-size: 11px; color: #64748b; display: block; margin-top: 2px; }
+    .asthl-form-group { margin-bottom: 11px; }
     .asthl-form-group label { display: block; font-size: 13px; color: #134e4a; margin-bottom: 4px; font-weight: 500; }
-    .asthl-form-group input {
-      width: 100%; padding: 10px 12px; border: 1px solid #ccfbf1; border-radius: 10px;
-      font-size: 14px; font-family: inherit; color: #134e4a; background: white; outline: none;
-      transition: border-color 0.15s;
-    }
-    .asthl-form-group input:focus { border-color: #0d9488; }
-    .asthl-form-group input::placeholder { color: #94a3b8; }
+    .asthl-form-group input, .asthl-form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #ccfbf1; border-radius: 10px; font-size: 14px; font-family: inherit; color: #134e4a; background: white; outline: none; transition: border-color 0.15s; }
+    .asthl-form-group input:focus, .asthl-form-group textarea:focus { border-color: #0d9488; }
+    .asthl-form-group input::placeholder, .asthl-form-group textarea::placeholder { color: #94a3b8; }
     .asthl-form-error { font-size: 12px; color: #e11d48; margin-top: 4px; display: none; }
     .asthl-form-error.show { display: block; }
-    #asthl-form-submit {
-      width: 100%; padding: 12px; background: linear-gradient(135deg, #0d9488, #0f766e);
-      color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600;
-      cursor: pointer; font-family: inherit; margin-top: 6px; transition: all 0.15s;
-    }
-    #asthl-form-submit:hover { transform: scale(1.02); }
+    .asthl-btn-primary { width: 100%; padding: 12px; background: linear-gradient(135deg, #0d9488, #0f766e); color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; margin-top: 6px; transition: all 0.15s; }
+    .asthl-btn-primary:hover { transform: scale(1.02); }
+    .asthl-btn-primary:disabled { opacity: 0.6; cursor: wait; }
+    .asthl-link { background: none; border: none; color: #0d9488; font-size: 13px; cursor: pointer; font-family: inherit; text-decoration: underline; }
     .asthl-form-note { font-size: 11px; color: #94a3b8; text-align: center; margin-top: 10px; line-height: 1.4; }
-
-    /* ===== CHAT MESSAGES ===== */
+    .asthl-otp-status { font-size: 13px; color: #0f766e; text-align: center; margin-bottom: 12px; line-height: 1.5; padding: 8px; background: #f0fdfa; border-radius: 8px; }
+    #asthl-otp-input { text-align: center; font-size: 22px !important; letter-spacing: 8px; font-weight: 600; }
+    .asthl-otp-links { display: flex; justify-content: space-between; margin-top: 12px; }
+    .asthl-otp-links button { background: none; border: none; color: #0d9488; font-size: 13px; cursor: pointer; font-family: inherit; text-decoration: underline; }
+    .asthl-otp-links button:disabled { color: #94a3b8; cursor: default; text-decoration: none; }
+    /* Returning user */
+    .asthl-return-card { background: white; border: 1px solid #ccfbf1; border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+    .asthl-return-card .row { display: flex; justify-content: space-between; padding: 5px 0; font-size: 13px; border-bottom: 1px dashed #ccfbf1; }
+    .asthl-return-card .row:last-child { border-bottom: none; }
+    .asthl-return-card .row .k { color: #64748b; }
+    .asthl-return-card .row .v { color: #134e4a; font-weight: 500; }
+    .asthl-return-card .v.green { color: #166534; }
     #asthl-chat-messages { flex: 1; overflow-y: auto; padding: 12px; display: none; flex-direction: column; gap: 8px; }
     #asthl-chat-messages.show { display: flex; }
     #asthl-chat-messages::-webkit-scrollbar { width: 4px; }
@@ -237,13 +280,11 @@ Clearly label: opening dose, constitutional, supportive. Potency aur dosage bhi 
     .asthl-msg.user { align-self: flex-end; background: #0d9488; color: white; border-bottom-right-radius: 4px; }
     .asthl-msg.bot { align-self: flex-start; background: white; color: #134e4a; border: 1px solid #ccfbf1; border-bottom-left-radius: 4px; }
     .asthl-msg.error { align-self: center; background: #fef2f2; color: #e11d48; border: 1px solid #fecaca; font-size: 12px; text-align: center; }
-
     .asthl-typing { align-self: flex-start; background: white; border: 1px solid #ccfbf1; border-radius: 12px; padding: 10px 14px; display: flex; gap: 4px; }
     .asthl-typing span { width: 6px; height: 6px; border-radius: 50%; background: #5eead4; animation: asthl-typing 1.2s infinite; }
     .asthl-typing span:nth-child(2) { animation-delay: 0.2s; }
     .asthl-typing span:nth-child(3) { animation-delay: 0.4s; }
     @keyframes asthl-typing { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-4px); opacity: 1; } }
-
     #asthl-chat-input-area { background: white; border-top: 1px solid #ccfbf1; padding: 8px 10px; display: none; gap: 6px; align-items: flex-end; flex-shrink: 0; }
     #asthl-chat-input-area.show { display: flex; }
     #asthl-chat-input { flex: 1; border: 1px solid #ccfbf1; border-radius: 20px; padding: 8px 12px; font-size: 14px; font-family: inherit; color: #134e4a; outline: none; resize: none; max-height: 80px; line-height: 1.4; background: #f0fdfa; }
@@ -252,14 +293,8 @@ Clearly label: opening dose, constitutional, supportive. Potency aur dosage bhi 
     #asthl-chat-send:hover { background: #0f766e; }
     #asthl-chat-send:disabled { opacity: 0.5; }
     #asthl-chat-send svg { width: 18px; height: 18px; fill: white; }
-
     #asthl-chat-disclaimer { font-size: 11px; color: #0f766e; text-align: center; padding: 6px 10px; background: #f0fdfa; font-weight: 500; border-top: 1px solid #ccfbf1; }
-
-    @media (max-width: 600px) {
-      #asthl-chat-window { width: 100vw; height: 100dvh; right: 0; bottom: 0; border-radius: 0; border: none; }
-      #asthl-flash { right: 10px; left: 10px; max-width: none; }
-      #asthl-chat-btn { bottom: 16px; right: 16px; }
-    }
+    @media (max-width: 600px) { #asthl-chat-window { width: 100vw; height: 100dvh; right: 0; bottom: 0; border-radius: 0; border: none; } #asthl-flash { right: 10px; left: 10px; max-width: none; } #asthl-chat-btn { bottom: 16px; right: 16px; } }
   `;
   document.head.appendChild(style);
 
@@ -287,57 +322,141 @@ Clearly label: opening dose, constitutional, supportive. Potency aur dosage bhi 
         <div class="name">ASTHL Assistant</div>
         <div class="status"><span class="dot"></span> Online</div>
       </div>
+      <button id="asthl-new-chat-btn">⟳ नयी चैट</button>
       <span class="close" id="asthl-chat-close">&times;</span>
     </div>
+    <a id="asthl-wa-join" href="${WHATSAPP_URL}" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="#ffffff"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.52.149-.174.198-.298.297-.497.1-.198.05-.371-.025-.52-.074-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+      <span>WhatsApp ग्रुप से जुड़ें</span>
+    </a>
 
-    <!-- PRE-CHAT FORM -->
     <div id="asthl-form-screen">
-      <h3>\u0938\u094D\u0935\u093E\u0917\u0924 \u0939\u0948! \u0915\u0943\u092A\u092F\u093E \u0935\u093F\u0935\u0930\u0923 \u092D\u0930\u0947\u0902</h3>
-      <p>\u0938\u0947\u0935\u093E \u0936\u0941\u0930\u0942 \u0915\u0930\u0928\u0947 \u0938\u0947 \u092A\u0939\u0932\u0947 \u0915\u0941\u091B \u091C\u093E\u0928\u0915\u093E\u0930\u0940 \u0926\u0947\u0902</p>
-      <div class="asthl-form-group">
-        <label>\u0928\u093E\u092E (Name) *</label>
-        <input type="text" id="asthl-pname" placeholder="\u0905\u092A\u0928\u093E \u0928\u093E\u092E \u0932\u093F\u0916\u0947\u0902" autocomplete="off">
-        <div class="asthl-form-error" id="asthl-err-name">\u0915\u0943\u092A\u092F\u093E \u0928\u093E\u092E \u0926\u0930\u094D\u091C \u0915\u0930\u0947\u0902</div>
+
+      <!-- STEP 0: Category -->
+      <div id="asthl-step-category" class="asthl-step">
+        <h3>\u0928\u092E\u0938\u094D\u0924\u0947! \u0906\u092A \u0915\u094C\u0928 \u0939\u0948\u0902?</h3>
+        <p class="sub">\u092A\u0939\u0932\u0947 \u0905\u092A\u0928\u0940 \u0936\u094D\u0930\u0947\u0923\u0940 \u091A\u0941\u0928\u0947\u0902</p>
+        <div class="asthl-cat-grid">
+          <button class="asthl-cat-btn" id="asthl-cat-patient">
+            <span class="cat-icon">\u{1F469}\u200D\u2695\uFE0F</span>
+            <span class="cat-title">\u092E\u0930\u0940\u095B</span>
+            <span class="cat-sub">\u0938\u094D\u0935\u093E\u0938\u094D\u0925\u094D\u092F \u0938\u0935\u093E\u0932 \u092A\u0942\u091B\u0928\u093E \u0939\u0948</span>
+          </button>
+          <button class="asthl-cat-btn" id="asthl-cat-doctor">
+            <span class="cat-icon">\u{1F3E5}</span>
+            <span class="cat-title">\u0921\u0949\u0915\u094D\u091F\u0930</span>
+            <span class="cat-sub">\u0939\u094B\u092E\u094D\u092F\u094B\u092A\u0925\u0940 \u092A\u094D\u0930\u0948\u0915\u094D\u091F\u093F\u0936\u0928\u0930</span>
+          </button>
+        </div>
+        <div class="asthl-form-note">\u092A\u0939\u0932\u0940 \u092C\u093E\u0930 \u092A\u0902\u091C\u0940\u0930\u0923 \u092E\u0947\u0902 \u092E\u094B\u092C\u093E\u0907\u0932 OTP \u0938\u0947 \u0938\u0924\u094D\u092F\u093E\u092A\u0928 \u0939\u094B\u0917\u093E\u0964 \u0909\u0938\u0915\u0947 \u092C\u093E\u0926 \u092C\u093E\u0930-\u092C\u093E\u0930 OTP \u0928\u0939\u0940\u0902 \u0932\u0917\u0947\u0917\u093E\u0964</div>
       </div>
-      <div class="asthl-form-group">
-        <label>\u0909\u092E\u094D\u0930 (Age) *</label>
-        <input type="number" id="asthl-page" placeholder="\u0905\u092A\u0928\u0940 \u0909\u092E\u094D\u0930 \u0932\u093F\u0916\u0947\u0902" autocomplete="off">
-        <div class="asthl-form-error" id="asthl-err-age">\u0915\u0943\u092A\u092F\u093E \u0909\u092E\u094D\u0930 \u0926\u0930\u094D\u091C \u0915\u0930\u0947\u0902</div>
+
+      <!-- STEP 1: Registration Form -->
+      <div id="asthl-step-form" class="asthl-step" style="display:none">
+        <h3 id="asthl-form-title">\u0935\u093F\u0935\u0930\u0923 \u092D\u0930\u0947\u0902</h3>
+        <p class="sub" id="asthl-form-sub"></p>
+        <div class="asthl-form-group">
+          <label>\u0928\u093E\u092E *</label>
+          <input type="text" id="asthl-pname" placeholder="\u0905\u092A\u0928\u093E \u092A\u0942\u0930\u093E \u0928\u093E\u092E" autocomplete="off">
+          <div class="asthl-form-error" id="asthl-err-name">\u0915\u0943\u092A\u092F\u093E \u0928\u093E\u092E \u0926\u0930\u094D\u091C \u0915\u0930\u0947\u0902</div>
+        </div>
+        <div class="asthl-form-group">
+          <label>\u0909\u092E\u094D\u0930 *</label>
+          <input type="number" id="asthl-page" placeholder="\u0905\u092A\u0928\u0940 \u0909\u092E\u094D\u0930" autocomplete="off">
+          <div class="asthl-form-error" id="asthl-err-age">\u0915\u0943\u092A\u092F\u093E \u0938\u0939\u0940 \u0909\u092E\u094D\u0930 \u0926\u0930\u094D\u091C \u0915\u0930\u0947\u0902</div>
+        </div>
+        <div class="asthl-form-group">
+          <label>\u092E\u094B\u092C\u093E\u0907\u0932 \u0928\u0902\u092C\u0930 *</label>
+          <input type="tel" id="asthl-pmobile" placeholder="10 digit mobile number" maxlength="10" autocomplete="off">
+          <div class="asthl-form-error" id="asthl-err-mobile">\u0915\u0943\u092A\u092F\u093E \u0938\u0939\u0940 10 \u0905\u0902\u0915 \u0915\u093E \u0928\u0902\u092C\u0930 \u0926\u0930\u094D\u091C \u0915\u0930\u0947\u0902</div>
+        </div>
+        <div class="asthl-form-group" id="asthl-clinic-group" style="display:none">
+          <label>\u0915\u094D\u0932\u093F\u0928\u093F\u0915 / \u0905\u0938\u094D\u092A\u0924\u093E\u0932 \u0915\u093E \u0928\u093E\u092E *</label>
+          <input type="text" id="asthl-pclinic" placeholder="\u0905\u092A\u0928\u0947 \u0915\u094D\u0932\u093F\u0928\u093F\u0915 \u0915\u093E \u0928\u093E\u092E \u0932\u093F\u0916\u0947\u0902" autocomplete="off">
+          <div class="asthl-form-error" id="asthl-err-clinic">\u0915\u0943\u092A\u092F\u093E \u0915\u094D\u0932\u093F\u0928\u093F\u0915 \u0915\u093E \u0928\u093E\u092E \u0926\u0930\u094D\u091C \u0915\u0930\u0947\u0902</div>
+        </div>
+        <div class="asthl-form-group">
+          <label>\u092A\u0924\u093E *</label>
+          <textarea id="asthl-paddress" rows="2" placeholder="\u0928\u0917\u0930, \u091C\u093F\u0932\u093E, \u0930\u093E\u091C\u094D\u092F \u0932\u093F\u0916\u0947\u0902" autocomplete="off"></textarea>
+          <div class="asthl-form-error" id="asthl-err-address">\u0915\u0943\u092A\u092F\u093E \u092A\u0924\u093E \u0926\u0930\u094D\u091C \u0915\u0930\u0947\u0902</div>
+        </div>
+        <button id="asthl-form-submit" class="asthl-btn-primary">\u0913\u091F\u0940\u092A\u0940 \u092D\u0947\u091C\u0947\u0902 \u2192</button>
+        <div style="text-align:center;margin-top:10px">
+          <button class="asthl-link" id="asthl-back-cat">\u2190 \u0936\u094D\u0930\u0947\u0923\u0940 \u092C\u0926\u0932\u0947\u0902</button>
+        </div>
       </div>
-      <div class="asthl-form-group">
-        <label>\u092E\u094B\u092C\u093E\u0907\u0932 (Mobile) *</label>
-        <input type="tel" id="asthl-pmobile" placeholder="10 digit mobile number" maxlength="10" autocomplete="off">
-        <div class="asthl-form-error" id="asthl-err-mobile">\u0915\u0943\u092A\u092F\u093E \u0938\u0939\u0940 10 \u0905\u0902\u0915 \u0915\u093E \u092E\u094B\u092C\u093E\u0907\u0932 \u0928\u0902\u092C\u0930 \u0926\u0930\u094D\u091C \u0915\u0930\u0947\u0902</div>
+
+      <!-- STEP 2: OTP -->
+      <div id="asthl-step-otp" class="asthl-step" style="display:none">
+        <h3>\u092E\u094B\u092C\u093E\u0907\u0932 \u0938\u0924\u094D\u092F\u093E\u092A\u0928</h3>
+        <div class="asthl-otp-status" id="asthl-otp-status">+91-XXXXXXX \u092A\u0930 OTP \u092D\u0947\u091C\u093E \u0917\u092F\u093E \u0939\u0948</div>
+        <div class="asthl-form-group">
+          <label>OTP \u0926\u0930\u094D\u091C \u0915\u0930\u0947\u0902 *</label>
+          <input type="tel" id="asthl-otp-input" placeholder="- - - - - -" maxlength="6" autocomplete="one-time-code">
+          <div class="asthl-form-error" id="asthl-err-otp">\u0917\u0932\u0924 OTP\u0964 \u0926\u094B\u092C\u093E\u0930\u093E \u0915\u094B\u0936\u093F\u0936 \u0915\u0930\u0947\u0902\u0964</div>
+        </div>
+        <button id="asthl-otp-verify" class="asthl-btn-primary">\u0938\u0924\u094D\u092F\u093E\u092A\u093F\u0924 \u0915\u0930\u0947\u0902 \u2713</button>
+        <div class="asthl-otp-links">
+          <button id="asthl-otp-back">\u2190 \u092A\u0940\u091B\u0947</button>
+          <button id="asthl-otp-resend">\u0926\u094B\u092C\u093E\u0930\u093E \u092D\u0947\u091C\u0947\u0902</button>
+        </div>
+        <div class="asthl-form-note">\u092F\u0939 \u090F\u0915 \u092C\u093E\u0930 \u0939\u0940 \u0939\u094B\u0917\u093E \u2014 \u0905\u0917\u0932\u0940 \u092C\u093E\u0930 OTP \u0928\u0939\u0940\u0902 \u092E\u093E\u0902\u0917\u093E \u091C\u093E \u0924\u0915</div>
       </div>
-      <button id="asthl-form-submit">\u091A\u0948\u091F \u0936\u0941\u0930\u0942 \u0915\u0930\u0947\u0902 \u2192</button>
-      <div class="asthl-form-note">\u0921\u0949\u0915\u094D\u091F\u0930 \u0938\u0947 \u092C\u093E\u0924 \u0915\u0930\u0928\u0947 \u0915\u0947 \u0932\u093F\u090F: +91-7903873282</div>
+
+      <!-- STEP 3: Returning user -->
+      <div id="asthl-step-return" class="asthl-step" style="display:none">
+        <h3>\u0928\u092E\u0938\u094D\u0924\u0947 \u092B\u093F\u0930 \u0938\u0947, <span id="asthl-ret-name"></span>! \u{1F44B}</h3>
+        <p class="sub">\u0906\u092A \u092A\u0939\u0932\u0947 \u0938\u0947 \u0930\u091C\u093F\u0938\u094D\u091F\u0930 \u0939\u0948\u0902 \u2014 \u092C\u0938 \u091A\u0948\u091F \u0936\u0941\u0930\u0942 \u0915\u0930\u0947\u0902</p>
+        <div class="asthl-return-card" id="asthl-ret-card"></div>
+        <button id="asthl-ret-start" class="asthl-btn-primary">\u091A\u0948\u091F \u0936\u0941\u0930\u0942 \u0915\u0930\u0947\u0902 \u2192</button>
+        <div style="text-align:center;margin-top:12px">
+          <button class="asthl-link" id="asthl-ret-reset">\u0928\u092F\u093E \u092F\u0942\u091C\u093C\u0930 \u0939\u0948\u0902? \u0926\u094B\u092C\u093E\u0930\u093E \u0930\u091C\u093F\u0938\u094D\u091F\u0930 \u0915\u0930\u0947\u0902</button>
+        </div>
+      </div>
+
+      <!-- reCAPTCHA -->
+      <div id="asthl-recaptcha-container"></div>
     </div>
 
-    <!-- CHAT MESSAGES -->
     <div id="asthl-chat-messages"></div>
 
-    <!-- INPUT AREA -->
     <div id="asthl-chat-input-area">
       <textarea id="asthl-chat-input" rows="1" placeholder="\u0905\u092A\u0928\u093E \u092A\u094D\u0930\u0936\u094D\u0928 \u0932\u093F\u0916\u0947\u0902... (r:, ias:, ai:, s+, m+, l+)"></textarea>
       <button id="asthl-chat-send"><svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2v7z"/></svg></button>
     </div>
 
-    <!-- DISCLAIMER -->
     <div id="asthl-chat-disclaimer">${DOCTOR_CONTACT}</div>
   `;
   root.appendChild(win);
 
   // ===== DOM refs =====
+  const stepCat = document.getElementById('asthl-step-category');
+  const stepForm = document.getElementById('asthl-step-form');
+  const stepOtp = document.getElementById('asthl-step-otp');
+  const stepReturn = document.getElementById('asthl-step-return');
   const formScreen = document.getElementById('asthl-form-screen');
   const msgContainer = document.getElementById('asthl-chat-messages');
   const inputArea = document.getElementById('asthl-chat-input-area');
   const input = document.getElementById('asthl-chat-input');
   const sendBtn = document.getElementById('asthl-chat-send');
   const formSubmit = document.getElementById('asthl-form-submit');
+  const otpInput = document.getElementById('asthl-otp-input');
+  const otpVerifyBtn = document.getElementById('asthl-otp-verify');
+  const otpResendBtn = document.getElementById('asthl-otp-resend');
+  const otpBackBtn = document.getElementById('asthl-otp-back');
+  const otpStatus = document.getElementById('asthl-otp-status');
+  const otpErr = document.getElementById('asthl-err-otp');
+
+  function showStep(step) {
+    stepCat.style.display = 'none';
+    stepForm.style.display = 'none';
+    stepOtp.style.display = 'none';
+    stepReturn.style.display = 'none';
+    if (step) step.style.display = 'flex';
+  }
 
   // ===== Helpers =====
   function scrollDown() { msgContainer.scrollTop = msgContainer.scrollHeight; }
-
   function addMsg(text, type) {
     const el = document.createElement('div');
     el.className = 'asthl-msg ' + type;
@@ -345,7 +464,6 @@ Clearly label: opening dose, constitutional, supportive. Potency aur dosage bhi 
     msgContainer.appendChild(el);
     scrollDown();
   }
-
   function showTyping() {
     const el = document.createElement('div');
     el.className = 'asthl-typing';
@@ -354,15 +472,16 @@ Clearly label: opening dose, constitutional, supportive. Potency aur dosage bhi 
     msgContainer.appendChild(el);
     scrollDown();
   }
-
   function hideTyping() {
     const el = document.getElementById('asthl-typing-indicator');
     if (el) el.remove();
   }
-
   function showError(id, show) {
     const el = document.getElementById(id);
     if (show) el.classList.add('show'); else el.classList.remove('show');
+  }
+  function hideAllErrors() {
+    ['asthl-err-name','asthl-err-age','asthl-err-mobile','asthl-err-clinic','asthl-err-address'].forEach(function(id){ showError(id,false); });
   }
 
   // ===== Flash =====
@@ -372,76 +491,302 @@ Clearly label: opening dose, constitutional, supportive. Potency aur dosage bhi 
     flash.classList.add('show');
     setTimeout(function() { if (isFlashing && !isOpen) hideFlash(); }, FLASH_AUTO_CLOSE);
   }
-
   function hideFlash() { flash.classList.remove('show'); isFlashing = false; }
 
   // ===== Open/close chat =====
   function openChat() {
+    // HTTP (insecure) page: Firebase OTP secure context maangta hai.
+    // Isliye chat ko secure page par naye tab mein khol do.
+    if (OTP_ENABLED && !FULLPAGE_MODE && !window.isSecureContext) {
+      window.open(CHAT_PAGE_URL, '_blank');
+      return;
+    }
     isOpen = true; hideFlash(); win.classList.add('open');
-    if (!chatStarted) {
-      // Form screen dikhega pehle
-      formScreen.style.display = 'flex';
-      msgContainer.classList.remove('show');
-      inputArea.classList.remove('show');
-    } else {
+    if (chatStarted) {
       formScreen.style.display = 'none';
       msgContainer.classList.add('show');
       inputArea.classList.add('show');
       setTimeout(function() { input.focus(); }, 300);
+      return;
+    }
+    // Registration flow
+    formScreen.style.display = 'flex';
+    msgContainer.classList.remove('show');
+    inputArea.classList.remove('show');
+    var saved = loadSavedUser();
+    if (saved) {
+      patientInfo = saved;
+      fillReturnCard(saved);
+      showStep(stepReturn);
+    } else {
+      showStep(stepCat);
+    }
+  }
+  function closeChat() { isOpen = false; win.classList.remove('open'); }
+
+  function fillReturnCard(u) {
+    document.getElementById('asthl-ret-name').textContent = u.name;
+    var cat = u.category === 'doctor' ? '\u0921\u0949\u0915\u094D\u091F\u0930' : '\u092E\u0930\u0940\u095B';
+    var html = '<div class="row"><span class="k">\u0928\u093E\u092E</span><span class="v">' + u.name + '</span></div>';
+    html += '<div class="row"><span class="k">\u092E\u094B\u092C\u093E\u0907\u0932</span><span class="v green">+91-' + u.mobile + ' \u2713</span></div>';
+    html += '<div class="row"><span class="k">\u0936\u094D\u0930\u0947\u0923\u0940</span><span class="v">' + cat + '</span></div>';
+    if (u.category === 'doctor' && u.clinic) html += '<div class="row"><span class="k">\u0915\u094D\u0932\u093F\u0928\u093F\u0915</span><span class="v">' + u.clinic + '</span></div>';
+    if (u.address) html += '<div class="row"><span class="k">\u092A\u0924\u093E</span><span class="v">' + u.address + '</span></div>';
+    document.getElementById('asthl-ret-card').innerHTML = html;
+  }
+
+  // ===== Category selection =====
+  var selectedCategory = null;
+
+  document.getElementById('asthl-cat-patient').addEventListener('click', function() {
+    selectedCategory = 'patient';
+    document.getElementById('asthl-form-title').textContent = '\u092E\u0930\u0940\u095B \u2014 \u0935\u093F\u0935\u0930\u0923 \u092D\u0930\u0947\u0902';
+    document.getElementById('asthl-form-sub').textContent = '\u092A\u0922\u093C\u0947\u0947 \u0939\u0941\u090F \u0938\u0935\u093E\u0932\u094B\u0902 \u0915\u0947 \u0932\u093F\u090F \u0938\u0930\u0932 \u091C\u0935\u093E\u092C \u092E\u093F\u0932\u0947\u0902\u0917\u0947';
+    document.getElementById('asthl-clinic-group').style.display = 'none';
+    showStep(stepForm);
+  });
+
+  document.getElementById('asthl-cat-doctor').addEventListener('click', function() {
+    selectedCategory = 'doctor';
+    document.getElementById('asthl-form-title').textContent = '\u0921\u0949\u0915\u094D\u091F\u0930 \u2014 \u0935\u093F\u0935\u0930\u0923 \u092D\u0930\u0947\u0902';
+    document.getElementById('asthl-form-sub').textContent = '\u0924\u0915\u0928\u0940\u0915\u0940 \u0935\u093F\u0938\u094D\u0924\u0943\u0924 \u0938\u092E\u091D \u092E\u093F\u0932\u0947\u0917\u0940 \u2014 rubric, Materia Medica \u0906\u0926\u093F';
+    document.getElementById('asthl-clinic-group').style.display = 'block';
+    showStep(stepForm);
+  });
+
+  document.getElementById('asthl-back-cat').addEventListener('click', function() {
+    showStep(stepCat);
+  });
+
+  // ===== FIREBASE =====
+  async function initFirebase() {
+    try {
+      const appMod = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+      const authMod = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+      const app = appMod.initializeApp(FIREBASE_CONFIG);
+      fbAuth = authMod.getAuth(app);
+      fbAuthMod = authMod;
+      return true;
+    } catch (err) {
+      console.error('Firebase init failed:', err);
+      return false;
     }
   }
 
-  function closeChat() { isOpen = false; win.classList.remove('open'); }
+  async function sendOTP(mobile) {
+    if (!fbAuth || !fbAuthMod) {
+      const ok = await initFirebase();
+      if (!ok) throw new Error('Firebase config error');
+    }
+    if (!recaptchaVerifier) {
+      recaptchaVerifier = new fbAuthMod.RecaptchaVerifier(fbAuth, 'asthl-recaptcha-container', { size: 'invisible' });
+      await recaptchaVerifier.render();
+    }
+    confirmationResult = await fbAuthMod.signInWithPhoneNumber(fbAuth, '+91' + mobile, recaptchaVerifier);
+    return true;
+  }
 
-  // ===== Form validation & submit =====
-  function validateAndStart() {
+  async function verifyOTP(code) {
+    if (!confirmationResult) throw new Error('Pehle OTP bhejein.');
+    return await confirmationResult.confirm(code);
+  }
+
+  // ===== Form submit =====
+  async function handleFormSubmit() {
     const name = document.getElementById('asthl-pname').value.trim();
     const age = document.getElementById('asthl-page').value.trim();
     const mobile = document.getElementById('asthl-pmobile').value.trim();
+    const clinic = document.getElementById('asthl-pclinic').value.trim();
+    const address = document.getElementById('asthl-paddress').value.trim();
 
+    hideAllErrors();
     let valid = true;
-    showError('asthl-err-name', false);
-    showError('asthl-err-age', false);
-    showError('asthl-err-mobile', false);
-
     if (!name || name.length < 2) { showError('asthl-err-name', true); valid = false; }
     if (!age || isNaN(age) || parseInt(age) < 1 || parseInt(age) > 120) { showError('asthl-err-age', true); valid = false; }
     if (!mobile || !/^\d{10}$/.test(mobile)) { showError('asthl-err-mobile', true); valid = false; }
-
+    if (selectedCategory === 'doctor' && (!clinic || clinic.length < 2)) { showError('asthl-err-clinic', true); valid = false; }
+    if (!address || address.length < 5) { showError('asthl-err-address', true); valid = false; }
     if (!valid) return;
 
-    // Save patient info
-    patientInfo = { name: name, age: age, mobile: mobile };
-    chatStarted = true;
+    var newUser = { name: name, age: age, mobile: mobile, address: address, category: selectedCategory, clinic: selectedCategory === 'doctor' ? clinic : '', verified: false };
 
-    // Hide form, show chat
+    if (!OTP_ENABLED || !window.isSecureContext) {
+      // HTTP par Firebase OTP nahi chalta — insecure context.
+      // Patient ko block karne ke bajaye unverified register kar do.
+      // HTTPS aane par (Cloudflare) OTP apne aap active ho jayega.
+      patientInfo = newUser;
+      patientInfo.verified = window.isSecureContext ? false : false;
+      saveUser(newUser);
+      startChat();
+      return;
+    }
+
+    formSubmit.disabled = true;
+    formSubmit.textContent = 'OTP \u092D\u0947\u091C \u0930\u0939\u093E \u0939\u0948...';
+
+    try {
+      await sendOTP(mobile);
+      patientInfo = newUser;
+      otpStatus.textContent = '+91-' + mobile + ' \u092A\u0930 6 \u0905\u0902\u0915 \u0915\u093E OTP \u092D\u0947\u091C\u093E \u0917\u092F\u093E \u0939\u0948\u0964 SMS \u0926\u0947\u0916\u0915\u0930 \u0928\u0940\u091A\u0947 \u0921\u093E\u0932\u0947\u0902\u0964';
+      otpErr.classList.remove('show');
+      otpInput.value = '';
+      showStep(stepOtp);
+      startResendCooldown(60);
+      setTimeout(function() { otpInput.focus(); }, 200);
+    } catch (err) {
+      console.error('OTP send failed:', err);
+      var msg = 'OTP \u0928\u0939\u0940\u0902 \u092D\u0947\u091C \u092A\u093E \u0930\u0939\u093E\u0964 \u0925\u094B\u0921\u093C\u0940 \u0926\u0947\u0930 \u092C\u093E\u0926 \u092A\u094D\u0930\u092F\u093E\u0938 \u0915\u0930\u0947\u0902\u0964';
+      if (err.code === 'auth/too-many-requests') msg = '\u092C\u0939\u0941\u0924 \u091C\u094D\u092F\u093E\u0926\u093E OTP \u092D\u0947\u091C\u093E \u0917\u092F\u093E\u0964 \u0915\u0941\u091B \u0926\u0947\u0930 \u092C\u093E\u0926 \u0915\u094B\u0936\u093F\u0936 \u0915\u0930\u0947\u0902\u0964';
+      if (err.code === 'auth/invalid-phone-number') msg = '\u0917\u0932\u0924 \u092E\u094B\u092C\u093E\u0907\u0932 \u0928\u0902\u092C\u0930\u0964';
+      if (err.code === 'auth/unauthorized-domain') msg = '\u092F\u0939 domain Firebase mein authorized \u0928\u0939\u0940\u0902 \u0939\u0948\u0964';
+      if ((err.code || '').indexOf('billing') !== -1 || (err.message || '').indexOf('BILLING_NOT_ENABLED') !== -1) {
+        msg = 'Firebase billing account link karna zaroori hai (naya rule). Firebase Console > Usage and billing > Blaze plan (10 SMS/day ab bhi free).';
+      }
+      // reCAPTCHA reset — warna retry par wahi error aata rahega
+      if (recaptchaVerifier) { try { recaptchaVerifier.clear(); } catch (e2) {} recaptchaVerifier = null; }
+      alert(msg + '\n\n[Error: ' + (err.code || err.message || 'unknown') + ']');
+    } finally {
+      formSubmit.disabled = false;
+      formSubmit.textContent = '\u0913\u091F\u0940\u092A\u0940 \u092D\u0947\u091C\u0947\u0902 \u2192';
+    }
+  }
+
+  // ===== OTP verify =====
+  async function handleOtpVerify() {
+    const code = otpInput.value.trim();
+    if (!code || !/^\d{6}$/.test(code)) {
+      otpErr.textContent = '\u0915\u0943\u092A\u092F\u093E 6 \u0905\u0902\u0915 \u0915\u093E OTP \u0921\u093E\u0932\u0947\u0902\u0964';
+      otpErr.classList.add('show');
+      return;
+    }
+    otpVerifyBtn.disabled = true;
+    otpVerifyBtn.textContent = '\u091C\u093E\u0901\u091A \u0939\u094B \u0930\u0939\u0940 \u0939\u0948...';
+    otpErr.classList.remove('show');
+
+    try {
+      await verifyOTP(code);
+      patientInfo.verified = true;
+      patientInfo.registeredAt = new Date().toISOString();
+      saveUser(patientInfo);
+      startChat();
+    } catch (err) {
+      if (err.code === 'auth/invalid-verification-code') {
+        otpErr.textContent = '\u0917\u0932\u0924 OTP\u0964 \u0926\u094B\u092C\u093E\u0930\u093E \u0915\u094B\u0936\u093F\u0936 \u0915\u0930\u0947\u0902\u0964';
+      } else if (err.code === 'auth/code-expired') {
+        otpErr.textContent = 'OTP \u0938\u092E\u093E\u092A\u094D\u0924 \u0939\u094B \u0917\u092F\u093E\u0964 \u0926\u094B\u092C\u093E\u0930\u093E \u092D\u0947\u091C\u0947\u0902\u0964';
+      } else {
+        otpErr.textContent = '\u0924\u094D\u0930\u0941\u091F\u093F: ' + (err.message || 'fail');
+      }
+      otpErr.classList.add('show');
+      otpInput.value = '';
+      otpInput.focus();
+    } finally {
+      otpVerifyBtn.disabled = false;
+      otpVerifyBtn.textContent = '\u0938\u0924\u094D\u092F\u093E\u092A\u093F\u0924 \u0915\u0930\u0947\u0902 \u2713';
+    }
+  }
+
+  function startResendCooldown(sec) {
+    otpCooldown = sec;
+    otpResendBtn.disabled = true;
+    clearInterval(resendTimer);
+    resendTimer = setInterval(function() {
+      otpCooldown--;
+      if (otpCooldown <= 0) {
+        clearInterval(resendTimer);
+        otpResendBtn.disabled = false;
+        otpResendBtn.textContent = '\u0926\u094B\u092C\u093E\u0930\u093E \u092D\u0947\u091C\u0947\u0902';
+      } else {
+        otpResendBtn.textContent = '\u0926\u094B\u092C\u093E\u0930\u093E \u092D\u0947\u091C\u0947\u0902 (' + otpCooldown + 's)';
+      }
+    }, 1000);
+    otpResendBtn.textContent = '\u0926\u094B\u092C\u093E\u0930\u093E \u092D\u0947\u091C\u0947\u0902 (' + otpCooldown + 's)';
+  }
+
+  async function handleOtpResend() {
+    try {
+      await sendOTP(patientInfo.mobile);
+      otpErr.classList.remove('show');
+      otpInput.value = '';
+      otpInput.focus();
+      startResendCooldown(60);
+    } catch (err) {
+      alert('OTP \u0928\u0939\u0940\u0902 \u092D\u0947\u091C \u092A\u093E \u0930\u0939\u093E\u0964 \u0925\u094B\u0921\u093C\u0940 \u0926\u0947\u0930 \u092C\u093E\u0926 \u092A\u094D\u0930\u092F\u093E\u0938 \u0915\u0930\u0947\u0902\u0964');
+    }
+  }
+
+  function handleOtpBack() {
+    showStep(stepForm);
+    clearInterval(resendTimer);
+  }
+
+  // ===== Start chat =====
+  function startChat() {
+    chatStarted = true;
+    newChatBtn.style.display = 'block';
+    clearInterval(resendTimer);
+    buildMessages();
     formScreen.style.display = 'none';
     msgContainer.classList.add('show');
     inputArea.classList.add('show');
-
-    // Welcome message with patient name
-    const welcomeMsg = '\u0928\u092E\u0938\u094D\u0924\u0947 ' + name + '! \u{1F64F} \u092E\u0948\u0902 ASTHL \u0939\u094B\u092E\u094D\u092F\u094B\u092A\u0925\u0940 \u0905\u0938\u093F\u0938\u094D\u091F\u0947\u0902\u091F \u0939\u0942\u0901\u0964 \u0905\u092A\u0928\u093E \u0938\u0935\u093E\u0932 \u092A\u0942\u091B\u0947\u0902 \u2014 \u0930\u0942\u092C\u094D\u0930\u093F\u0915 \u090F\u0928\u093E\u0932\u093F\u0938\u093F\u0938, \u092E\u0948\u091F\u0947\u0930\u093F\u092F\u093E \u092E\u0947\u0921\u093F\u0915\u093E, \u0930\u0947\u092E\u0947\u0921\u0940 \u0924\u0941\u0932\u0928\u093E \u0906\u0926\u093F\u0964 r:, ias:, ai:, s+, m+, l+ \u092A\u094D\u0930\u0940\u092B\u093F\u0915\u094D\u0938 \u092D\u0940 \u0909\u092A\u092F\u094B\u0917 \u0915\u0930 \u0938\u0915\u0924\u0947 \u0939\u0948\u0902\u0964';
-    addMsg(welcomeMsg, 'bot');
-
+    var cat = patientInfo.category === 'doctor' ? '\u0921\u0949\u0915\u094D\u091F\u0930' : '\u092E\u0930\u0940\u095B';
+    var extra = patientInfo.category === 'doctor' && patientInfo.clinic ? '\u0905\u092A\u0928\u0947 \u0915\u094D\u0932\u093F\u0928\u093F\u0915 \u0938\u0947 \u092C\u093E\u0924 \u0915\u0930\u0924\u0947 \u0939\u0948\u0902\u0964 ' : '';
+    var welcome = '\u0928\u092E\u0938\u094D\u0924\u0947 ' + patientInfo.name + '! \u{1F64F} \u0906\u092A ' + cat + ' \u0930\u0942\u092A \u092E\u0947\u0902 \u0930\u091C\u093F\u0938\u094D\u091F\u0930 \u0939\u0948\u0902\u0964 ' + extra + '\u0905\u092A\u0928\u093E \u0938\u0935\u093E\u0932 \u092A\u0942\u091B\u0947\u0902 \u2014 \u0930\u0942\u092C\u094D\u0930\u093F\u0915 \u090F\u0928\u093E\u0932\u093F\u0938\u093F\u0938, \u092E\u0948\u091F\u0947\u0930\u093F\u092F\u093E \u092E\u0947\u0921\u093F\u0915\u093E, \u0930\u0947\u092E\u0947\u0921\u0940 \u0924\u0941\u0932\u0928\u093E \u0906\u0926\u093F\u0964 r:, ias:, ai:, s+, m+, l+ \u092A\u094D\u0930\u0940\u092B\u093F\u0915\u094D\u0938 \u092D\u0940 \u0909\u092A\u092F\u094B\u0917 \u0915\u0930 \u0938\u0915\u0924\u0947 \u0939\u0948\u0902\u0964';
+    addMsg(welcome, 'bot');
     setTimeout(function() { input.focus(); }, 300);
   }
 
+  // ===== Returning user =====
+  document.getElementById('asthl-ret-start').addEventListener('click', function() {
+    startChat();
+  });
+  document.getElementById('asthl-ret-reset').addEventListener('click', function() {
+    clearUser();
+    patientInfo = null;
+    showStep(stepCat);
+  });
+
   // ===== Events =====
   btn.addEventListener('click', function() { if (isOpen) closeChat(); else openChat(); });
+  // WhatsApp group: ek click ke baad button hide (galti se dobara click na ho)
+  var waBtn = document.getElementById('asthl-wa-join');
+  if (localStorage.getItem('asthl_wa_done')) { waBtn.style.display = 'none'; }
+  waBtn.addEventListener('click', function() {
+    localStorage.setItem('asthl_wa_done', '1');
+    waBtn.style.display = 'none';
+  });
   document.getElementById('asthl-flash-close').addEventListener('click', hideFlash);
   document.getElementById('asthl-flash-cta').addEventListener('click', openChat);
   document.getElementById('asthl-chat-close').addEventListener('click', closeChat);
-  formSubmit.addEventListener('click', validateAndStart);
+  var newChatBtn = document.getElementById('asthl-new-chat-btn');
+  newChatBtn.addEventListener('click', function() {
+    if (!chatStarted) return;
+    var ok = confirm('\u0928\u0908 \u091a\u0948\u091f \u0936\u0941\u0930\u0942 \u0915\u0930\u0947\u0902?\n\n\u092a\u0941\u0930\u093e\u0928\u0940 \u092c\u093e\u0924\u091a\u0940\u0924 \u0915\u093e \u0938\u0902\u0926\u0930\u094d\u092d \u0939\u091f \u091c\u093e\u090f\u0917\u093e \u2014 AI \u0915\u094b \u0907\u0938 \u091a\u0948\u091f \u0915\u0940 \u092c\u093e\u0924\u0947\u0902 \u092f\u093e\u0926 \u0928\u0939\u0940\u0902 \u0930\u0939\u0947\u0902\u0917\u0940\u0964');
+    if (!ok) return;
+    SESSION_ID = 'P' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    buildMessages();
+    msgContainer.innerHTML = '';
+    addMsg('\u0928\u0908 \u091a\u0948\u091f \u0936\u0941\u0930\u0942 \u0939\u0941\u0908 \U0001F504\n\u0905\u092c \u092e\u0948\u0902 \u092a\u093f\u091b\u0932\u0940 \u092c\u093e\u0924\u091a\u0940\u0924 \u0928\u0939\u0940\u0902 \u091c\u093e\u0928\u0924\u093e \u2014 \u0905\u092a\u0928\u093e \u0928\u092f\u093e \u0938\u0935\u093e\u0932 \u092a\u0942\u091b\u0947\u0902\u0964', 'bot');
+    input.focus();
+  });
+  formSubmit.addEventListener('click', handleFormSubmit);
+  otpVerifyBtn.addEventListener('click', handleOtpVerify);
+  otpResendBtn.addEventListener('click', handleOtpResend);
+  otpBackBtn.addEventListener('click', handleOtpBack);
 
-  // Mobile input — sirf numbers
   document.getElementById('asthl-pmobile').addEventListener('input', function(e) {
     e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 10);
   });
-
-  // Enter key on form fields
-  ['asthl-pname', 'asthl-page', 'asthl-pmobile'].forEach(function(id) {
+  otpInput.addEventListener('input', function(e) {
+    e.target.value = e.target.value.replace(/[^0-9]/g, '').slice(0, 6);
+    otpErr.classList.remove('show');
+  });
+  otpInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') { e.preventDefault(); handleOtpVerify(); }
+  });
+  ['asthl-pname', 'asthl-page', 'asthl-pmobile', 'asthl-pclinic', 'asthl-paddress'].forEach(function(id) {
     document.getElementById(id).addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') { e.preventDefault(); validateAndStart(); }
+      if (e.key === 'Enter' && id !== 'asthl-paddress') { e.preventDefault(); handleFormSubmit(); }
     });
   });
 
@@ -458,16 +803,21 @@ Clearly label: opening dose, constitutional, supportive. Potency aur dosage bhi 
     messages.push({ role: 'user', parts: [{ text: text }] });
     showTyping();
     try {
+      var payload = {
+        messages: messages,
+        sessionId: SESSION_ID,
+        patientName: patientInfo ? patientInfo.name : '',
+        patientAge: patientInfo ? patientInfo.age : '',
+        patientMobile: patientInfo ? patientInfo.mobile : '',
+        mobileVerified: patientInfo ? patientInfo.verified : false,
+        category: patientInfo ? patientInfo.category : '',
+        clinic: patientInfo ? patientInfo.clinic : '',
+        address: patientInfo ? patientInfo.address : ''
+      };
       var res = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: messages,
-          sessionId: SESSION_ID,
-          patientName: patientInfo.name,
-          patientAge: patientInfo.age,
-          patientMobile: patientInfo.mobile
-        })
+        body: JSON.stringify(payload)
       });
       if (!res.ok) { var err = await res.json().catch(function() { return {}; }); throw new Error(err.error || 'Server error'); }
       var data = await res.json();
@@ -482,5 +832,20 @@ Clearly label: opening dose, constitutional, supportive. Potency aur dosage bhi 
     }
   }
 
-  setTimeout(showFlash, FLASH_DELAY);
+  // ===== Fullpage mode (chat.html) =====
+  if (FULLPAGE_MODE) {
+    var fpStyle = document.createElement('style');
+    fpStyle.textContent = '#asthl-chat-window{position:fixed;top:0;left:0;right:0;bottom:0;width:100%;height:100%;max-height:100dvh;border-radius:0;display:flex !important;border:none;}'
+      + '#asthl-chat-btn,#asthl-flash,#asthl-chat-close{display:none !important;}'
+      + '#asthl-chat-root{pointer-events:auto;}'
+      + '#asthl-form-screen{align-items:center;justify-content:center;padding:24px 16px;}'
+      + '.asthl-step{flex:0 1 auto;width:100%;max-width:440px;background:#ffffff;border-radius:16px;padding:24px;box-shadow:0 10px 40px rgba(13,148,136,0.18);border:1px solid #ccfbf1;}'
+      + '#asthl-chat-messages{width:100%;max-width:760px;margin:0 auto;}'
+      + '#asthl-chat-input-area{justify-content:center;}'
+      + '#asthl-chat-input-area textarea{max-width:700px;position:static;}';
+    document.head.appendChild(fpStyle);
+    openChat();
+  } else {
+    setTimeout(showFlash, FLASH_DELAY);
+  }
 })();
