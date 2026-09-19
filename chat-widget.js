@@ -1,5 +1,5 @@
 // =====================================================
-// ASTHL Flash Chat Widget v14 — WhatsApp group link + click ke baad button hide
+// ASTHL Flash Chat Widget v15 — Patient: simple medicine mode; Doctor: full ASTHL training
 // Patient/Doctor categories, ek baar OTP, phir seedha chat
 // =====================================================
 
@@ -187,6 +187,29 @@ Clearly label: opening dose, constitutional, supportive. Potency aur dosage bhi 
 - For marketing/health content: avoid unsupported cure claims.
 - Doctor contact: +91-7903873282 (call/WhatsApp). When case seems serious, advise patient to call/WhatsApp this number.`;
 
+  // ===== PATIENT MODE PROMPT (sirf patient login par) =====
+  const PATIENT_PROMPT = `ASTHL — A Step Towards Healthy Life (Patient Assistant)
+
+You are the ASTHL patient health assistant. You are talking to a PATIENT — a non-medical person. Keep every reply simple, short and easy to understand.
+
+RULES:
+1. Reply ONLY in simple, easy Devanagari Hindi (respectful "आप"). Short sentences. No technical or medical jargon.
+2. Case taking: ask simple questions — kya samasya hai, kab se hai, kahan hai, kaisa lagta hai, kya badha/dhima karta hai. Ask only 2-3 short questions at a time. Never ask for rubrics, grading or repertory language.
+3. When symptoms are clear, recommend ONLY ONE best-matching homeopathic medicine — the medicine whose keynote symptoms match the patient's symptoms most closely. Keep it simple; zyada detail se patient confuse hota hai.
+4. Medicine answer format (simple Hindi):
+   - दवा: <Medicine name> <potency e.g. 30C>
+   - कैसे लें: <e.g. 4 गोलियाँ दिन में 3 बार, हल्का गुनगुना पानी>
+   - कब तक लें: <duration e.g. 3-4 दिन>
+   - किन लक्षणों में मदद करती है: <2-3 simple points>
+   - सावधानी: <simple precautions>
+5. Recommend only well-known common homeopathic medicines (Aconite, Arnica, Arsenicum album, Belladonna, Bryonia, Calendula, Chamomilla, China, Drosera, Euphrasia, Gelsemium, Hepar sulph, Hypericum, Ipecac, Kali bich, Lycopodium, Mag phos, Mercurius, Natrum mur, Nux vomica, Phosphorus, Pulsatilla, Rhus tox, Ruta, Sepia, Silicea, Spongia, Sulphur etc.) and only low potencies (30C or lower).
+6. NEVER show rubric analysis, repertory tables, medicine comparisons, s+/m+/l+ information, or r:/ias:/ai: prefixes. The patient only needs one simple medicine recommendation.
+7. Serious symptoms (tez bukhar 3+ din, khoon behna, seene mein dard, saans ki dikkat, bachcha/buzurg ki halat kharab ho rahi ho, koi bhi emergency): turant bolo — "कृपया तुरंत ASTHL के डॉक्टर्स से बात करें — कॉल/व्हाट्सप्प +91-7903873282" — plus basic safety advice de.
+8. Jab bhi medicine recommend karo ya doctor se baat karna zaruri ho, reply ke end mein ek line:
+   "ASTHL डॉक्टर्स से बात करें: कॉल/व्हाट्सप्प +91-7903873282। ASTHL WhatsApp ग्रुप से जुड़ने के लिए चैट में हरा बटन दबाएँ।"
+9. Always write the user's name in Devanagari. Never assume the user is Riva Kumari.`;
+
+
   let messages = [];
 
   function buildMessages() {
@@ -195,7 +218,7 @@ Clearly label: opening dose, constitutional, supportive. Potency aur dosage bhi 
       if (patientInfo.category === 'doctor') {
         sys += '\n\n## Current User\nThe current user is a DOCTOR (homeopathy practitioner): ' + patientInfo.name + ', clinic: ' + (patientInfo.clinic || '-') + '. Since the user is a doctor, use technical/clinical language freely. Address the user by their own name in Devanagari - never call the user Riva.';
       } else {
-        sys += '\n\n## Current User\nThe current user is a PATIENT (non-medical person): ' + patientInfo.name + ', age ' + patientInfo.age + '. Respond in simple, easy-to-understand Hindi. Address the user by their own name in Devanagari - never call the user Riva.';
+        sys = PATIENT_PROMPT + '\n\n## Current User\nThe current user is a PATIENT (non-medical person): ' + patientInfo.name + ', age ' + patientInfo.age + '. Address the user by their own name in Devanagari - never call the user Riva.';
       }
     }
     messages = [
@@ -731,7 +754,13 @@ Clearly label: opening dose, constitutional, supportive. Potency aur dosage bhi 
     inputArea.classList.add('show');
     var cat = patientInfo.category === 'doctor' ? '\u0921\u0949\u0915\u094D\u091F\u0930' : '\u092E\u0930\u0940\u095B';
     var extra = patientInfo.category === 'doctor' && patientInfo.clinic ? '\u0905\u092A\u0928\u0947 \u0915\u094D\u0932\u093F\u0928\u093F\u0915 \u0938\u0947 \u092C\u093E\u0924 \u0915\u0930\u0924\u0947 \u0939\u0948\u0902\u0964 ' : '';
-    var welcome = '\u0928\u092E\u0938\u094D\u0924\u0947 ' + patientInfo.name + '! \u{1F64F} \u0906\u092A ' + cat + ' \u0930\u0942\u092A \u092E\u0947\u0902 \u0930\u091C\u093F\u0938\u094D\u091F\u0930 \u0939\u0948\u0902\u0964 ' + extra + '\u0905\u092A\u0928\u093E \u0938\u0935\u093E\u0932 \u092A\u0942\u091B\u0947\u0902 \u2014 \u0930\u0942\u092C\u094D\u0930\u093F\u0915 \u090F\u0928\u093E\u0932\u093F\u0938\u093F\u0938, \u092E\u0948\u091F\u0947\u0930\u093F\u092F\u093E \u092E\u0947\u0921\u093F\u0915\u093E, \u0930\u0947\u092E\u0947\u0921\u0940 \u0924\u0941\u0932\u0928\u093E \u0906\u0926\u093F\u0964 r:, ias:, ai:, s+, m+, l+ \u092A\u094D\u0930\u0940\u092B\u093F\u0915\u094D\u0938 \u092D\u0940 \u0909\u092A\u092F\u094B\u0917 \u0915\u0930 \u0938\u0915\u0924\u0947 \u0939\u0948\u0902\u0964';
+    var welcome;
+    if (patientInfo.category === 'doctor') {
+          var welcome = '\u0928\u092E\u0938\u094D\u0924\u0947 ' + patientInfo.name + '! \u{1F64F} \u0906\u092A ' + cat + ' \u0930\u0942\u092A \u092E\u0947\u0902 \u0930\u091C\u093F\u0938\u094D\u091F\u0930 \u0939\u0948\u0902\u0964 ' + extra + '\u0905\u092A\u0928\u093E \u0938\u0935\u093E\u0932 \u092A\u0942\u091B\u0947\u0902 \u2014 \u0930\u0942\u092C\u094D\u0930\u093F\u0915 \u090F\u0928\u093E\u0932\u093F\u0938\u093F\u0938, \u092E\u0948\u091F\u0947\u0930\u093F\u092F\u093E \u092E\u0947\u0921\u093F\u0915\u093E, \u0930\u0947\u092E\u0947\u0921\u0940 \u0924\u0941\u0932\u0928\u093E \u0906\u0926\u093F\u0964 r:, ias:, ai:, s+, m+, l+ \u092A\u094D\u0930\u0940\u092B\u093F\u0915\u094D\u0938 \u092D\u0940 \u0909\u092A\u092F\u094B\u0917 \u0915\u0930 \u0938\u0915\u0924\u0947 \u0939\u0948\u0902\u0964';
+    } else {
+      welcome = 'नमस्ते ' + patientInfo.name + '! 🙏 आप मरीज़ रूप में रजिस्टर हैं। अपनी समस्या आसान भाषा में बताइए — मैं आपके लक्षणों के अनुसार एक होम्योपथिक दवा सुझाऊँगा। गंभीर लक्षण हों तो कृपया ASTHL के डॉक्टर्स से बात करें — कॉल/व्हाट्सप्प +91-7903873282।';
+      input.placeholder = 'अपनी समस्या या लक्षण आसान शब्दों में लिखें...';
+    }
     addMsg(welcome, 'bot');
     setTimeout(function() { input.focus(); }, 300);
   }
