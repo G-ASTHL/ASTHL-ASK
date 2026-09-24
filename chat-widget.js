@@ -1,5 +1,5 @@
 // =====================================================
-// ASTHL Flash Chat Widget v17 — ID gate sirf Vercel page par; widget = registration only; unlimited voice
+// ASTHL Flash Chat Widget v18 — voice multi-line fix + AI: 2+ sawal pooch kar phir medicine
 // Patient/Doctor categories, ek baar OTP, phir seedha chat
 // =====================================================
 
@@ -63,7 +63,10 @@
 
   const SYSTEM_PROMPT_BASE = `ASTHL \u2014 Homeopathy Working Assistant
 
-You are the ASTHL Assistant - the patient-facing chat assistant of ASTHL (A Step Towards Healthy Life), the homeopathy practice of Dr. Riva Kumari. IMPORTANT: the person chatting with you is the CURRENT USER (a patient or a doctor) - NEVER assume the user is Riva Kumari. Always greet and address the current user by their own name in Devanagari. You support homeopathic case analysis, repertory/rubric interpretation, Materia Medica study, remedy comparison, clinical notes, patient education, and the ASTHL project ("A Step Towards Healthy Life").
+You are the ASTHL Assistant - the patient-facing chat assistant of ASTHL (A Step Towards Healthy Life), the homeopathy practice of Dr. Riva Kumari. IMPORTANT: the person chatting with you is the CURRENT USER (a patient or a doctor) - NEVER assume the user is Riva Kumari. Always greet and address the current user by their own name in Devanagari.
+
+## Case-Taking Rule (VERY IMPORTANT)
+Before recommending ANY medicine, collect the case properly: ask at least 2-3 questions across at least 2 rounds — location, sensation, duration, what makes it better/worse, associated symptoms. Do NOT recommend a medicine on the very first question unless the user has already given complete case details in their message. Jab tak 2 rounds ke sawalon ke jawab nahi milte, tab tak sirf aage ke sawal poochte raho. Jab details poore ho jayein, tab EK HI reply mein complete medicine recommendation dena (dawa + dose + duration). You support homeopathic case analysis, repertory/rubric interpretation, Materia Medica study, remedy comparison, clinical notes, patient education, and the ASTHL project ("A Step Towards Healthy Life").
 
 ## Language & Style
 
@@ -194,7 +197,7 @@ You are the ASTHL patient health assistant. You are talking to a PATIENT — a n
 
 RULES:
 1. Reply ONLY in simple, easy Devanagari Hindi (respectful "आप"). Short sentences. No technical or medical jargon.
-2. Case taking: ask simple questions — kya samasya hai, kab se hai, kahan hai, kaisa lagta hai, kya badha/dhima karta hai. Ask only 2-3 short questions at a time. Never ask for rubrics, grading or repertory language.
+2. Case taking: ask simple questions — kya samasya hai, kab se hai, kahan hai, kaisa lagta hai, kya badha/dhima karta hai. Ask only 2-3 short questions at a time. Never ask for rubrics, grading or repertory language. MINIMUM 2 rounds of questions poore hone ke baad hi medicine recommend karo — pehle sawal par dawa mat do.
 3. When symptoms are clear, recommend ONLY ONE best-matching homeopathic medicine — the medicine whose keynote symptoms match the patient's symptoms most closely. Keep it simple; zyada detail se patient confuse hota hai.
 4. Medicine answer format (simple Hindi):
    - दवा: <Medicine name> <potency e.g. 30C>
@@ -854,15 +857,19 @@ RULES:
   var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
   var recognition = null, isListening = false;
   var voiceTimer = null;
+  var voiceBase = '';
   if (SpeechRec) {
     recognition = new SpeechRec();
     recognition.lang = 'hi-IN';
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.onresult = function(e) {
-      var txt = '';
-      for (var k = 0; k < e.results.length; k++) { txt += e.results[k][0].transcript; }
-      input.value = txt;
+      var interim = '';
+      for (var k = e.resultIndex; k < e.results.length; k++) {
+        if (e.results[k].isFinal) { voiceBase += e.results[k][0].transcript + ' '; }
+        else { interim += e.results[k][0].transcript; }
+      }
+      input.value = (voiceBase + interim).replace(/\s+/g, ' ');
       input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 150) + 'px';
     };
     recognition.onend = function() {
@@ -877,6 +884,7 @@ RULES:
         input.placeholder = '\u0938\u0941\u0928 \u0930\u0939\u093E \u0939\u0942\u0901... \u092C\u094B\u0932\u0924\u0947 \u0930\u0939\u0947\u0902 \u2014 \u0930\u094B\u0915\u0928\u0947 \u0915\u0947 \u0932\u093F\u090F \u092E\u093E\u0907\u0915 \u092A\u0930 \u0926\u094B\u092C\u093E\u0930\u093E \u0926\u092C\u093E\u090F\u0901';
         isListening = true;
         micBtn.classList.add('listening');
+        voiceBase = input.value ? input.value.replace(/\s+$/g, '') + ' ' : '';
         recognition.start();
         voiceTimer = setTimeout(function() { isListening = false; try { recognition.stop(); } catch (e6) {} }, 120000);
       } catch (e4) {}
