@@ -1,5 +1,5 @@
 // =====================================================
-// ASTHL Flash Chat Widget v16 — ID gate (access control) + voice input
+// ASTHL Flash Chat Widget v17 — ID gate sirf Vercel page par; widget = registration only; unlimited voice
 // Patient/Doctor categories, ek baar OTP, phir seedha chat
 // =====================================================
 
@@ -310,7 +310,7 @@ RULES:
     @keyframes asthl-typing { 0%, 60%, 100% { transform: translateY(0); opacity: 0.4; } 30% { transform: translateY(-4px); opacity: 1; } }
     #asthl-chat-input-area { background: white; border-top: 1px solid #ccfbf1; padding: 8px 10px; display: none; gap: 6px; align-items: flex-end; flex-shrink: 0; }
     #asthl-chat-input-area.show { display: flex; }
-    #asthl-chat-input { flex: 1; border: 1px solid #ccfbf1; border-radius: 20px; padding: 8px 12px; font-size: 14px; font-family: inherit; color: #134e4a; outline: none; resize: none; max-height: 80px; line-height: 1.4; background: #f0fdfa; }
+    #asthl-chat-input { flex: 1; border: 1px solid #ccfbf1; border-radius: 20px; padding: 8px 12px; font-size: 14px; font-family: inherit; color: #134e4a; outline: none; resize: none; max-height: 150px; line-height: 1.4; background: #f0fdfa; }
     #asthl-chat-input:focus { border-color: #0d9488; }
     #asthl-mic-btn { width: 38px; height: 38px; border-radius: 50%; border: 1px solid #ccfbf1; background: #f0fdfa; color: #0d9488; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.15s; padding: 0; }
     #asthl-mic-btn:hover { background: #ccfbf1; }
@@ -559,7 +559,9 @@ RULES:
     formScreen.style.display = 'flex';
     msgContainer.classList.remove('show');
     inputArea.classList.remove('show');
-    if (!localStorage.getItem('asthl_access_ok')) { showStep(stepGate); return; }
+    if (FULLPAGE_MODE && !localStorage.getItem('asthl_access_ok')) { showStep(stepGate); return; }
+    // Vercel page par ID ke baad seedha chat — registration sirf website widget par
+    if (FULLPAGE_MODE && !chatStarted) { startChat(); return; }
     var saved = loadSavedUser();
     if (saved) {
       patientInfo = saved;
@@ -776,10 +778,12 @@ RULES:
     formScreen.style.display = 'none';
     msgContainer.classList.add('show');
     inputArea.classList.add('show');
-    var cat = patientInfo.category === 'doctor' ? '\u0921\u0949\u0915\u094D\u091F\u0930' : '\u092E\u0930\u0940\u095B';
-    var extra = patientInfo.category === 'doctor' && patientInfo.clinic ? '\u0905\u092A\u0928\u0947 \u0915\u094D\u0932\u093F\u0928\u093F\u0915 \u0938\u0947 \u092C\u093E\u0924 \u0915\u0930\u0924\u0947 \u0939\u0948\u0902\u0964 ' : '';
+    var cat = (patientInfo && patientInfo.category === 'doctor') ? '\u0921\u0949\u0915\u094D\u091F\u0930' : '\u092E\u0930\u0940\u095B';
+    var extra = patientInfo && patientInfo.category === 'doctor' && patientInfo.clinic ? '\u0905\u092A\u0928\u0947 \u0915\u094D\u0932\u093F\u0928\u093F\u0915 \u0938\u0947 \u092C\u093E\u0924 \u0915\u0930\u0924\u0947 \u0939\u0948\u0902\u0964 ' : '';
     var welcome;
-    if (patientInfo.category === 'doctor') {
+    if (!patientInfo) {
+      welcome = 'नमस्ते! 🙏 मैं ASTHL होम्योपथी असिस्टेंट हूँ। अपना सवाल पूछें — केस विश्लेषण, रूब्रिक, मैटेरिया मेडिका आदि।';
+    } else if (patientInfo.category === 'doctor') {
           var welcome = '\u0928\u092E\u0938\u094D\u0924\u0947 ' + patientInfo.name + '! \u{1F64F} \u0906\u092A ' + cat + ' \u0930\u0942\u092A \u092E\u0947\u0902 \u0930\u091C\u093F\u0938\u094D\u091F\u0930 \u0939\u0948\u0902\u0964 ' + extra + '\u0905\u092A\u0928\u093E \u0938\u0935\u093E\u0932 \u092A\u0942\u091B\u0947\u0902 \u2014 \u0930\u0942\u092C\u094D\u0930\u093F\u0915 \u090F\u0928\u093E\u0932\u093F\u0938\u093F\u0938, \u092E\u0948\u091F\u0947\u0930\u093F\u092F\u093E \u092E\u0947\u0921\u093F\u0915\u093E, \u0930\u0947\u092E\u0947\u0921\u0940 \u0924\u0941\u0932\u0928\u093E \u0906\u0926\u093F\u0964 r:, ias:, ai:, s+, m+, l+ \u092A\u094D\u0930\u0940\u092B\u093F\u0915\u094D\u0938 \u092D\u0940 \u0909\u092A\u092F\u094B\u0917 \u0915\u0930 \u0938\u0915\u0924\u0947 \u0939\u0948\u0902\u0964';
     } else {
       welcome = 'नमस्ते ' + patientInfo.name + '! 🙏 आप मरीज़ रूप में रजिस्टर हैं। अपनी समस्या आसान भाषा में बताइए — मैं आपके लक्षणों के अनुसार एक होम्योपथिक दवा सुझाऊँगा। गंभीर लक्षण हों तो कृपया ASTHL के डॉक्टर्स से बात करें — कॉल/व्हाट्सप्प +91-7903873282।';
@@ -830,7 +834,7 @@ RULES:
       var data = await res.json();
       if (data.access === true) {
         localStorage.setItem('asthl_access_ok', '1');
-        openAfterGate();
+        if (FULLPAGE_MODE) { patientInfo = null; startChat(); } else { openAfterGate(); }
       } else {
         gateErr.textContent = '\u0917\u0932\u0924 ID\u0964 \u0938\u0939\u0940 ID \u0921\u093E\u0932\u0947\u0902 \u092F\u093E ASTHL \u0938\u0947 \u0938\u0902\u092A\u0930\u094D\u0915 \u0915\u0930\u0947\u0902 \u2014 \u0915\u0949\u0932/\u0935\u094D\u0939\u093E\u091F\u094D\u0938\u092A\u094D\u092A +91-7903873282';
         gateErr.classList.add('show');
@@ -849,27 +853,32 @@ RULES:
   var micBtn = document.getElementById('asthl-mic-btn');
   var SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
   var recognition = null, isListening = false;
+  var voiceTimer = null;
   if (SpeechRec) {
     recognition = new SpeechRec();
     recognition.lang = 'hi-IN';
-    recognition.continuous = false;
+    recognition.continuous = true;
     recognition.interimResults = true;
     recognition.onresult = function(e) {
       var txt = '';
       for (var k = 0; k < e.results.length; k++) { txt += e.results[k][0].transcript; }
       input.value = txt;
-      input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 80) + 'px';
+      input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 150) + 'px';
     };
-    recognition.onend = function() { isListening = false; micBtn.classList.remove('listening'); if (input.dataset.ph) input.placeholder = input.dataset.ph; };
+    recognition.onend = function() {
+      if (isListening) { try { recognition.start(); return; } catch (e5) {} }
+      isListening = false; micBtn.classList.remove('listening'); if (input.dataset.ph) input.placeholder = input.dataset.ph;
+    };
     recognition.onerror = function() { isListening = false; micBtn.classList.remove('listening'); };
     micBtn.addEventListener('click', function() {
-      if (isListening) { try { recognition.stop(); } catch (e3) {} return; }
+      if (isListening) { isListening = false; clearTimeout(voiceTimer); try { recognition.stop(); } catch (e3) {} return; }
       try {
         input.dataset.ph = input.placeholder;
-        input.placeholder = '\u0938\u0941\u0928 \u0930\u0939\u093E \u0939\u0942\u0901... \u092C\u094B\u0932\u093F\u090F';
+        input.placeholder = '\u0938\u0941\u0928 \u0930\u0939\u093E \u0939\u0942\u0901... \u092C\u094B\u0932\u0924\u0947 \u0930\u0939\u0947\u0902 \u2014 \u0930\u094B\u0915\u0928\u0947 \u0915\u0947 \u0932\u093F\u090F \u092E\u093E\u0907\u0915 \u092A\u0930 \u0926\u094B\u092C\u093E\u0930\u093E \u0926\u092C\u093E\u090F\u0901';
         isListening = true;
         micBtn.classList.add('listening');
         recognition.start();
+        voiceTimer = setTimeout(function() { isListening = false; try { recognition.stop(); } catch (e6) {} }, 120000);
       } catch (e4) {}
     });
   } else {
@@ -910,7 +919,7 @@ RULES:
     });
   });
 
-  input.addEventListener('input', function() { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 80) + 'px'; });
+  input.addEventListener('input', function() { input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 150) + 'px'; });
   input.addEventListener('keydown', function(e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); } });
   sendBtn.addEventListener('click', sendMsg);
 
