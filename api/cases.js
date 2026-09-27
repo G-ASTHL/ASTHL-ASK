@@ -29,6 +29,9 @@ module.exports = async (req, res) => {
       payload = { action: 'saveCase', accessId, name, issue, conversation };
     } else if (action === 'list') {
       payload = { action: 'listCases', accessId };
+    } else if (action === 'close' || action === 'reopen') {
+      if (!caseId) return res.status(400).json({ error: 'caseId required' });
+      payload = { action: action === 'close' ? 'closeCase' : 'reopenCase', accessId, caseId };
     } else if (action === 'load') {
       if (!caseId) return res.status(400).json({ error: 'caseId required' });
       payload = { action: 'loadCase', accessId, caseId };
