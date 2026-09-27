@@ -1,5 +1,5 @@
 // =====================================================
-// ASTHL Flash Chat Widget v25 — Cases me Login ID dikhega (save/list clarity) + ID-match robust
+// ASTHL Flash Chat Widget v26 — Case Close/Reopen: ilaaj poora hone par case ✅ बंद karein, dobara khol sakte hain
 // Patient/Doctor categories, ek baar OTP, phir seedha chat
 // =====================================================
 
@@ -291,7 +291,7 @@ Step 11 (repertory se medicines) ke BAAD aur Step 12 (final medicine list) se PE
     #asthl-chat-window-header .info .name { font-size: 14px; font-weight: 600; }
     #asthl-chat-window-header .info .status { font-size: 11px; opacity: 0.9; display: flex; align-items: center; gap: 4px; }
     #asthl-chat-window-header .info .status .dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; }
-    #asthl-new-chat-btn { background: rgba(255,255,255,0.2); border: none; border-radius: 12px; padding: 5px 10px; font-size: 11px; color: white; cursor: pointer; font-family: inherit; font-weight: 500; display: none; flex-shrink: 0; margin-right: 6px; transition: background 0.15s; } #asthl-new-chat-btn:hover { background: rgba(255,255,255,0.4); } #asthl-save-case-btn, #asthl-cases-btn { background: rgba(255,255,255,0.2); border: none; border-radius: 12px; padding: 5px 8px; font-size: 11px; color: white; cursor: pointer; font-family: inherit; font-weight: 500; flex-shrink: 0; margin-right: 4px; display: none; } #asthl-save-case-btn:hover, #asthl-cases-btn:hover { background: rgba(255,255,255,0.4); }
+    #asthl-new-chat-btn { background: rgba(255,255,255,0.2); border: none; border-radius: 12px; padding: 5px 10px; font-size: 11px; color: white; cursor: pointer; font-family: inherit; font-weight: 500; display: none; flex-shrink: 0; margin-right: 6px; transition: background 0.15s; } #asthl-new-chat-btn:hover { background: rgba(255,255,255,0.4); } #asthl-save-case-btn, #asthl-cases-btn { background: rgba(255,255,255,0.2); border: none; border-radius: 12px; padding: 5px 8px; font-size: 11px; color: white; cursor: pointer; font-family: inherit; font-weight: 500; flex-shrink: 0; margin-right: 4px; display: none; } #asthl-save-case-btn:hover, #asthl-cases-btn:hover { background: rgba(255,255,255,0.4); } .asthl-case-row.closed { opacity: 0.55; background: #f1f5f9; } .asthl-case-tg { flex-shrink: 0; margin-left: 8px; background: #0d9488; color: #fff; border: none; border-radius: 8px; padding: 4px 9px; font-size: 11px; cursor: pointer; font-family: inherit; white-space: nowrap; } .asthl-case-tg:hover { background: #0f766e; }
     #asthl-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; z-index: 1000000; padding: 16px; }
     #asthl-modal { background: #ffffff; border-radius: 16px; max-width: 420px; width: 100%; max-height: 80dvh; overflow-y: auto; padding: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
     .asthl-case-row { border: 1px solid #ccfbf1; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; background: #f0fdfa; }
@@ -1078,7 +1078,7 @@ Step 11 (repertory se medicines) ke BAAD aur Step 12 (final medicine list) se PE
           ov.remove();
           alert('\u2705 \u0915\u0947\u0938 \u0938\u0947\u0935 \u0939\u094B \u0917\u092F\u093E: ' + data.caseId + '\n(\u0928\u093E\u092E: ' + name + ' | ' + issue + ')\n(Login ID: ' + accId + ' \u0938\u0947 \u0938\u0947\u0935 \u0939\u0941\u0926\u093E \u2014 \u0907\u0938\u0940 ID se login karke hi \u092F\u0939 case \u0926\u093F\u0916\u0947\u0917\u093E)\n\n\u092F\u0939 \u0915\u0947\u0938 \u0905\u092C 📂 Cases \u092E\u0947\u0902 \u092E\u093F\u0932\u0947\u0917\u093E \u2014 \u092C\u093E\u0926 \u092E\u0947\u0902 \u0916\u094B\u0932\u0915\u0930 follow-up \u0915\u0930 \u0938\u0915\u0924\u0947 \u0939\u0948\u0902\u0964');
         } else if (data.status === 'ok') {
-          alert('⚠️ Google Sheet ka Apps Script PURANA version hai!\n\nscript.google.com par jaiye > apna ASTHL project > poori file replace karein naye google-sheet-script.js (v8) se > Deploy > Manage deployments > Edit (pencil) > Version: New version > Deploy.\n\nUske baad wapas yahan Save karein.');
+          alert('⚠️ Google Sheet ka Apps Script PURANA version hai!\n\nscript.google.com par jaiye > apna ASTHL project > poori file replace karein naye google-sheet-script.js (v9) se > Deploy > Manage deployments > Edit (pencil) > Version: New version > Deploy.\n\nUske baad wapas yahan Save karein.');
         } else { alert('त्रुटि: ' + (data.error || 'save fail')); }
       } catch (err) { alert('\u0915\u0928\u0947\u0915\u094D\u0936\u0928 \u0924\u094D\u0930\u0941\u091F\u093F\u0964 \u0926\u094B\u092C\u093E\u0930\u093E \u0915\u094B\u0936\u093F\u0936 \u0915\u0930\u0947\u0902\u0964'); }
     });
@@ -1092,15 +1092,17 @@ Step 11 (repertory se medicines) ke BAAD aur Step 12 (final medicine list) se PE
       var res = await fetch(CASES_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'list', accessId: accId }) });
       var data = await res.json();
       if (data.status === 'ok' && !Array.isArray(data.cases)) {
-        ov.querySelector('#asthl-modal').innerHTML = '<h3 style="margin:0 0 10px;color:#b91c1c">⚠️ Google Sheet Script Purana Hai</h3><p style="font-size:13px;color:#334155;line-height:1.6">Cases isliye nahi dikh rahe kyunki Apps Script ka <b>naya version deploy nahi hua</b> hai — save bhi asal mein Sheet mein nahi gaya hai.<br><br><b>Karein:</b> script.google.com > apna project > poori file replace karein naye <b>google-sheet-script.js (v8)</b> se > <b>Deploy > Manage deployments > Edit > New version > Deploy</b>.<br><br>Phir wapas aakar 📂 Cases dabayein.</p>';
+        ov.querySelector('#asthl-modal').innerHTML = '<h3 style="margin:0 0 10px;color:#b91c1c">⚠️ Google Sheet Script Purana Hai</h3><p style="font-size:13px;color:#334155;line-height:1.6">Cases isliye nahi dikh rahe kyunki Apps Script ka <b>naya version deploy nahi hua</b> hai — save bhi asal mein Sheet mein nahi gaya hai.<br><br><b>Karein:</b> script.google.com > apna project > poori file replace karein naye <b>google-sheet-script.js (v9)</b> se > <b>Deploy > Manage deployments > Edit > New version > Deploy</b>.<br><br>Phir wapas aakar 📂 Cases dabayein.</p>';
         return;
       }
       var cases = data.cases || [];
       if (!cases.length) { ov.querySelector('#asthl-modal').innerHTML = '<h3 style=\"margin:0 0 10px;color:#134e4a\">📂 \u0907\u0938 ID (' + accId + ') \u0938\u0947 \u0915\u094B\u0908 \u0915\u0947\u0938 \u0938\u0947\u0935 \u0928\u0939\u0940\u0902 \u0939\u0948</h3><p style=\"font-size:13px;color:#64748b;line-height:1.6\">\u091C\u093F\u0938 Login ID \u0938\u0947 \u0915\u0947\u0938 \u0938\u0947\u0935 \u0915\u093F\u092F\u093E \u0925\u093E, \u0935\u0939\u0940\u0902 ID \u0938\u0947 login \u0915\u0930\u0928\u0947 \u092A\u0930 \u0926\u093F\u0916\u0947\u0917\u093E\u0964<br>\u0928\u092F\u093E \u0915\u0947\u0938 \u0915\u0930\u0928\u0947 \u0915\u0947 \u0932\u093F\u090F \u091A\u0948\u091F \u0915\u0930\u0915\u0947 💾 \u0938\u0947\u0935 \u0915\u0930\u0947\u0902\u0964</p>'; return; }
+      cases.sort(function(a, b) { return (a.caseStatus === 'Closed' ? 1 : 0) - (b.caseStatus === 'Closed' ? 1 : 0); });
       var html = '<h3 style=\"margin:0 0 10px;color:#134e4a\">📂 \u0938\u0947\u0935 \u0915\u093F\u090F \u0939\u0941\u090F \u0915\u0947\u0938 \u2014 ID: ' + accId + '</h3>';
       for (var i = 0; i < cases.length; i++) {
         var c = cases[i];
-        html += '<div class="asthl-case-row" data-cid="' + c.caseId + '"><b>' + c.name + '</b> <span class="asthl-case-pub">' + (c.isPublic ? '🔓 Public' : '') + '</span><span class="asthl-case-meta">' + c.issue + '</span><span class="asthl-case-id">' + c.caseId + '</span></div>';
+var isClosed = (c.caseStatus === 'Closed');
+        html += '<div class="asthl-case-row' + (isClosed ? ' closed' : '') + '" data-cid="' + c.caseId + '"><b>' + c.name + '</b> <span class="asthl-case-pub">' + (c.isPublic ? '🔓 Public' : '') + (isClosed ? ' ✅ बंद' : '') + '</span><span class="asthl-case-meta">' + c.issue + '</span><span class="asthl-case-id">' + c.caseId + '</span>' + (isClosed ? '<button class="asthl-case-tg" data-tg="open">🔄 खोलें</button>' : '<button class="asthl-case-tg" data-tg="close">✅ बंद करें</button>') + '</div>';
       }
       ov.querySelector('#asthl-modal').innerHTML = html;
       var rows = ov.querySelectorAll('.asthl-case-row');
@@ -1109,10 +1111,31 @@ Step 11 (repertory se medicines) ke BAAD aur Step 12 (final medicine list) se PE
           return function() { var cid = row.getAttribute('data-cid'); ov.remove(); loadCaseById(cid, accId); };
         })(rows[r]));
       }
+      var tgBtns = ov.querySelectorAll('.asthl-case-tg');
+      for (var t = 0; t < tgBtns.length; t++) {
+        tgBtns[t].addEventListener('click', (function(btn, row) {
+          return function(ev) {
+            ev.stopPropagation();
+            var cid = row.getAttribute('data-cid');
+            var wantClose = btn.getAttribute('data-tg') === 'close';
+            if (!confirm(wantClose ? 'क्या इस केस को बंद करना है?\n\nबंद करने के बाद भी केस देखा जा सकता है — बस ✅ बंद निशान लग जाएगा और यह सूची में नीचे चला जाएगा।' : 'क्या इस बंद केस को दोबारा खोलना है?')) return;
+            toggleCaseStatus(cid, wantClose ? 'close' : 'open', accId, ov);
+          };
+        })(tgBtns[t], tgBtns[t].closest('.asthl-case-row')));
+      }
     } catch (err) {
       ov.querySelector('#asthl-modal').innerHTML = '<p style="font-size:13px;color:#b91c1c">\u0915\u0928\u0947\u0915\u094D\u0936\u0928 \u0924\u094D\u0930\u0941\u091F\u093F\u0964 \u0926\u094B\u092C\u093E\u0930\u093E \u0915\u094B\u0936\u093F\u0936 \u0915\u0930\u0947\u0902\u0964</p>';
     }
   });
+
+  async function toggleCaseStatus(cid, act, accId, ov) {
+    try {
+      var res = await fetch(CASES_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: act, accessId: accId, caseId: cid }) });
+      var data = await res.json();
+      if (data.status === 'ok') { ov.remove(); casesBtn.click(); }
+      else { alert('त्रुटि: ' + (data.error || 'फिर कोशिश करें')); }
+    } catch (err) { alert('कनेक्शन त्रुटि। दोबारा कोशिश करें।'); }
+  }
 
   async function loadCaseById(cid, accId) {
     try {
@@ -1136,7 +1159,7 @@ Step 11 (repertory se medicines) ke BAAD aur Step 12 (final medicine list) se PE
         addMsg(t, conv[i].role === 'user' ? 'user' : 'bot');
       }
       loadedCaseId = cid;
-      addMsg('📂 \u0915\u0947\u0938 ' + cid + ' \u0932\u094B\u0921 \u0939\u0941\u0906 \u2014 ' + data.name + ' (' + data.issue + ')\u0964 \u092A\u0942\u0930\u093E \u0915\u0947\u0938 + \u0926\u0935\u093E \u092F\u093E\u0926 \u0939\u0948\u0964 \u0905\u092C \u0928\u092F\u093E \u0932\u0915\u094D\u0937\u0923 \u092F\u093E follow-up \u092A\u094D\u0930\u0936\u094D\u0928 \u0932\u093F\u0916\u0947\u0902\u0964', 'bot');
+      addMsg('📂 \u0915\u0947\u0938 ' + cid + ' \u0932\u094B\u0921 \u0939\u0941\u0906 \u2014 ' + data.name + ' (' + data.issue + ')' + (data.caseStatus === 'Closed' ? ' \u2014 \u2705 \u092C\u0902\u0926 \u0915\u0947\u0938' : '') + '\u0964 \u092A\u0942\u0930\u093E \u0915\u0947\u0938 + \u0926\u0935\u093E \u092F\u093E\u0926 \u0939\u0948\u0964 \u0905\u092C \u0928\u092F\u093E \u0932\u0915\u094D\u0937\u0923 \u092F\u093E follow-up \u092A\u094D\u0930\u0936\u094D\u0928 \u0932\u093F\u0916\u0947\u0902\u0964', 'bot');
       setTimeout(function() { input.focus(); }, 300);
     } catch (err) { alert('\u0915\u0947\u0938 \u0932\u094B\u0921 \u0924\u094D\u0930\u0941\u091F\u093F\u0964'); }
   }
