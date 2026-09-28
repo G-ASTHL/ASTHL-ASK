@@ -8,22 +8,20 @@ module.exports = async (req, res) => {
 
   // ===== ASTHL ID check (access gate) =====
   if (req.body && req.body.checkId !== undefined) {
-    // ACCESS_IDS format: "ID1,ID2:2026-12-31,..." — ID ke baad :YYYY-MM-DD = validity ki aakhri tareekh (expiry)
-    const entries = (process.env.ACCESS_IDS || '').split(',').map(s => s.trim()).filter(Boolean);
+    // ACCESS_IDS format: "ID1,ID2:2026-12-31,..." — ID ke saath expiry date (YYYY-MM-DD ya DD-MM-YYYY dono chalega)
+    // v29: comma / newline /semicolon sab separator; date flexible; ek hi ID kai baar likhi ho to koi bhi valid entry chalegi
+    const entries = (process.env.ACCESS_IDS || '').split(/[,;\n]/).map(s => s.trim()).filter(Boolean);
     const idv = String(req.body.checkId).trim().toUpperCase();
     let ok = false, expired = false;
     for (const entry of entries) {
-      const parts = entry.toUpperCase().split(':');
-      const eid = parts[0].trim();
-      const exp = parts[1] ? parts[1].trim() : '';
+      const cIdx = entry.indexOf(':');
+      const eid = (cIdx === -1 ? entry : entry.slice(0, cIdx)).trim().toUpperCase();
+      const expRaw = cIdx === -1 ? '' : entry.slice(cIdx + 1).trim();
       if (eid !== idv) continue;
-      if (!exp) { ok = true; }
-      else {
-        const until = new Date(exp + 'T23:59:59+05:30'); // IST din ka ant
-        if (!isNaN(until) && Date.now() <= until.getTime()) ok = true;
-        else expired = true;
-      }
-      break;
+      if (!expRaw) { ok = true; continue; } // bina date = hamesha valid
+      const until = parseExpiry(expRaw);
+      if (until && Date.now() <= until.getTime()) { ok = true; continue; }
+      expired = true; // date beet chuki ya samajh nahi aayi
     }
     return res.status(200).json({ access: ok, expired: expired && !ok });
   }
@@ -135,3 +133,16 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: 'Server error. Thodi der baad try karein.' });
   }
 };
+
+
+// ===== Expiry date parser (v29) =====
+// YYYY-MM-DD, DD-MM-YYYY, DD.MM.YYYY, DD/MM/YYYY — sab formats samajhta hai
+function parseExpiry(s) {
+  s = String(s).trim();
+  let m = s.match(/^(\d{4})[-.\/](\d{1,2})[-.\/](\d{1,2})$/);
+  if (m) return new Date(m[1] + '-' + String(m[2]).padStart(2, '0') + '-' + String(m[3]).padStart(2, '0') + 'T23:59:59+05:30');
+  m = s.match(/^(\d{1,2})[-.\/](\d{1,2})[-.\/](\d{4})$/);
+  if (m) return new Date(m[3] + '-' + String(m[2]).padStart(2, '0') + '-' + String(m[1]).padStart(2, '0') + 'T23:59:59+05:30');
+  const d = new Date(s);
+  return isNaN(d.getTime()) ? null : d;
+}
