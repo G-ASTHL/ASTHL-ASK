@@ -1,5 +1,5 @@
 // =====================================================
-// ASTHL Flash Chat Widget v31 — Voice v4: phrase-revision engine (Android correction purane shabd REPLACE karta hai, repeat nahi)
+// ASTHL Flash Chat Widget v32 — Voice v5: per-result commit (Android ke multiple finals alag-alag — revised purane ko replace karta hai)
 // Patient/Doctor categories, ek baar OTP, phir seedha chat
 // =====================================================
 
@@ -937,17 +937,21 @@ Step 11 (repertory se medicines) ke BAAD aur Step 12 (final medicine list) se PE
     for (i = 0; i < wa.length; i++) pool[wa[i]] = (pool[wa[i]] || 0) + 1;
     for (i = 0; i < wb.length; i++) { if (pool[wb[i]] > 0) { pool[wb[i]]--; common++; } }
     var mx = Math.max(wa.length, wb.length);
-    return mx > 0 && (common / mx) >= 0.6;
+    return mx > 0 && (common / mx) >= 0.5;
   }
   function voiceCommit(f) {
     if (!voicePhrases.length) { voicePhrases.push(f); return; }
     var joined = voicePhrases.join(' ');
     if (f === joined) return;                        // poora duplicate — chhodo
     if (joined.indexOf(f) !== -1) return;            // stale/partial — pehle se shamil hai
-    if (f.indexOf(joined) === 0 && f.length > joined.length) { voicePhrases.push(f.slice(joined.length).trim()); return; } // Android accumulate — sirf NAYA hissa jodo
-    if (voiceIsRevision(joined, f)) { if (f.length >= joined.length) voicePhrases = [f]; return; } // poore dictation ka correction
-    var last = voicePhrases[voicePhrases.length - 1];
-    if (voiceIsRevision(last, f)) { voicePhrases[voicePhrases.length - 1] = (f.length >= last.length ? f : last); return; } // aakhri phrase ka correction — REPLACE
+    if (f.indexOf(joined) !== -1) { voicePhrases = [f]; return; } // Android full-sentence revision/extension — SAB replace karo
+    if (voiceIsRevision(joined, f) && f.length >= joined.length) { voicePhrases = [f]; return; } // word-level correction — sab replace
+    var q, last = voicePhrases[voicePhrases.length - 1];
+    for (q = 0; q < voicePhrases.length - 1; q++) {  // PURANE phrases ka stale-revision — chhodo
+      if (voicePhrases[q].indexOf(f) !== -1) return;
+      if (f.length <= voicePhrases[q].length && voiceIsRevision(voicePhrases[q], f)) return;
+    }
+    if (voiceIsRevision(last, f)) { voicePhrases[voicePhrases.length - 1] = (f.length >= last.length ? f : last); return; } // sirf aakhri phrase ka correction — REPLACE
     voicePhrases.push(f);
   }
 
@@ -957,14 +961,14 @@ Step 11 (repertory se medicines) ke BAAD aur Step 12 (final medicine list) se PE
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.onresult = function(e) {
-      // v31 ENGINE: phrase-revision — correction purane phrase ko REPLACE karta hai
-      var finals = '', interim = '';
+      // v32 ENGINE: HAR final result ko alag-alag commit karo (Android ek event me purana+revised dono bhejta hai)
+      var interim = '';
       for (var k = 0; k < e.results.length; k++) {
-        if (e.results[k].isFinal) { finals += e.results[k][0].transcript + ' '; }
-        else { interim += e.results[k][0].transcript; }
+        if (e.results[k].isFinal) {
+          var ft = (e.results[k][0].transcript || '').replace(/\s+/g, ' ').trim();
+          if (ft) voiceCommit(ft);
+        } else { interim += e.results[k][0].transcript; }
       }
-      finals = finals.replace(/\s+/g, ' ').trim();
-      if (finals) voiceCommit(finals);
       input.value = [voicePre, voicePhrases.join(' '), interim.replace(/\s+/g, ' ').trim()].filter(Boolean).join(' ').replace(/\s+/g, ' ');
       input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 150) + 'px';
     };
