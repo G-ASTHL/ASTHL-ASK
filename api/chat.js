@@ -43,14 +43,18 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: 'GEMINI_API_KEY not set on server' });
     }
 
+    // v33: 4 ALAG-ALAG models — har model ka apna quota hota hai
+    // (gemini-flash-latest = gemini-2.5-flash hi hai, duplicate try bekar tha)
+    // Free tier limits (2026): flash 250/din, flash-lite 1000/din, pro 100/din
     const models = [
-      'gemini-flash-latest',
-      'gemini-2.5-flash',
-      'gemini-flash-lite-latest',
-      'gemini-2.5-flash-lite'
+      'gemini-2.5-flash',        // sabse achha quality
+      'gemini-2.5-flash-lite',   // 4x zyada daily quota — fallback hero
+      'gemini-2.0-flash',        // purana model, agar zinda ho to kaam aayega
+      'gemini-2.5-pro'           // last resort (kam quota, best quality)
     ];
 
     let reply = null;
+    let lastErr = 0; // v33: aakhri error status yaad rakho (429=quota, 400/403=key)
 
     for (const model of models) {
       try {
@@ -71,7 +75,10 @@ module.exports = async (req, res) => {
         );
 
         if (!geminiResponse.ok) {
-          console.error(`Model ${model} error:`, geminiResponse.status);
+          let errDetail = '';
+          try { const errBody = await geminiResponse.text(); errDetail = errBody.slice(0, 200); } catch (e) {}
+          console.error(`Model ${model} error:`, geminiResponse.status, errDetail);
+          if (geminiResponse.status === 429) { lastErr = 429; } else { lastErr = lastErr || geminiResponse.status; }
           continue;
         }
 
@@ -125,6 +132,12 @@ module.exports = async (req, res) => {
 
       return res.status(200).json({ reply: reply });
     } else {
+      // v33: user ko sahi wajah batado
+      if (lastErr === 429) {
+        return res.status(503).json({ error: 'Aaj ka free limit lagbhag khatam ho gaya hai ya bahut tezi se requests ho rahi hain. Thodi der ruk kar dobara try karein. (Limit roz raat ~1:30 PM Indian time par reset hoti hai)' });
+      } else if (lastErr === 400 || lastErr === 401 || lastErr === 403) {
+        return res.status(500).json({ error: 'Server ki API key me dikkat hai. Admin se sampark karein: +91-7903873282' });
+      }
       return res.status(503).json({ error: 'Abhi sab models busy hain. 1-2 minute baad try karein.' });
     }
 
