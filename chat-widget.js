@@ -1,5 +1,5 @@
 // =====================================================
-// ASTHL Flash Chat Widget v30 — Voice v3 engine: mobile duplicate-proof (banked-prefix dedupe) + cache-bust
+// ASTHL Flash Chat Widget v31 — Voice v4: phrase-revision engine (Android correction purane shabd REPLACE karta hai, repeat nahi)
 // Patient/Doctor categories, ek baar OTP, phir seedha chat
 // =====================================================
 
@@ -926,40 +926,50 @@ Step 11 (repertory se medicines) ke BAAD aur Step 12 (final medicine list) se PE
   var recognition = null, isListening = false;
   var voiceTimer = null;
   var voicePre = '';
-  var voiceBanked = '';
-  var voiceNew = '';
+  var voicePhrases = [];
+  // v31: phrase commit + revision detection (Android correction handling)
+  function voiceIsRevision(a, b) {
+    if (!a || !b) return false;
+    if (a === b) return true;
+    if (a.indexOf(b) !== -1 || b.indexOf(a) !== -1) return true;
+    var wa = a.split(' '), wb = b.split(' ');
+    var pool = {}, common = 0, i;
+    for (i = 0; i < wa.length; i++) pool[wa[i]] = (pool[wa[i]] || 0) + 1;
+    for (i = 0; i < wb.length; i++) { if (pool[wb[i]] > 0) { pool[wb[i]]--; common++; } }
+    var mx = Math.max(wa.length, wb.length);
+    return mx > 0 && (common / mx) >= 0.6;
+  }
+  function voiceCommit(f) {
+    if (!voicePhrases.length) { voicePhrases.push(f); return; }
+    var joined = voicePhrases.join(' ');
+    if (f === joined) return;                        // poora duplicate — chhodo
+    if (joined.indexOf(f) !== -1) return;            // stale/partial — pehle se shamil hai
+    if (f.indexOf(joined) === 0 && f.length > joined.length) { voicePhrases.push(f.slice(joined.length).trim()); return; } // Android accumulate — sirf NAYA hissa jodo
+    if (voiceIsRevision(joined, f)) { if (f.length >= joined.length) voicePhrases = [f]; return; } // poore dictation ka correction
+    var last = voicePhrases[voicePhrases.length - 1];
+    if (voiceIsRevision(last, f)) { voicePhrases[voicePhrases.length - 1] = (f.length >= last.length ? f : last); return; } // aakhri phrase ka correction — REPLACE
+    voicePhrases.push(f);
+  }
+
   if (SpeechRec) {
     recognition = new SpeechRec();
     recognition.lang = 'hi-IN';
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.onresult = function(e) {
-      // v30 ENGINE: poora rebuild + banked se overlap kaat do — mobile duplicate IMPOSSIBLE
+      // v31 ENGINE: phrase-revision — correction purane phrase ko REPLACE karta hai
       var finals = '', interim = '';
       for (var k = 0; k < e.results.length; k++) {
         if (e.results[k].isFinal) { finals += e.results[k][0].transcript + ' '; }
         else { interim += e.results[k][0].transcript; }
       }
       finals = finals.replace(/\s+/g, ' ').trim();
-      var newPart = finals;
-      if (voiceBanked && finals) {
-        if (finals.indexOf(voiceBanked) === 0) { newPart = finals.slice(voiceBanked.length).trim(); }
-        else if (voiceBanked.indexOf(finals) === 0) { newPart = ''; }
-      }
-      voiceNew = newPart;
-      input.value = [voicePre, voiceBanked, voiceNew, interim.replace(/\s+/g, ' ').trim()].filter(Boolean).join(' ').replace(/\s+/g, ' ');
+      if (finals) voiceCommit(finals);
+      input.value = [voicePre, voicePhrases.join(' '), interim.replace(/\s+/g, ' ').trim()].filter(Boolean).join(' ').replace(/\s+/g, ' ');
       input.style.height = 'auto'; input.style.height = Math.min(input.scrollHeight, 150) + 'px';
     };
     recognition.onend = function() {
-      // naya speech bank me jama — agar already banked ke ant me hai to skip (repeat-proof)
-      if (voiceNew) {
-        var b = voiceBanked, n = voiceNew;
-        if (!(b.length >= n.length && b.slice(b.length - n.length) === n)) {
-          voiceBanked = b ? b + ' ' + n : n;
-        }
-        voiceNew = '';
-      }
-      input.value = [voicePre, voiceBanked].filter(Boolean).join(' ').replace(/\s+/g, ' ');
+      input.value = [voicePre, voicePhrases.join(' ')].filter(Boolean).join(' ').replace(/\s+/g, ' ');
       if (isListening) { try { recognition.start(); return; } catch (e5) {} }
       isListening = false; micBtn.classList.remove('listening'); if (input.dataset.ph) input.placeholder = input.dataset.ph;
     };
@@ -972,7 +982,7 @@ Step 11 (repertory se medicines) ke BAAD aur Step 12 (final medicine list) se PE
         isListening = true;
         micBtn.classList.add('listening');
         voicePre = input.value ? input.value.replace(/\s+$/g, '') : '';
-        voiceBanked = ''; voiceNew = '';
+        voicePhrases = [];
         recognition.start();
         voiceTimer = setTimeout(function() { isListening = false; try { recognition.stop(); } catch (e6) {} }, 120000);
       } catch (e4) {}
