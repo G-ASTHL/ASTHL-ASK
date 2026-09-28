@@ -95,6 +95,50 @@ module.exports = async (req, res) => {
       }
     }
 
+    // ===== v34: GROQ FREE BACKUP =====
+    // Agar Gemini ke sab models fail ho jayein AUR Vercel me GROQ_API_KEY set ho,
+    // to Groq ke free models try karo (console.groq.com — FREE, koi card nahi)
+    // Note: Hindi quality Gemini se thodi kam — sirf emergency backup ke liye
+    if (!reply && process.env.GROQ_API_KEY) {
+      const groqModels = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'];
+      const groqMessages = trimmedMessages.map(m => {
+        const txt = (m.parts && m.parts[0] && m.parts[0].text) || m.content || '';
+        return { role: m.role === 'assistant' || m.role === 'model' ? 'assistant' : 'user', content: txt };
+      });
+      for (const gm of groqModels) {
+        try {
+          console.log('Trying Groq model:', gm);
+          const gr = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + process.env.GROQ_API_KEY
+            },
+            body: JSON.stringify({
+              model: gm,
+              messages: groqMessages,
+              temperature: 0.7,
+              max_tokens: 8192,
+              top_p: 0.9
+            })
+          });
+          if (!gr.ok) {
+            let gd = '';
+            try { gd = (await gr.text()).slice(0, 200); } catch (e) {}
+            console.error('Groq model error:', gm, gr.status, gd);
+            lastErr = lastErr || gr.status;
+            continue;
+          }
+          const gdata = await gr.json();
+          const greply = gdata.choices && gdata.choices[0] && gdata.choices[0].message && gdata.choices[0].message.content;
+          if (greply) { reply = greply; console.log('Success via Groq:', gm); break; }
+        } catch (gerr) {
+          console.error('Groq model failed:', gm, gerr.message);
+          continue;
+        }
+      }
+    }
+
     if (reply) {
       // ===== Google Sheet mein log karo =====
       const userMessages = trimmedMessages.filter(m => m.role === 'user' || (m.parts && m.role !== 'model'));
