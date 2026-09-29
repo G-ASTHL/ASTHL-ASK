@@ -53,6 +53,8 @@
   .delivered-box { background: #dcfce7; border: 2px solid #4ade80; border-radius: 16px; padding: 16px; margin-bottom: 12px; font-size: 14.5px; color: #14532d; line-height: 1.7; }
   .delivered-box b { color: #15803d; }
   .delivered-box .cour { background: #fff; border: 1.5px dashed #86efac; border-radius: 12px; padding: 10px 12px; margin-top: 8px; font-size: 13.5px; }
+  .wait-box { background: #fffbeb; border: 2px dashed #f59e0b; border-radius: 14px; padding: 14px; font-size: 14px; color: #92400e; line-height: 1.7; margin-top: 12px; }
+  .utr-box { background: #eff6ff; border: 1.5px solid #93c5fd; border-radius: 12px; padding: 10px 14px; font-size: 13.5px; color: #1e40af; margin-bottom: 10px; }
 
   .paybox { background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 16px; padding: 16px; text-align: center; margin-top: 12px; }
   .paybox img { width: 190px; height: 190px; border-radius: 12px; background: #fff; padding: 6px; border: 1px solid #e2e8f0; }
@@ -117,13 +119,15 @@
       <div class="card">
         <div id="a-delivered" class="delivered-box" style="display:none"></div>
         <div class="bill">
-          <div class="lbl">आपका बिल (दवा + कूरियर)</div>
+          <div class="lbl" id="a-lbl">आपका बिल (दवा + कूरियर)</div>
           <div class="amt" id="a-amount">₹0</div>
-          <div class="costs"><span>💊 दवा: <b id="a-med">₹0</b></span><span>🚚 कूरियर: <b id="a-courier">₹0</b></span></div>
+          <div class="costs" id="a-costs"><span>💊 दवा: <b id="a-med">₹0</b></span><span>🚚 कूरियर: <b id="a-courier">₹0</b></span></div>
           <div class="det" id="a-det"></div>
         </div>
         <div class="fgrp"><label>पिन कोड *</label><input id="a-pincode" type="tel" maxlength="6" placeholder="6 अंकों का पिन कोड"></div>
         <div class="fgrp"><label>पूरा पता *</label><textarea id="a-address" rows="2" placeholder="घर, गाँव/शहर, जिला"></textarea></div>
+        <div class="wait-box" id="a-wait" style="display:none">⏳ <b>आपका बिल अभी तैयार नहीं है।</b><br>आपकी जानकारी दर्ज हो गई है — दवा की राशि आने पर यहीं दिख जाएगी।<br>जल्दी चाहिए तो WhatsApp करें: <b>+91-7903873282</b></div>
+        <div id="a-pay-sec">
         <div class="paybox">
           <div style="font-weight:700; color:#78350f;">👇 कुल राशि का भुगतान करें (UPI)</div>
           <img id="a-qr" alt="UPI QR Code">
@@ -136,6 +140,7 @@
           <input id="a-utr" placeholder="UPI ऐप में मिलता है (वही डालें)">
         </div>
         <button class="btn gold" id="a-confirm">✅ भुगतान हुआ — ऑर्डर कन्फर्म करें</button>
+        </div>
       </div>
       <div id="a-done"></div>
     </div>
@@ -207,12 +212,19 @@ $('a-find').addEventListener('click', function () {
     .then(function (r) { return r.json(); }).then(function (d) {
       $('a-find').textContent = 'बिल देखें →'; $('a-find').disabled = false;
       if (d && d.status === 'ok') {
-        var total = d.total || '0';
+        var hasCost = d.medCost && parseFloat(d.medCost) > 0;
+        var total = hasCost ? (d.total || String(parseFloat(d.medCost || 0) + parseFloat(d.courier || 0))) : '0';
         $('a-bill-sec').style.display = 'block';
-        $('a-amount').textContent = '₹' + total;
-        $('a-med').textContent = '₹' + (d.medCost || '0');
-        $('a-courier').textContent = '₹' + (d.courier || '0');
+        // medicine cost blank = QR/cost sab chhupa do
+        $('a-lbl').textContent = hasCost ? 'आपका बिल (दवा + कूरियर)' : 'आपकी जानकारी';
+        $('a-amount').style.display = hasCost ? 'block' : 'none';
+        $('a-costs').style.display = hasCost ? 'flex' : 'none';
+        $('a-pay-sec').style.display = hasCost ? 'block' : 'none';
+        $('a-wait').style.display = hasCost ? 'none' : 'block';
+        if (hasCost) { $('a-amount').textContent = '₹' + total; $('a-med').textContent = '₹' + (d.medCost || '0'); $('a-courier').textContent = '₹' + (d.courier || '0'); }
         var det = '<b>नाम:</b> ' + esc(d.name || '—') + '<br><b>समस्या:</b> ' + esc(d.bimari || '—');
+        if (d.address) { det += '<br><b>पता:</b> ' + esc(d.address); $('a-address').value = d.address; }
+        if (d.utr) det += '<br><b>UTR (पहले से दर्ज):</b> ' + esc(d.utr);
         $('a-det').innerHTML = det;
         window._aPat = { name: d.name || '', bimari: d.bimari || '' };
         var dbox = $('a-delivered');
