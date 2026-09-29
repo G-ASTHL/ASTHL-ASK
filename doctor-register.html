@@ -145,6 +145,7 @@ $('d-submit').addEventListener('click', function () {
     body: JSON.stringify({
       action: 'saveOrder', type: 'doctor-registration', patientRef: mob,
       name: 'Dr. ' + name, mobile: mob, address: (city + (clinic ? ' • ' + clinic : '')),
+      qual: qual, city: city, clinic: clinic,
       pincode: '', items: 'डॉक्टर ID रजिस्ट्रेशन (₹299/माह) • योग्यता: ' + qual,
       amount: '299', payRef: utr
     })

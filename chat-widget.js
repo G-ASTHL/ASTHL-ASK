@@ -1123,6 +1123,7 @@ Step 11 (repertory se medicines) ke BAAD aur Step 12 (final medicine list) se PE
     var ov = openModal(
       '<h3 style="margin:0 0 6px;color:#134e4a">💾 \u0915\u0947\u0938 \u0938\u0947\u0935 \u0915\u0930\u0947\u0902</h3>'
       + '<div class="asthl-form-group"><label>\u092E\u0930\u0940\u095B \u0915\u093E \u0928\u093E\u092E *</label><input id="asthl-case-name" type="text" placeholder="\u0928\u093E\u092E \u0932\u093F\u0916\u0947\u0902" /></div>'
+      + '<div class="asthl-form-group"><label>मरीड़ का मोबाइल (दवा बिल के लिए)</label><input id="asthl-case-mobile" type="tel" inputmode="numeric" placeholder="10 अंकों का नंबर" /></div>'
       + '<div class="asthl-form-group"><label>\u0938\u092E\u0938\u094D\u092F\u093E / Issue *</label><input id="asthl-case-issue" type="text" placeholder="\u091C\u0948\u0938\u0947: \u0917\u0948\u0938, \u092E\u0932 \u0924\u094D\u092F\u093E\u0917 \u0915\u0940 \u0938\u092E\u0938\u094D\u092F\u093E" /></div>'
       + '<button id="asthl-case-save-go" class="asthl-btn-primary">\u0938\u0947\u0935 \u0915\u0930\u0947\u0902 \u2192</button>'
       + '<p style="font-size:11.5px;color:#64748b;margin:10px 0 0;text-align:center">\u092A\u0942\u0930\u0940 \u091A\u0948\u091F + \u0926\u0935\u093E \u0911\u091F\u094B\u092E\u0947\u091F\u093F\u0915 \u0938\u0947\u0935 \u0939\u094B \u091C\u093E\u090F\u0917\u0940</p>'
@@ -1130,12 +1131,14 @@ Step 11 (repertory se medicines) ke BAAD aur Step 12 (final medicine list) se PE
     ov.querySelector('#asthl-case-save-go').addEventListener('click', async function() {
       var name = ov.querySelector('#asthl-case-name').value.trim();
       var issue = ov.querySelector('#asthl-case-issue').value.trim();
+      var mob = ov.querySelector('#asthl-case-mobile').value.replace(/\D/g, '');
       if (!name || !issue) { alert('\u0928\u093E\u092E \u0914\u0930 \u0938\u092E\u0938\u094D\u092F\u093E \u0926\u094B\u0928\u094B\u0902 \u0921\u093E\u0932\u0947\u0902\u0964'); return; }
+      if (mob && mob.length !== 10) { alert('मोबाइल नंबर पूरा नहीं है — 10 अंक लिखें या खाली छोड़ दें।'); return; }
       var btn = ov.querySelector('#asthl-case-save-go');
       btn.disabled = true; btn.textContent = '\u0938\u0947\u0935 \u0939\u094B \u0930\u0939\u093E \u0939\u0948...';
       try {
         var conv = messages.slice(1);
-        var res = await fetch(CASES_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save', accessId: accId, name: name, issue: issue, conversation: JSON.stringify(conv) }) });
+        var res = await fetch(CASES_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save', accessId: accId, name: name, issue: issue, mobile: mob, conversation: JSON.stringify(conv) }) });
         var data = await res.json();
         if (data.status === 'ok' && data.caseId) {
           loadedCaseId = data.caseId;
