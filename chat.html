@@ -7,10 +7,48 @@
 <title>ASTHL - A Step Towards Healthy Life</title>
 <style>
   html, body { margin: 0; padding: 0; height: 100%; background: #f0fdfa; overflow: hidden; }
+  /* ===== SELECTION OVERLAY ===== */
+  #asthl-select { position: fixed; inset: 0; z-index: 9999; background: linear-gradient(165deg,#062e2a,#0d6e60); display: flex; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
+  .sel-card { background: #fff; border-radius: 26px; max-width: 430px; width: 100%; padding: 30px 24px 24px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.4); font-family: 'Noto Sans Devanagari', sans-serif; }
+  .sel-card img { width: 92px; height: 92px; object-fit: contain; border-radius: 22px; border: 3px solid #ccfbf1; }
+  .sel-card h1 { font-size: 25px; color: #134e4a; margin: 12px 0 2px; }
+  .sel-card .sub { font-size: 13.5px; color: #64748b; margin-bottom: 20px; }
+  .sel-opt { display: block; width: 100%; text-align: left; border: 2px solid #ccfbf1; background: #f0fdfa; border-radius: 18px; padding: 16px; cursor: pointer; font-family: inherit; margin-bottom: 12px; transition: all .15s; }
+  .sel-opt:hover { border-color: #0d9488; background: #fff; }
+  .sel-opt .ic { font-size: 30px; }
+  .sel-opt b { display: block; font-size: 17px; color: #0f766e; margin-top: 4px; }
+  .sel-opt span { font-size: 13px; color: #64748b; line-height: 1.45; display: block; margin-top: 2px; }
+  .sel-reg { background: none; border: none; color: #0d9488; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer; text-decoration: underline; margin-top: 6px; }
+  .sel-back { position: absolute; top: 14px; left: 14px; color: #99f6e4; font-size: 13px; font-family: 'Noto Sans Devanagari', sans-serif; text-decoration: none; background: rgba(255,255,255,.1); padding: 8px 14px; border-radius: 999px; }
 </style>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+
+<div id="asthl-select">
+  <a class="sel-back" href="index.html">← मुख्य पृष्ठ</a>
+  <div class="sel-card">
+    <img src="asthl-logo.jpg" alt="ASTHL">
+    <h1>आप कौन हैं?</h1>
+    <div class="sub">अपना विकल्प चुनें — उसी हिसाब से आपको सहायता मिलेगी</div>
+
+    <button class="sel-opt" onclick="location.href='patient.html'">
+      <div class="ic">🧑‍🤝‍🧑</div>
+      <b>मैं मरीज़ हूँ</b>
+      <span>FREE चैट — अपनी समस्या बताइए, होम्योपैथी सलाह पाइए (100% मुफ़्त, आजीवन)</span>
+    </button>
+
+    <button class="sel-opt" onclick="document.getElementById('asthl-select').style.display='none'">
+      <div class="ic">👨‍⚕️</div>
+      <b>मैं डॉक्टर हूँ</b>
+      <span>अपनी ID डालकर DEEP ANALYSIS — 13-Point Medicine Selection, Case Files, PDF Report</span>
+    </button>
+
+    <button class="sel-reg" onclick="location.href='doctor-register.html'">🆕 नया डॉक्टर? रजिस्टर करें (₹299/माह) →</button>
+  </div>
+</div>
+
 <script>window.ASTHL_FULLPAGE = true;</script>
-<script src="/chat-widget.js"></script>
+<script src="/chat-widget.js?v=34"></script>
 </body>
 </html>

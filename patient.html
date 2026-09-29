@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0d9488">
+<title>ASTHL — मरीज़ चैट | A Step Towards Healthy Life</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #f0fdfa; --surface: #ffffff; --border: #ccfbf1;
+    --text: #134e4a; --dim: #64748b; --accent: #0d9488; --accent-dark: #0f766e;
+    --error: #e11d48; --gold: #f59e0b;
+    --shadow: 0 4px 16px rgba(13,148,136,.12);
+  }
+  html { height: 100%; }
+  body { font-family: 'Noto Sans Devanagari', sans-serif; height: 100%; background: var(--bg); color: var(--text); display: flex; flex-direction: column; }
+
+  /* ===== TOP NAV ===== */
+  .nav { display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg,#0f766e,#0d9488); padding: 10px 12px; overflow-x: auto; flex: 0 0 auto; }
+  .nav a { color: #fff; text-decoration: none; font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 999px; white-space: nowrap; background: rgba(255,255,255,.12); }
+  .nav a.active { background: #fff; color: #0f766e; }
+  .nav .sp { flex: 1; }
+  .nav .appt { background: #fbbf24; color: #451a03; }
+
+  /* ===== FLYER POPUP ===== */
+  #flyer { position: fixed; inset: 0; background: linear-gradient(165deg,#062e2a,#0d6e60); z-index: 200; overflow-y: auto; display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .flyer-card { background: #fff; border-radius: 24px; max-width: 480px; width: 100%; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.4); }
+  .flyer-head { background: linear-gradient(135deg,#0f766e,#14b8a6); color: #fff; text-align: center; padding: 26px 18px 22px; }
+  .flyer-head img { width: 84px; height: 84px; object-fit: contain; background: #fff; border-radius: 20px; padding: 6px; }
+  .flyer-head h1 { font-size: 24px; margin-top: 12px; letter-spacing: 1px; }
+  .flyer-head .slogan { font-size: 13px; color: #99f6e4; margin-top: 4px; font-style: italic; }
+  .flyer-head .promise { margin-top: 12px; background: rgba(255,255,255,.14); border: 1px solid rgba(153,246,228,.4); border-radius: 12px; padding: 10px; font-size: 15px; font-weight: 600; line-height: 1.5; }
+  .flyer-body { padding: 18px; }
+  .flyer-body h2 { font-size: 16px; color: #0f766e; margin-bottom: 10px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { background: #f0fdfa; border: 1px solid #99f6e4; color: #0f766e; font-size: 12.5px; font-weight: 600; padding: 7px 11px; border-radius: 999px; }
+  .flyer-imp { margin-top: 14px; background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 14px; padding: 12px 14px; font-size: 14.5px; font-weight: 600; color: #78350f; line-height: 1.5; }
+  .flyer-meta { margin-top: 14px; display: grid; gap: 8px; font-size: 13.5px; }
+  .flyer-meta div { display: flex; gap: 8px; align-items: flex-start; line-height: 1.5; }
+  .flyer-meta b { color: #0f766e; }
+  .flyer-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 16px 18px 20px; }
+  .flyer-btns button { font-family: inherit; font-size: 15px; font-weight: 700; padding: 14px 8px; border-radius: 14px; border: none; cursor: pointer; }
+  #flyer-close { background: #f1f5f9; color: #475569; }
+  #flyer-next { background: linear-gradient(135deg,#0d9488,#0f766e); color: #fff; box-shadow: 0 6px 16px rgba(13,148,136,.35); }
+
+  /* ===== REGISTRATION ===== */
+  #reg-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
+  .reg-card { background: var(--surface); border: 1px solid var(--border); border-radius: 22px; box-shadow: var(--shadow); max-width: 430px; width: 100%; padding: 26px 24px; }
+  .reg-card h2 { font-size: 21px; margin-bottom: 4px; }
+  .reg-card .sub { font-size: 13.5px; color: var(--dim); margin-bottom: 18px; line-height: 1.5; }
+  .fgrp { margin-bottom: 13px; }
+  .fgrp label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+  .fgrp input, .fgrp select { width: 100%; font-family: inherit; font-size: 15px; padding: 11px 12px; border: 1.5px solid var(--border); border-radius: 12px; background: #fff; color: var(--text); outline: none; }
+  .fgrp input:focus, .fgrp select:focus { border-color: var(--accent); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .ferr { color: var(--error); font-size: 12px; margin-top: 4px; display: none; }
+  .btn-main { width: 100%; font-family: inherit; font-size: 16px; font-weight: 700; color: #fff; background: linear-gradient(135deg,#0d9488,#0f766e); border: none; border-radius: 14px; padding: 14px; cursor: pointer; box-shadow: 0 6px 16px rgba(13,148,136,.3); }
+  .btn-main:disabled { opacity: .6; }
+  .otp-note { background: #f0fdfa; border-radius: 10px; font-size: 12.5px; color: #0f766e; padding: 9px; margin-bottom: 13px; line-height: 1.5; }
+  #otp-input { text-align: center; font-size: 24px !important; letter-spacing: 10px; font-weight: 700; }
+  .otp-links { display: flex; justify-content: space-between; margin-top: 10px; }
+  .otp-links button { background: none; border: none; color: var(--accent); font-size: 12.5px; cursor: pointer; font-family: inherit; text-decoration: underline; }
+  .otp-links button:disabled { color: #94a3b8; cursor: default; text-decoration: none; }
+
+  /* ===== CHAT ===== */
+  #chat-wrap { flex: 1; display: none; flex-direction: column; height: 100%; }
+  #chat-head { background: linear-gradient(135deg,#0f766e,#0d9488); color: #fff; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+  #chat-head .dot { width: 9px; height: 9px; border-radius: 50%; background: #4ade80; }
+  #chat-head b { font-size: 15px; }
+  #chat-head span { font-size: 12px; color: #99f6e4; }
+  #chat-head .newbtn { margin-left: auto; font-size: 12px; background: rgba(255,255,255,.15); border: none; color: #fff; font-family: inherit; font-weight: 600; padding: 7px 12px; border-radius: 999px; cursor: pointer; }
+  #chat-log { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .msg { max-width: 86%; padding: 10px 14px; border-radius: 16px; font-size: 14.5px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+  .msg.user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.bot { align-self: flex-start; background: #fff; border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+  .msg.typing { color: var(--dim); font-style: italic; }
+  #chat-input-area { display: flex; gap: 8px; padding: 10px 12px; background: #fff; border-top: 1px solid var(--border); }
+  #chat-input { flex: 1; font-family: inherit; font-size: 15px; padding: 11px 14px; border: 1.5px solid var(--border); border-radius: 999px; outline: none; resize: none; max-height: 100px; }
+  #chat-input:focus { border-color: var(--accent); }
+  #chat-send { flex: 0 0 46px; height: 46px; border-radius: 50%; border: none; background: var(--accent); color: #fff; font-size: 18px; cursor: pointer; }
+  #chat-send:disabled { opacity: .5; }
+  .disclaimer { text-align: center; font-size: 11px; color: var(--dim); padding: 6px 12px 10px; background: #fff; line-height: 1.5; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <a href="index.html">🏠 मुख्य पृष्ठ</a>
+  <a href="chat.html">🩺 डॉक्टर</a>
+  <a href="medicine.html">💊 दवा ऑर्डर</a>
+  <a href="homeopathy.html">🌿 होम्योपैथी</a>
+  <span class="sp"></span>
+  <a class="appt" href="https://asthl.in" target="_blank">📅 अपॉइंटमेंट बुक करें</a>
+</div>
+
+<!-- ============ STEP 0: CLINIC FLYER (decorated) ============ -->
+<div id="flyer">
+  <div class="flyer-card">
+    <div class="flyer-head">
+      <img src="asthl-logo.jpg" alt="ASTHL">
+      <h1>ASTHL HOMEOPATHY CLINIC</h1>
+      <div class="slogan">"A Step Towards Healthy Life"</div>
+      <div class="promise">पुरानी से पुरानी बीमारी का सफल इलाज, गारंटी के साथ।<br>क्या आप सालों से दवाइयाँ खाकर थक चुके हैं, लेकिन आराम नहीं मिला? अब चिंता छोड़िए — हर पुरानी बीमारी का इलाज संभव है।</div>
+    </div>
+    <div class="flyer-body">
+      <h2>✅ इलाज किया जाता है:</h2>
+      <div class="chips">
+        <span class="chip">गठिया, जोड़ों का दर्द व सूजन</span>
+        <span class="chip">मानसिक थकान, कमजोरी, चिड़चिड़ापन</span>
+        <span class="chip">मोटापा / वजन नियंत्रण</span>
+        <span class="chip">डायबिटीज (Sugar)</span>
+        <span class="chip">हृदय की समस्याएँ</span>
+        <span class="chip">नींद न आना</span>
+        <span class="chip">बीमारी के बाद की कमजोरी</span>
+        <span class="chip">चर्म रोग</span>
+        <span class="chip">एलर्जी, अस्थमा, साइनस, माइग्रेन</span>
+        <span class="chip">महिलाओं की समस्याएँ</span>
+        <span class="chip">पाचन — गैस, कब्ज, एसिडिटी</span>
+        <span class="chip">बाल झड़ना, फुरियाँ, थायराइड</span>
+        <span class="chip">मोतियाबिंद — सिर्फ दवा से</span>
+        <span class="chip">बच्चों की पढ़ाई में मन न लगना</span>
+      </div>
+      <div class="flyer-imp">💯 100% सुरक्षित — बिना साइड इफेक्ट और स्थायी इलाज। क्रोनिक बीमारियों का सफल उपचार — वर्षों का अनुभव और भरोसा।</div>
+      <div class="flyer-meta">
+        <div><b>📍 पता:</b> गायत्री मंदिर के सामने, नंदुआ स्थान, अटल क्लिनिक के पास, शिव शक्ति नगर, चासा</div>
+        <div><b>📞 Call/WhatsApp:</b> 7903873282</div>
+        <div><b>🕘 समय:</b> 9 am – 1 pm, 3 pm – 7 pm</div>
+        <div><b>💬 समस्या है तो समाधान है।</b></div>
+      </div>
+    </div>
+    <div class="flyer-btns">
+      <button id="flyer-close">✖ बंद करें</button>
+      <button id="flyer-next">✅ आगे बढ़ें — चैट शुरू करें</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ STEP 1: REGISTRATION ============ -->
+<div id="reg-wrap" style="display:none">
+  <div class="reg-card">
+    <div id="step-form">
+      <h2>👤 मरीज़ पंजीकरण</h2>
+      <div class="sub">पहली बार पंजीकरण में मोबाइल OTP से सत्यापन होगा। उसके बाद बार-बार OTP नहीं लगेगा।</div>
+      <div class="fgrp">
+        <label>पूरा नाम *</label>
+        <input id="p-name" type="text" placeholder="अपना नाम लिखें">
+        <div class="ferr" id="err-name">कृपया नाम लिखें</div>
+      </div>
+      <div class="row2">
+        <div class="fgrp">
+          <label>उम्र *</label>
+          <input id="p-age" type="number" placeholder="जैसे: 32" min="1" max="120">
+          <div class="ferr" id="err-age">उम्र लिखें</div>
+        </div>
+        <div class="fgrp">
+          <label>लिंग *</label>
+          <select id="p-gender">
+            <option value="">— चुनें —</option>
+            <option value="पुरुष">पुरुष</option>
+            <option value="महिला">महिला</option>
+            <option value="अन्य">अन्य</option>
+          </select>
+          <div class="ferr" id="err-gender">लिंग चुनें</div>
+        </div>
+      </div>
+      <div class="fgrp">
+        <label>मोबाइल नंबर *</label>
+        <input id="p-mobile" type="tel" placeholder="10 अंकों का नंबर" maxlength="10" inputmode="numeric">
+        <div class="ferr" id="err-mobile">सही 10 अंकों का नंबर लिखें</div>
+      </div>
+      <div class="fgrp">
+        <label>पता *</label>
+        <input id="p-address" type="text" placeholder="गाँव / शहर, जिला">
+        <div class="ferr" id="err-address">कृपया पता लिखें</div>
+      </div>
+      <button class="btn-main" id="btn-send-otp">OTP भेजें →</button>
+    </div>
+
+    <div id="step-otp" style="display:none">
+      <h2>📱 OTP सत्यापन</h2>
+      <div class="otp-note" id="otp-status">OTP भेजा जा रहा है...</div>
+      <div class="fgrp">
+        <label>OTP दर्ज करें *</label>
+        <input id="otp-input" type="tel" placeholder="- - - - - -" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
+        <div class="ferr" id="err-otp">गलत OTP। दोबारा कोशिश करें।</div>
+      </div>
+      <button class="btn-main" id="btn-verify-otp">सत्यापित करें ✓</button>
+      <div class="otp-links">
+        <button id="otp-resend" disabled>OTP दोबारा भेजें</button>
+        <button id="otp-back">← बदलाव करें</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ STEP 2: CHAT ============ -->
+<div id="chat-wrap">
+  <div id="chat-head">
+    <div class="dot"></div>
+    <div><b>ASTHL स्वास्थ्य सहायक</b><br><span id="pat-info">मरीज़</span></div>
+    <button class="newbtn" id="btn-new-patient" title="नया मरीज़">नया मरीज़</button>
+  </div>
+  <div id="chat-log"></div>
+  <div id="chat-input-area">
+    <textarea id="chat-input" rows="1" placeholder="अपनी समस्या लिखें..."></textarea>
+    <button id="chat-send">➤</button>
+  </div>
+  <div class="disclaimer">यह AI सहायक है, डॉक्टर नहीं। गंभीर समस्या में डॉक्टर से मिलें — 📞 +91-7903873282</div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script>
+(function () {
+  // ===== Firebase (phone OTP) =====
+  var firebaseConfig = {
+    apiKey: "AIzaSyArvYDxEHVMs_N8fPIQeSoXv3IT3rOEWvM",
+    authDomain: "asthl-chat-otp.firebaseapp.com",
+    projectId: "asthl-chat-otp",
+    appId: "1:1060361604381:web:7cf9891b7339636c7ca5f4"
+  };
+  firebase.initializeApp(firebaseConfig);
+  var confirmationResult = null, resendTimer = null;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var PATIENT_PROMPT = 'आप ASTHL होम्योपैथी क्लिनिक के स्वास्थ्य सहायक हैं। आपसे बात करने वाला एक मरीज़ है। नियम: (1) सरल हिंदी में, छोटे उत्तर दें (ज़्यादा से ज़्यादा 150 शब्द)। (2) मरीज़ की समस्या सुनकर उसके लिए सामान्य होम्योपैथिक जानकारी, घरेलू सावधानी और आहार सलाह दे सकते हैं। (3) किसी भी दवा की मात्रा (dose) या शक्ति (potency) खुद से न बताएँ — कहें कि डॉक्टर की सलाह से सही दवा व मात्रा तय होगी। (4) गंभीर या आपातकालीन लक्षण (सीने में दर्द, सांस की तकलीफ, लगातार उल्टी, बहुत तेज़ बुखार, बेहोशी आदि) में तुरंत डॉक्टर से मिलने या अस्पताल जाने की सलाह दें और ASTHL क्लिनिक से संपर्क बताएं: Call/WhatsApp +91-7903873282। (5) भरोसा बनाए रखें, डराएँ नहीं। (6) इलाज व दवा के लिए अपॉइंटमेंट की सलाह दें — asthl.in पर बुक होता है। (7) अंत में ज़रूरत पड़ने पर यह जानकारी भी दे सकते हैं: ASTHL HOMEOPATHY CLINIC, गायत्री मंदिर के सामने, नंदुआ स्थान, चासा — समय: 9am-1pm, 3pm-7pm।';
+
+  var messages = [];
+  var patient = null;
+
+  // ===== FLYER =====
+  function hideFlyer() {
+    $('flyer').style.display = 'none';
+    $('reg-wrap').style.display = 'flex';
+  }
+  $('flyer-close').addEventListener('click', hideFlyer);
+  $('flyer-next').addEventListener('click', hideFlyer);
+
+  // ===== RETURNING PATIENT? =====
+  try { patient = JSON.parse(localStorage.getItem('asthlPatientV35') || 'null'); } catch (e) { patient = null; }
+  if (patient && patient.mobile) { startChat(); }
+
+  // ===== REGISTRATION =====
+  $('p-mobile').addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 10); });
+  $('otp-input').addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 6); });
+
+  $('btn-send-otp').addEventListener('click', function () {
+    var name = $('p-name').value.trim();
+    var age = $('p-age').value.trim();
+    var gender = $('p-gender').value;
+    var mobile = $('p-mobile').value.trim();
+    var address = $('p-address').value.trim();
+    var ok = true;
+    [['err-name', name.length < 2], ['err-age', !age || +age < 1 || +age > 120], ['err-gender', !gender], ['err-mobile', !/^\d{10}$/.test(mobile)], ['err-address', address.length < 3]].forEach(function (x) {
+      $(x[0]).style.display = x[1] ? 'block' : 'none'; if (x[1]) ok = false;
+    });
+    if (!ok) return;
+    window._pendingReg = { name: name, age: age, gender: gender, mobile: mobile, address: address };
+    sendOTP(mobile);
+  });
+
+  function sendOTP(mobile) {
+    $('step-form').style.display = 'none';
+    $('step-otp').style.display = 'block';
+    $('otp-status').textContent = 'OTP भेजा जा रहा है...';
+    $('err-otp').style.display = 'none';
+    var appVerifier = new firebase.auth.RecaptchaVerifier('btn-send-otp', { size: 'invisible' });
+    firebase.auth().signInWithPhoneNumber('+91' + mobile, appVerifier)
+      .then(function (r) {
+        confirmationResult = r;
+        $('otp-status').textContent = '+91-' + mobile + ' पर OTP भेजा गया है। कृपया दर्ज करें।';
+        var s = 45;
+        $('otp-resend').disabled = true;
+        $('otp-resend').textContent = 'OTP दोबारा भेजें (' + s + ')';
+        clearInterval(resendTimer);
+        resendTimer = setInterval(function () {
+          s--; $('otp-resend').textContent = 'OTP दोबारा भेजें (' + s + ')';
+          if (s <= 0) { clearInterval(resendTimer); $('otp-resend').disabled = false; $('otp-resend').textContent = 'OTP दोबारा भेजें'; }
+        }, 1000);
+      })
+      .catch(function (err) {
+        $('otp-status').textContent = 'OTP नहीं भेजा जा सका: ' + (err && err.code ? err.code : '') + ' — कुछ देर बाद दोबारा कोशिश करें।';
+      });
+  }
+
+  $('otp-resend').addEventListener('click', function () { if (window._pendingReg) sendOTP(window._pendingReg.mobile); });
+  $('otp-back').addEventListener('click', function () { $('step-otp').style.display = 'none'; $('step-form').style.display = 'block'; });
+
+  $('btn-verify-otp').addEventListener('click', function () {
+    var code = $('otp-input').value.trim();
+    if (code.length !== 6) { $('err-otp').style.display = 'block'; return; }
+    if (!confirmationResult) { $('otp-status').textContent = 'पहले OTP भेजें।'; return; }
+    confirmationResult.confirm(code).then(function () {
+      var p = window._pendingReg;
+      patient = p;
+      try { localStorage.setItem('asthlPatientV35', JSON.stringify(p)); } catch (e) {}
+      startChat();
+    }).catch(function () { $('err-otp').style.display = 'block'; });
+  });
+
+  // ===== CHAT =====
+  function addMsg(text, who) {
+    var d = document.createElement('div');
+    d.className = 'msg ' + who;
+    d.textContent = text;
+    $('chat-log').appendChild(d);
+    $('chat-log').scrollTop = $('chat-log').scrollHeight;
+    return d;
+  }
+
+  function startChat() {
+    $('flyer').style.display = 'none';
+    $('reg-wrap').style.display = 'none';
+    $('chat-wrap').style.display = 'flex';
+    $('pat-info').textContent = patient.name + ' • ' + patient.age + ' वर्ष • ' + patient.gender + ' • ' + patient.mobile;
+    messages = [{ role: 'user', parts: [{ text: PATIENT_PROMPT }] }, { role: 'model', parts: [{ text: 'नमस्ते ' + patient.name + ' जी! 👋 मैं ASTHL स्वास्थ्य सहायक हूँ। अपनी समस्या बताइए — मैं होम्योपैथी में आपकी मदद करूँगा।' }] }];
+    addMsg('नमस्ते ' + patient.name + ' जी! 👋 मैं ASTHL स्वास्थ्य सहायक हूँ। अपनी समस्या बताइए — मैं होम्योपैथी में आपकी मदद करूँगा।', 'bot');
+  }
+
+  $('btn-new-patient').addEventListener('click', function () {
+    if (!confirm('क्या आप नए मरीज़ के रूप में दोबारा पंजीकरण करना चाहते हैं?')) return;
+    try { localStorage.removeItem('asthlPatientV35'); } catch (e) {}
+    location.reload();
+  });
+
+  var sending = false;
+  function send() {
+    var text = $('chat-input').value.trim();
+    if (!text || sending) return;
+    sending = true; $('chat-send').disabled = true;
+    $('chat-input').value = ''; $('chat-input').style.height = 'auto';
+    messages.push({ role: 'user', parts: [{ text: text }] });
+    addMsg(text, 'user');
+    var typing = addMsg('लिख रहा है...', 'bot typing');
+    fetch('/api/chat', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messages: messages, sessionId: 'p-' + patient.mobile,
+        patientName: patient.name, patientAge: patient.age + ' / ' + patient.gender,
+        patientMobile: patient.mobile, mobileVerified: 'Yes', category: 'patient',
+        clinic: 'ASTHL Clinic', address: patient.address
+      })
+    }).then(function (r) { return r.json(); }).then(function (d) {
+      typing.remove();
+      var reply = (d && d.reply) ? d.reply : '⚠️ ' + ((d && d.error) ? d.error : 'कनेक्शन त्रुटि। दोबारा कोशिश करें।');
+      messages.push({ role: 'model', parts: [{ text: reply }] });
+      addMsg(reply, 'bot');
+    }).catch(function () {
+      typing.remove();
+      addMsg('⚠️ कनेक्शन त्रुटि। दोबारा कोशिश करें।', 'bot');
+    }).finally(function () { sending = false; $('chat-send').disabled = false; $('chat-input').focus(); });
+  }
+  $('chat-send').addEventListener('click', send);
+  $('chat-input').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+  $('chat-input').addEventListener('input', function () { this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 100) + 'px'; });
+})();
+</script>
+</body>
+</html>

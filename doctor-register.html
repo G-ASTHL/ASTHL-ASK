@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0d9488">
+<title>ASTHL — डॉक्टर रजिस्ट्रेशन | ₹299/माह</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root { --accent:#0d9488; --dark:#0f766e; --text:#134e4a; --dim:#64748b; --bg:#f0fdfa; --border:#ccfbf1; }
+  body { font-family: 'Noto Sans Devanagari', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+  .nav { display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg,#0f766e,#0d9488); padding: 10px 12px; overflow-x: auto; }
+  .nav a { color: #e6fffa; text-decoration: none; font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 999px; white-space: nowrap; background: rgba(255,255,255,.12); }
+  .nav .sp { flex: 1; }
+
+  .wrap { max-width: 560px; width: 100%; margin: 0 auto; padding: 22px 14px 40px; flex: 1; }
+  .head { text-align: center; margin-bottom: 18px; }
+  .head img { width: 88px; height: 88px; object-fit: contain; background: #fff; border-radius: 20px; border: 2px solid #ccfbf1; }
+  .head h1 { font-size: 23px; margin-top: 10px; }
+  .head p { color: var(--dim); font-size: 13.5px; margin-top: 4px; line-height: 1.55; }
+
+  .price-hero { background: linear-gradient(135deg,#15803d,#166534); border-radius: 20px; color: #fff; padding: 20px; text-align: center; margin-bottom: 16px; }
+  .price-hero .old { font-size: 20px; color: #bbf7d0; text-decoration: line-through; }
+  .price-hero .new { font-size: 42px; font-weight: 700; color: #fde047; }
+  .price-hero small { font-size: 17px; font-weight: 600; }
+  .price-hero .off { display: inline-block; background: #dc2626; color: #fff; font-size: 14px; font-weight: 700; padding: 4px 14px; border-radius: 999px; margin-top: 8px; }
+
+  .feat { background: #fff; border: 1.5px solid var(--border); border-radius: 16px; padding: 14px 16px; margin-bottom: 16px; }
+  .feat p { font-size: 13.5px; line-height: 1.8; }
+  .feat p b { color: var(--dark); }
+
+  .card { background: #fff; border: 1.5px solid var(--border); border-radius: 18px; padding: 18px; margin-bottom: 16px; }
+  .card h3 { font-size: 16px; margin-bottom: 10px; }
+  .fgrp { margin-bottom: 12px; }
+  .fgrp label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; }
+  .fgrp input, .fgrp select { width: 100%; font-family: inherit; font-size: 15px; padding: 11px 12px; border: 1.5px solid var(--border); border-radius: 12px; outline: none; }
+  .fgrp input:focus, .fgrp select:focus { border-color: var(--accent); }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .paybox { background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 18px; padding: 18px; text-align: center; }
+  .paybox h3 { color: #92400e; }
+  .paybox img { width: 200px; height: 200px; border-radius: 14px; background: #fff; padding: 6px; border: 1px solid #e2e8f0; }
+  .paybox .upi-id { font-family: monospace; font-size: 15px; color: #78350f; background: #fff; display: inline-block; padding: 6px 14px; border-radius: 10px; border: 1px solid #fde68a; margin-top: 8px; }
+  .paybox p { font-size: 12.5px; color: #92400e; margin-top: 8px; line-height: 1.55; }
+  .btn { display: block; width: 100%; font-family: inherit; font-size: 15.5px; font-weight: 700; color: #fff; background: linear-gradient(135deg,#0d9488,#0f766e); border: none; border-radius: 14px; padding: 14px; cursor: pointer; text-align: center; text-decoration: none; }
+  .btn.green { background: linear-gradient(135deg,#16a34a,#15803d); margin-top: 10px; }
+  .btn:disabled { opacity: .55; }
+  .ok-msg { background: #dcfce7; border: 1.5px solid #86efac; color: #14532d; border-radius: 18px; padding: 22px; text-align: center; line-height: 1.7; font-size: 15px; }
+  .note { font-size: 12px; color: var(--dim); text-align: center; margin-top: 12px; line-height: 1.6; }
+  footer { background: #04211d; color: #99f6e4; text-align: center; padding: 16px; font-size: 12.5px; line-height: 1.7; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <a href="index.html">🏠 मुख्य पृष्ठ</a>
+  <a href="chat.html">💬 चैट</a>
+  <a href="medicine.html">💊 दवा ऑर्डर</a>
+  <span class="sp"></span>
+  <a href="chat.html" style="background:#fbbf24; color:#451a03;">🔑 पहले से ID है? लॉगिन करें</a>
+</div>
+
+<div class="wrap">
+  <div class="head">
+    <img src="asthl-logo.jpg" alt="ASTHL">
+    <h1>👨‍⚕️ डॉक्टर रजिस्ट्रेशन</h1>
+    <p>ASTHL की AI Deep Analysis सेवा — अपनी ID पाएं, प्रैक्टिस को और बेहतर बनाएं</p>
+  </div>
+
+  <div class="price-hero">
+    <div class="old">₹999</div>
+    <div class="new">₹299<small>/माह</small></div>
+    <div class="off">70% OFF</div>
+    <div style="font-size: 12.5px; margin-top: 8px; color: #dcfce7;">13-Point Selection • Materia Medica Verification • Voice Input • Case Files • PDF Report</div>
+  </div>
+
+  <div id="reg-form">
+    <div class="card">
+      <h3>📋 अपनी जानकारी भरें</h3>
+      <div class="fgrp"><label>पूरा नाम *</label><input id="d-name" placeholder="Dr. आपका नाम"></div>
+      <div class="row2">
+        <div class="fgrp"><label>मोबाइल (WhatsApp) *</label><input id="d-mobile" type="tel" maxlength="10" placeholder="10 अंकों का नंबर"></div>
+        <div class="fgrp"><label>योग्यता *</label>
+          <select id="d-qual">
+            <option value="">— चुनें —</option>
+            <option>BHMS</option><option>MD (Homoeo)</option><option>DHMS</option><option>अन्य</option>
+          </select>
+        </div>
+      </div>
+      <div class="fgrp"><label>क्लिनिक / अस्पताल का नाम</label><input id="d-clinic" placeholder="जैसे: ASTHL Homeopathy Clinic"></div>
+      <div class="fgrp"><label>शहर / जिला *</label><input id="d-city" placeholder="जैसे: चासा"></div>
+    </div>
+
+    <div class="paybox">
+      <h3>💰 ₹299 का भुगतान करें</h3>
+      <img id="pay-qr" alt="UPI QR — ₹299 ASTHL">
+      <div class="upi-id">asthl@ybl</div>
+      <p>मोबाइल से नीचे बटन दबाइए — PhonePe / GPay / Paytm खुल जाएगा</p>
+      <a class="btn green" id="upi-btn">📱 ₹299 भुगतान करें (UPI)</a>
+    </div>
+
+    <div class="card">
+      <h3>✅ भुगतान के बाद</h3>
+      <div class="fgrp"><label>भुगतान का संदर्भ / UTR नंबर (अगर है)</label><input id="d-utr" placeholder="UPI ऐप में मिलता है (optional)"></div>
+      <button class="btn" id="d-submit">📩 रजिस्ट्रेशन पूरा करें</button>
+      <div class="note">भुगतान सत्यापन के बाद आपकी LOGIN ID WhatsApp पर भेज दी जाएगी (आमतौर पर 24 घंटे में) — +91-7903873282 से</div>
+    </div>
+  </div>
+
+  <div id="done-sec" style="display:none">
+    <div class="ok-msg">
+      ✅ <b>रजिस्ट्रेशन प्राप्त हो गया!</b><br><br>
+      भुगतान सत्यापन के बाद आपकी <b>Login ID</b> WhatsApp पर भेज दी जाएगी।<br>
+      📞 कोई भी सवाल हो तो WhatsApp करें: <b>+91-7903873282</b>
+    </div>
+    <a class="btn" href="chat.html" style="margin-top: 16px;">← वापस चैट पर जाएं</a>
+  </div>
+</div>
+
+<footer>ASTHL — A Step Towards Healthy Life • डॉक्टरों के लिए AI Deep Analysis</footer>
+
+<script>
+function $(id) { return document.getElementById(id); }
+var UPI_ID = 'asthl@ybl';
+var uri = 'upi://pay?pa=' + encodeURIComponent(UPI_ID) + '&pn=' + encodeURIComponent('ASTHL') + '&am=299&cu=INR&tn=' + encodeURIComponent('ASTHL Doctor ID');
+$('pay-qr').src = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=' + encodeURIComponent(uri);
+$('upi-btn').href = uri;
+
+$('d-mobile').addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 10); });
+
+$('d-submit').addEventListener('click', function () {
+  var name = $('d-name').value.trim(), mob = $('d-mobile').value.trim(), qual = $('d-qual').value,
+      city = $('d-city').value.trim(), clinic = $('d-clinic').value.trim(), utr = $('d-utr').value.trim();
+  if (name.length < 2) { alert('कृपया पूरा नाम लिखें।'); return; }
+  if (!/^\d{10}$/.test(mob)) { alert('सही 10 अंकों का मोबाइल नंबर लिखें।'); return; }
+  if (!qual) { alert('योग्यता चुनें।'); return; }
+  if (city.length < 2) { alert('शहर / जिला लिखें।'); return; }
+  var okPay = confirm('क्या आपने ₹299 का भुगतान कर दिया है? (हाँ = आगे बढ़ें)');
+  if (!okPay) { alert('पहले ऊपर UPI से ₹299 का भुगतान करें, फिर रजिस्ट्रेशन पूरा करें।'); return; }
+  $('d-submit').disabled = true; $('d-submit').textContent = 'भेज रहे हैं...';
+  fetch('/api/orders', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'saveOrder', type: 'doctor-registration', patientRef: mob,
+      name: 'Dr. ' + name, mobile: mob, address: (city + (clinic ? ' • ' + clinic : '')),
+      pincode: '', items: 'डॉक्टर ID रजिस्ट्रेशन (₹299/माह) • योग्यता: ' + qual,
+      amount: '299', payRef: utr
+    })
+  }).then(function (r) { return r.json(); }).then(function (d) {
+    if (d && d.status === 'ok') { $('reg-form').style.display = 'none'; $('done-sec').style.display = 'block'; window.scrollTo(0, 0); }
+    else { alert('सेव नहीं हुआ — दोबारा कोशिश करें।'); $('d-submit').disabled = false; $('d-submit').textContent = '📩 रजिस्ट्रेशन पूरा करें'; }
+  }).catch(function () { alert('कनेक्शन त्रुटि — दोबारा कोशिश करें।'); $('d-submit').disabled = false; $('d-submit').textContent = '📩 रजिस्ट्रेशन पूरा करें'; });
+});
+</script>
+</body>
+</html>
