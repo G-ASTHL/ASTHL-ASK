@@ -1,0 +1,17 @@
+{
+  "name": "ASTHL — A Step Towards Healthy Life",
+  "short_name": "ASTHL",
+  "description": "होम्योपैथी का AI सहायक — मरीज़ों के लिए FREE चैट, डॉक्टरों के लिए Deep Analysis, दवा ऑर्डर",
+  "lang": "hi",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0d9488",
+  "background_color": "#f0fdfa",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
