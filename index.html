@@ -2,15 +2,181 @@
 <html lang="hi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="robots" content="noindex">
-<title>ASTHL - A Step Towards Healthy Life</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0d9488">
+<meta name="description" content="ASTHL — A Step Towards Healthy Life. होम्योपैथी का AI सहायक — मरीज़ों के लिए FREE चैट, डॉक्टरों के लिए Deep Analysis, दवा ऑर्डर और होम्योपैथी जानकारी।">
+<title>ASTHL — A Step Towards Healthy Life | होम्योपैथी का AI सहायक</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  html, body { margin: 0; padding: 0; height: 100%; background: #f0fdfa; overflow: hidden; }
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  :root { --accent:#0d9488; --dark:#0f766e; --text:#134e4a; --dim:#64748b; --bg:#f0fdfa; }
+  html { scroll-behavior: smooth; }
+  body { font-family: 'Noto Sans Devanagari', sans-serif; background: var(--bg); color: var(--text); }
+
+  .nav { position: sticky; top: 0; z-index: 50; display: flex; align-items: center; gap: 8px; background: linear-gradient(135deg,#0f766e,#0d9488); padding: 10px 12px; overflow-x: auto; box-shadow: 0 2px 12px rgba(0,0,0,.15); }
+  .nav .brand { display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 700; font-size: 15px; white-space: nowrap; margin-right: 4px; }
+  .nav .brand img { width: 30px; height: 30px; background: #fff; border-radius: 8px; padding: 2px; }
+  .nav a { color: #e6fffa; text-decoration: none; font-size: 13px; font-weight: 600; padding: 7px 12px; border-radius: 999px; white-space: nowrap; background: rgba(255,255,255,.12); }
+  .nav a.active { background: #fff; color: var(--dark); }
+  .nav .sp { flex: 1; }
+  .nav .appt { background: #fbbf24; color: #451a03; }
+
+  .hero { background: linear-gradient(165deg,#062e2a 0%,#0b4f47 55%,#0d6e60 100%); color: #fff; padding: 48px 20px 54px; text-align: center; position: relative; overflow: hidden; }
+  .hero::after { content: ''; position: absolute; inset: 0; opacity: .05; background-image: radial-gradient(circle at 25px 25px, #fff 2px, transparent 3px); background-size: 90px 90px; }
+  .hero img.logo { width: 130px; height: 130px; object-fit: contain; background: #fff; border-radius: 30px; padding: 8px; box-shadow: 0 12px 40px rgba(0,0,0,.4); }
+  .hero h1 { font-size: 34px; margin-top: 18px; letter-spacing: 2px; }
+  .hero .tag { font-size: 15px; color: #99f6e4; font-style: italic; margin-top: 4px; }
+  .hero .lead { max-width: 560px; margin: 16px auto 0; font-size: 17px; line-height: 1.65; color: #d5fff3; }
+  .hero .lead b { color: #fde047; }
+
+  .actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; max-width: 860px; margin: -30px auto 0; padding: 0 16px; position: relative; z-index: 5; }
+  .act { background: #fff; border-radius: 22px; padding: 26px 20px; text-align: center; text-decoration: none; box-shadow: 0 10px 30px rgba(13,148,136,.18); border: 2px solid transparent; transition: transform .15s, border-color .15s; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .act:hover { transform: translateY(-3px); border-color: var(--accent); }
+  .act .ic { width: 68px; height: 68px; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 34px; }
+  .act:nth-child(1) .ic { background: linear-gradient(135deg,#ccfbf1,#99f6e4); }
+  .act:nth-child(2) .ic { background: linear-gradient(135deg,#fef3c7,#fde68a); }
+  .act:nth-child(3) .ic { background: linear-gradient(135deg,#dcfce7,#bbf7d0); }
+  .act b { font-size: 19px; color: var(--text); }
+  .act span { font-size: 13.5px; color: var(--dim); line-height: 1.5; }
+  .act .free { background: #16a34a; color: #fff; font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 999px; }
+
+  section.block { max-width: 860px; margin: 0 auto; padding: 44px 16px; }
+  section.block h2 { font-size: 26px; text-align: center; margin-bottom: 8px; }
+  section.block .hsub { text-align: center; color: var(--dim); font-size: 14.5px; margin-bottom: 26px; }
+
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 14px; }
+  .step { background: #fff; border: 1.5px solid #ccfbf1; border-radius: 18px; padding: 20px; }
+  .step .num { width: 40px; height: 40px; border-radius: 12px; background: var(--accent); color: #fff; font-weight: 700; font-size: 19px; display: flex; align-items: center; justify-content: center; }
+  .step b { display: block; margin: 10px 0 4px; font-size: 16px; }
+  .step span { font-size: 13.5px; color: var(--dim); line-height: 1.55; }
+
+  .bens { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px,1fr)); gap: 12px; }
+  .ben { background: #fff; border: 1.5px solid #ccfbf1; border-radius: 16px; padding: 16px; display: flex; gap: 12px; align-items: flex-start; }
+  .ben .em { font-size: 24px; }
+  .ben b { display: block; font-size: 15px; }
+  .ben span { font-size: 13px; color: var(--dim); line-height: 1.5; }
+
+  .member { background: linear-gradient(165deg,#0f766e,#0d9488); border-radius: 26px; color: #fff; padding: 32px 24px; max-width: 860px; margin: 0 auto; }
+  .member h2 { color: #fff; font-size: 24px; text-align: center; }
+  .member .msub { text-align: center; color: #99f6e4; font-size: 14px; margin: 6px 0 22px; }
+  .member .mgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px,1fr)); gap: 14px; }
+  .mcard { background: rgba(255,255,255,.1); border: 1.5px solid rgba(153,246,228,.35); border-radius: 16px; padding: 18px; }
+  .mcard b { display: block; font-size: 15.5px; margin-bottom: 6px; color: #fde047; }
+  .mcard span { font-size: 13.5px; color: #d5fff3; line-height: 1.6; }
+  .goal { background: rgba(253,224,71,.12); border: 1.5px solid rgba(253,224,71,.45); border-radius: 16px; padding: 16px 18px; margin-top: 14px; font-size: 14.5px; line-height: 1.65; }
+  .goal b { color: #fde047; }
+
+  footer { background: #04211d; color: #99f6e4; text-align: center; padding: 28px 16px 32px; font-size: 13.5px; line-height: 1.7; }
+  footer b { color: #fff; }
+  footer .flinks { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin: 14px 0; }
+  footer .flinks a { color: #fde047; text-decoration: none; background: rgba(255,255,255,.08); padding: 7px 14px; border-radius: 999px; font-size: 13px; }
+  .whatsapp-float { position: fixed; bottom: 18px; right: 18px; z-index: 60; width: 54px; height: 54px; border-radius: 50%; background: #25d366; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(37,211,102,.5); text-decoration: none; font-size: 26px; }
 </style>
 </head>
 <body>
-<script>window.ASTHL_FULLPAGE = true;</script>
-<script src="/chat-widget.js?v=32"></script>
+
+<div class="nav">
+  <div class="brand"><img src="asthl-logo.jpg" alt=""> ASTHL</div>
+  <a href="index.html" class="active">🏠 मुख्य पृष्ठ</a>
+  <a href="chat.html">💬 चैट</a>
+  <a href="medicine.html">💊 दवा ऑर्डर</a>
+  <a href="homeopathy.html">🌿 होम्योपैथी</a>
+  <span class="sp"></span>
+  <a class="appt" href="https://asthl.in" target="_blank">📅 अपॉइंटमेंट बुक करें</a>
+</div>
+
+<div class="hero">
+  <img class="logo" src="asthl-logo.jpg" alt="ASTHL Logo">
+  <h1>ASTHL</h1>
+  <div class="tag">"A Step Towards Healthy Life"</div>
+  <p class="lead"><b>होम्योपैथी का AI सहायक</b> — मरीज़ों के लिए <b>100% FREE चैट</b> (आजीवन), डॉक्टरों के लिए <b>Deep Analysis</b>, और सबके लिए घर बैठे दवा ऑर्डर की सुविधा।</p>
+</div>
+
+<!-- 3 MAIN OPTIONS -->
+<div class="actions">
+  <a class="act" href="chat.html">
+    <div class="ic">💬</div>
+    <b>स्वास्थ्य सहायक से बात करें</b>
+    <span>अपनी समस्या बताइए — होम्योपैथी सलाह पाइए। मरीज़ों के लिए निःशुल्क।</span>
+    <span class="free">मरीज / डॉक्टर AI Case Analysis</span>
+  </a>
+  <a class="act" href="medicine.html">
+    <div class="ic">💊</div>
+    <b>दवा ऑर्डर करें</b>
+    <span>अपनी दवा घर बैठे मंगाइए — ASTHL इलाज ले रहे मरीज़ अपना बिल देखकर भुगतान करें या दवा की लिस्ट से चुनें।</span>
+  </a>
+  <a class="act" href="homeopathy.html">
+    <div class="ic">🌿</div>
+    <b>होम्योपैथी की छुपी शक्ति</b>
+    <span>एलोपैथी केवल आराम देती है — होम्योपैथी जड़ से इलाज करती है। पूरी जानकारी देखिए।</span>
+  </a>
+</div>
+
+<!-- ASTHL KYA HAI -->
+<section class="block">
+  <h2>ASTHL क्या है?</h2>
+  <div class="hsub">एक पहल — जो होम्योपैथी को हर घर तक पहुँचाना चाहती है</div>
+  <div class="steps">
+    <div class="step"><div class="num">1</div><b>पहचानिए</b><span>ASTHL एक होम्योपैथी संस्था और AI सहायक है — मरीज़ों के लिए निःशुल्क सलाह और डॉक्टरों के लिए शोध-स्तरीय केस विश्लेषण।</span></div>
+    <div class="step"><div class="num">2</div><b>बात कीजिए</b><span>अपनी समस्या हिंदी में लिखें या बोलकर कहें — AI सहायक आपकी समस्या सुनकर होम्योपैथिक मार्गदर्शन देता है।</span></div>
+    <div class="step"><div class="num">3</div><b>इलाज पाइए</b><span>ज़रूरत पड़ने पर योग्य डॉक्टर से अपॉइंटमेंट बुक करें और दवा घर बैठे ऑर्डर करें।</span></div>
+  </div>
+</section>
+
+<!-- FAYDE -->
+<section class="block" style="padding-top: 0;">
+  <h2>ASTHL से जुड़ने के फायदे</h2>
+  <div class="hsub">मरीज़, डॉक्टर और समाज — तीनों के लिए</div>
+  <div class="bens">
+    <div class="ben"><div class="em">🆓</div><div><b>मरीज़ों के लिए FREE चैट</b><span>कोई शुल्क नहीं — आजीवन। पंजीकरण सिर्फ़ नाम और मोबाइल से।</span></div></div>
+    <div class="ben"><div class="em">👨‍⚕️</div><div><b>योग्य डॉक्टर परामर्श</b><span>ज़रूरत पड़ने पर अनुभवी होम्योपैथ डॉक्टर से सीधा संपर्क।</span></div></div>
+    <div class="ben"><div class="em">💊</div><div><b>घर बैठे दवा</b><span>अपनी दवा ऑनलाइन ऑर्डर करें — UPI से आसान भुगतान।</span></div></div>
+    <div class="ben"><div class="em">📋</div><div><b>केस रिकॉर्ड सुरक्षित</b><span>आपकी जानकारी सुरक्षित रहती है — इलाज में लगातार मदद मिलती है।</span></div></div>
+    <div class="ben"><div class="em">🎤</div><div><b>बोलकर बात करें</b><span>टाइप करने की ज़रूरत नहीं — अपनी आवाज़ में सवाल पूछें।</span></div></div>
+    <div class="ben"><div class="em">🤝</div><div><b>समाज सेवा का अवसर</b><span>सदस्य व कार्यकर्ता बनकर स्वस्थ समाज बनाने में योगदान दें।</span></div></div>
+  </div>
+</section>
+
+<!-- MEMBERSHIP -->
+<section class="block" style="padding-top: 0;">
+  <div class="member">
+    <h2>🤝 ASTHL का सदस्य बनें</h2>
+    <div class="msub">स्वस्थ समाज की बुनियाद — आपके सहयोग से</div>
+    <div class="mgrid">
+      <div class="mcard">
+        <b>📅 वार्षिक नामांकन व चुनाव</b>
+        <span>हर वर्ष <b>अप्रैल के प्रथम सप्ताह</b> में ASTHL के स्थायी सदस्यों का नामांकन एवं द्वितीय स्तर की कोर टीम का चुनाव होता है।</span>
+      </div>
+      <div class="mcard">
+        <b>🗳️ मुख्य टीम का चुनाव</b>
+        <span>चुनाव में डॉक्टरों और समाजसेवियों में से वही लोग चुने जाते हैं जो समाज के प्रति समर्पण दिखाते हैं। इन्हीं चुनी हुई सबसे बेहतर डॉक्टर्स के द्वारा मरीजो इलाज किया जाता है |</span>
+      </div>
+      <div class="mcard">
+        <b>👥 कार्यकर्ता बनें</b>
+        <span>वर्ष भर कोई भी कार्यकर्ता ASTHL से जुड़ सकता है — समाज सेवा के कार्यों में सहभागिता कर सकता है। सक्रिय कार्यकर्ताओं में से कुछ को स्थायी सदस्य भी बनाया जाता है।</span>
+      </div>
+    </div>
+    <div class="goal">
+      <b>🎯 हमारा उद्देश्य:</b> समाज को स्वस्थ बनाना एवं गंभीर बीमारियों के कारण होने वाले भारी खर्च व परेशानी से परिवारों को बचाना — ताकि कोई भी परिवार इलाज के अभाव में मुश्किल में न रहे।
+    </div>
+  </div>
+</section>
+
+<footer>
+  <b>ASTHL</b> — A Step Towards Healthy Life<br>
+  📍 गायत्री मंदिर के सामने, नंदुआ स्थान, अटल क्लिनिक के पास, शिव शक्ति नगर, चासा<br>
+  📞 Call / WhatsApp: +91-7903873282 &nbsp;|&nbsp; 🕘 समय: 9am–1pm, 3pm–7pm
+  <div class="flinks">
+    <a href="index.html">🏠 मुख्य पृष्ठ</a>
+    <a href="chat.html">💬 चैट</a>
+    <a href="medicine.html">💊 दवा ऑर्डर</a>
+    <a href="homeopathy.html">🌿 होम्योपैथी</a>
+    <a href="https://asthl.in" target="_blank">📅 इलाज के लिए अपॉइंटमेंट बुक करें</a>
+  </div>
+  <div style="margin-top: 10px; font-size: 12px;">यह AI सहायक है, डॉक्टर नहीं। गंभीर समस्या में डॉक्टर से मिलें।</div>
+</footer>
+
+<a class="whatsapp-float" href="https://wa.me/917903873282" target="_blank" title="WhatsApp करें">💬</a>
 </body>
 </html>
