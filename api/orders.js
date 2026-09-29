@@ -29,7 +29,7 @@ module.exports = async (req, res) => {
 
     if (!sheetResponse.ok) {
       console.error('Apps Script error:', sheetResponse.status);
-      return res.status(502).json({ error: 'Sheet se jawab nahi aaya. Thodi der baad try karein.' });
+      return res.status(502).json({ error: 'शीट से जवाब नहीं आया। थोड़ी देर बाद कोशिश करें।' });
     }
 
     const text = await sheetResponse.text();
@@ -38,10 +38,10 @@ module.exports = async (req, res) => {
       return res.status(200).json(data);
     } catch (parseErr) {
       console.error('Apps Script ne non-JSON bheja:', text.slice(0, 200));
-      return res.status(502).json({ error: 'Sheet ka Apps Script purana version hai — naya google-sheet-script.js (v11) deploy karein.' });
+      return res.status(502).json({ error: 'शीट का Apps Script पुराना वर्शन है — नया google-sheet-script.js डिप्लॉय करें।' });
     }
   } catch (err) {
     console.error('Orders API error:', err.message);
-    return res.status(500).json({ error: 'Server error. Thodi der baad try karein.' });
+    return res.status(500).json({ error: 'सर्वर त्रुटि। थोड़ी देर बाद कोशिश करें।' });
   }
 };
