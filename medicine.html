@@ -47,6 +47,12 @@
   .bill .amt { font-size: 34px; font-weight: 700; color: var(--dark); }
   .bill .lbl { font-size: 13px; color: var(--dim); }
   .bill .bnote { font-size: 13px; color: #0f766e; margin-top: 6px; line-height: 1.5; }
+  .bill .det { font-size: 14.5px; color: #134e4a; text-align: left; background: #fff; border: 1px solid #ccfbf1; border-radius: 12px; padding: 12px 14px; margin: 12px auto 0; max-width: 380px; line-height: 1.9; }
+  .bill .det b { color: #0f766e; }
+  .bill .costs { display: flex; justify-content: space-between; max-width: 380px; margin: 8px auto 0; font-size: 14px; color: #475569; }
+  .delivered-box { background: #dcfce7; border: 2px solid #4ade80; border-radius: 16px; padding: 16px; margin-bottom: 12px; font-size: 14.5px; color: #14532d; line-height: 1.7; }
+  .delivered-box b { color: #15803d; }
+  .delivered-box .cour { background: #fff; border: 1.5px dashed #86efac; border-radius: 12px; padding: 10px 12px; margin-top: 8px; font-size: 13.5px; }
 
   .paybox { background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 16px; padding: 16px; text-align: center; margin-top: 12px; }
   .paybox img { width: 190px; height: 190px; border-radius: 12px; background: #fff; padding: 6px; border: 1px solid #e2e8f0; }
@@ -109,21 +115,27 @@
 
     <div id="a-bill-sec" style="display:none">
       <div class="card">
+        <div id="a-delivered" class="delivered-box" style="display:none"></div>
         <div class="bill">
-          <div class="lbl">आपकी दवा की राशि</div>
+          <div class="lbl">आपका बिल (दवा + कूरियर)</div>
           <div class="amt" id="a-amount">₹0</div>
-          <div class="bnote" id="a-note"></div>
+          <div class="costs"><span>💊 दवा: <b id="a-med">₹0</b></span><span>🚚 कूरियर: <b id="a-courier">₹0</b></span></div>
+          <div class="det" id="a-det"></div>
         </div>
-        <div class="fgrp"><label>पूरा पता *</label><textarea id="a-address" rows="2" placeholder="घर, गाँव/शहर, जिला"></textarea></div>
         <div class="fgrp"><label>पिन कोड *</label><input id="a-pincode" type="tel" maxlength="6" placeholder="6 अंकों का पिन कोड"></div>
+        <div class="fgrp"><label>पूरा पता *</label><textarea id="a-address" rows="2" placeholder="घर, गाँव/शहर, जिला"></textarea></div>
         <div class="paybox">
-          <div style="font-weight:700; color:#78350f;">👇 भुगतान करें (UPI)</div>
+          <div style="font-weight:700; color:#78350f;">👇 कुल राशि का भुगतान करें (UPI)</div>
           <img id="a-qr" alt="UPI QR Code">
           <div class="upi-id">asthl@ybl</div>
           <p>मोबाइल से: नीचे बटन दबाइए — UPI ऐप खुल जाएगा<br>(PhonePe / Google Pay / Paytm / कोई भी UPI ऐप)</p>
           <a id="a-upi-btn" class="btn green" style="display:block; text-decoration:none; text-align:center; margin-top:10px;">📱 ₹ भुगतान करें (UPI)</a>
         </div>
-        <button class="btn gold" id="a-confirm" style="margin-top: 12px;">✅ भुगतान हो गया — ऑर्डर कन्फर्म करें</button>
+        <div class="fgrp" style="margin-top:14px;">
+          <label>भुगतान का UTR / संदर्भ नंबर *</label>
+          <input id="a-utr" placeholder="UPI ऐप में मिलता है (वही डालें)">
+        </div>
+        <button class="btn gold" id="a-confirm">✅ भुगतान हुआ — ऑर्डर कन्फर्म करें</button>
       </div>
       <div id="a-done"></div>
     </div>
@@ -194,11 +206,22 @@ $('a-find').addEventListener('click', function () {
   fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'getPatientBill', query: q }) })
     .then(function (r) { return r.json(); }).then(function (d) {
       $('a-find').textContent = 'बिल देखें →'; $('a-find').disabled = false;
-      if (d && d.status === 'ok' && d.amount) {
+      if (d && d.status === 'ok') {
+        var total = d.total || '0';
         $('a-bill-sec').style.display = 'block';
-        $('a-amount').textContent = '₹' + d.amount;
-        $('a-note').textContent = d.note ? ('📋 ' + d.note) : ('मरीज़: ' + q);
-        var uri = upiUri(d.amount, 'ASTHL Medicine ' + q);
+        $('a-amount').textContent = '₹' + total;
+        $('a-med').textContent = '₹' + (d.medCost || '0');
+        $('a-courier').textContent = '₹' + (d.courier || '0');
+        var det = '<b>नाम:</b> ' + esc(d.name || '—') + '<br><b>समस्या:</b> ' + esc(d.bimari || '—');
+        $('a-det').innerHTML = det;
+        window._aPat = { name: d.name || '', bimari: d.bimari || '' };
+        var dbox = $('a-delivered');
+        if (d.delivered) {
+          dbox.style.display = 'block';
+          dbox.innerHTML = '<b>✅ आपकी दवा डिलीवर कर दी गई है।</b>' +
+            (d.comment ? '<div class="cour"><b>📦 कूरियर विवरण:</b><br>' + esc(d.comment) + '</div>' : '');
+        } else { dbox.style.display = 'none'; }
+        var uri = upiUri(total, 'ASTHL Medicine ' + q);
         $('a-qr').src = qrUrl(uri);
         $('a-upi-btn').href = uri;
         $('a-bill-sec').scrollIntoView({ behavior: 'smooth' });
@@ -213,19 +236,23 @@ $('a-find').addEventListener('click', function () {
 });
 
 $('a-confirm').addEventListener('click', function () {
-  var q = $('a-query').value.trim(), addr = $('a-address').value.trim(), pin = $('a-pincode').value.trim();
+  var q = $('a-query').value.trim(), addr = $('a-address').value.trim(), pin = $('a-pincode').value.trim(), utr = $('a-utr').value.trim();
   var amt = $('a-amount').textContent.replace(/[^\d]/g, '');
-  if (addr.length < 5) { alert('कृपया पूरा पता लिखें।'); return; }
+  var pat = window._aPat || {};
   if (!/^\d{6}$/.test(pin)) { alert('कृपया 6 अंकों का पिन कोड लिखें।'); return; }
+  if (addr.length < 5) { alert('कृपया पूरा पता लिखें।'); return; }
+  if (utr.length < 6) { alert('कृपया भुगतान का UTR / संदर्भ नंबर लिखें — यह आवश्यक है।'); return; }
   $('a-confirm').disabled = true; $('a-confirm').textContent = 'ऑर्डर भेज रहे हैं...';
-  fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'saveOrder', type: 'medicine', patientRef: q, name: q, mobile: /^\d{10}$/.test(q) ? q : '', address: addr, pincode: pin, items: 'ASTHL इलाज की दवा (बिल अनुसार)', amount: amt }) })
+  var medAmt = $('a-med').textContent.replace(/[^\d]/g, '') || '0';
+  var crAmt = $('a-courier').textContent.replace(/[^\d]/g, '') || '0';
+  fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'saveOrder', type: 'medicine', patientRef: q, name: pat.name || q, mobile: /^\d{10}$/.test(q) ? q : '', address: addr, pincode: pin, items: 'दवा ₹' + medAmt + ' + कूरियर ₹' + crAmt + (pat.bimari ? ' — ' + pat.bimari : ''), amount: amt, payRef: utr }) })
     .then(function (r) { return r.json(); }).then(function (d) {
       if (d && d.status === 'ok') {
         $('a-bill-sec').style.display = 'none';
-        $('a-done').innerHTML = '<div class="ok-msg">✅ <b>ऑर्डर कन्फर्म हो गया!</b><br>भुगतान रसीद और डिलीवरी की जानकारी WhatsApp पर मिलेगी।<br>किसी भी सवाल के लिए: 📞 +91-7903873282</div>';
+        $('a-done').innerHTML = '<div class="ok-msg">✅ <b>ऑर्डर कन्फर्म हो गया!</b><br>UTR: ' + esc(utr) + ' दर्ज कर दिया गया है।<br>भुगतान सत्यापन के बाद दवा भेज दी जाएगी।<br>किसी भी सवाल के लिए: 📞 +91-7903873282</div>';
         $('a-done').scrollIntoView({ behavior: 'smooth' });
-      } else { alert('ऑर्डर सेव नहीं हुआ — दोबारा कोशिश करें।'); $('a-confirm').disabled = false; $('a-confirm').textContent = '✅ भुगतान हो गया — ऑर्डर कन्फर्म करें'; }
-    }).catch(function () { alert('कनेक्शन त्रुटि — दोबारा कोशिश करें।'); $('a-confirm').disabled = false; $('a-confirm').textContent = '✅ भुगतान हो गया — ऑर्डर कन्फर्म करें'; });
+      } else { alert('ऑर्डर सेव नहीं हुआ — दोबारा कोशिश करें।'); $('a-confirm').disabled = false; $('a-confirm').textContent = '✅ भुगतान हुआ — ऑर्डर कन्फर्म करें'; }
+    }).catch(function () { alert('कनेक्शन त्रुटि — दोबारा कोशिश करें।'); $('a-confirm').disabled = false; $('a-confirm').textContent = '✅ भुगतान हुआ — ऑर्डर कन्फर्म करें'; });
 });
 
 // ===== MODE B =====
