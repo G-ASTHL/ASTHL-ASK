@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0d9488">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
 <meta name="description" content="ASTHL — A Step Towards Healthy Life. होम्योपैथी का AI सहायक — मरीज़ों के लिए FREE चैट, डॉक्टरों के लिए Deep Analysis, दवा ऑर्डर और होम्योपैथी जानकारी।">
 <title>ASTHL — A Step Towards Healthy Life | होम्योपैथी का AI सहायक</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -163,6 +165,51 @@
   </div>
 </section>
 
+
+<!-- ===== APP INSTALL BANNER (v2) ===== -->
+<div id="app-install" style="display:none; max-width:600px; margin:0 auto 18px; padding:0 16px;">
+  <div style="background:linear-gradient(135deg,#0f766e,#0d9488); border-radius:18px; padding:16px; color:#fff; display:flex; align-items:center; gap:13px; box-shadow:0 8px 24px rgba(13,148,136,.35);">
+    <img src="icon-192.png" alt="ASTHL App" style="width:54px; height:54px; border-radius:13px; background:#fff; flex-shrink:0;">
+    <div style="flex:1; min-width:0;">
+      <b style="font-size:16px;">📱 ASTHL App बनाइए</b>
+      <div class="app-sub" style="font-size:12.5px; color:#d5fff3; margin-top:3px;">एक क्लिक में — फ़ोन में हमेशा के लिए</div>
+    </div>
+    <button id="app-install-btn" onclick="asthlInstall()" style="background:#fbbf24; color:#451a03; border:none; border-radius:999px; padding:10px 16px; font-family:inherit; font-weight:700; font-size:14px; cursor:pointer; flex-shrink:0;">इंस्टॉल</button>
+  </div>
+</div>
+<script>
+(function () {
+  var deferredPrompt = null;
+  var ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  function show(mode) {
+    if (standalone) return;
+    var box = document.getElementById('app-install');
+    if (!box) return;
+    box.style.display = 'block';
+    if (mode === 'ios') {
+      var sub = box.querySelector('.app-sub');
+      if (sub) sub.textContent = 'Safari में ⬆️ Share बटन दबाएँ → "Add to Home Screen"';
+      var btn = document.getElementById('app-install-btn');
+      if (btn) btn.style.display = 'none';
+    }
+  }
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    show('android');
+  });
+  window.asthlInstall = function () {
+    if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; }
+  };
+  window.addEventListener('appinstalled', function () {
+    var box = document.getElementById('app-install');
+    if (box) box.style.display = 'none';
+  });
+  if (ios) show('ios');
+})();
+</script>
+
 <footer>
   <b>ASTHL</b> — A Step Towards Healthy Life<br>
   📍 गायत्री मंदिर के सामने, नंदुआ स्थान, अटल क्लिनिक के पास, शिव शक्ति नगर, चासा<br>
@@ -178,5 +225,6 @@
 </footer>
 
 <a class="whatsapp-float" href="https://wa.me/917903873282" target="_blank" title="WhatsApp करें">💬</a>
+<script>if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); }); }</script>
 </body>
 </html>

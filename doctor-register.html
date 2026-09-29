@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0d9488">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
 <title>ASTHL — डॉक्टर रजिस्ट्रेशन | ₹299/माह</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -155,5 +157,6 @@ $('d-submit').addEventListener('click', function () {
   }).catch(function () { alert('कनेक्शन त्रुटि — दोबारा कोशिश करें।'); $('d-submit').disabled = false; $('d-submit').textContent = '📩 रजिस्ट्रेशन पूरा करें'; });
 });
 </script>
+<script>if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); }); }</script>
 </body>
 </html>

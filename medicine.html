@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0d9488">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icon-192.png">
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <title>ASTHL — दवा ऑर्डर करें | Buy Medicine</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -270,7 +272,7 @@ $('a-confirm').addEventListener('click', function () {
     .then(function (r) { return r.json(); }).then(function (d) {
       if (d && d.status === 'ok') {
         $('a-bill-sec').style.display = 'none';
-        $('a-done').innerHTML = '<div class="ok-msg">🙏 <b>ASTHL परिवार में जुडने के लिए आपका धन्यवाद!</b><br>✅ ऑर्डर कन्फर्म हो गया — UTR: ' + esc(utr) + ' दर्ज हो गया।<br>📦 <b>आपकी दवा जल्द ही भेज दी जाएगी।</b><br>किसी भी सवाल के लिए: 📞 +91-7903873282</div>';
+        $('a-done').innerHTML = '<div class="ok-msg">🙏 <b>ASTHL परिवार में जुड़ने के लिए आपका धन्यवाद!</b><br>✅ ऑर्डर कन्फर्म हो गया — UTR: ' + esc(utr) + ' दर्ज हो गया।<br>📦 <b>आपकी दवा जल्द ही भेज दी जाएगी।</b><br>किसी भी सवाल के लिए: 📞 +91-7903873282</div>';
         $('a-done').scrollIntoView({ behavior: 'smooth' });
       } else { alert('ऑर्डर सेव नहीं हुआ — दोबारा कोशिश करें।'); $('a-confirm').disabled = false; $('a-confirm').textContent = '✅ भुगतान हुआ — ऑर्डर कन्फर्म करें'; }
     }).catch(function () { alert('कनेक्शन त्रुटि — दोबारा कोशिश करें।'); $('a-confirm').disabled = false; $('a-confirm').textContent = '✅ भुगतान हुआ — ऑर्डर कन्फर्म करें'; });
@@ -372,5 +374,6 @@ fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/j
     renderMeds();
   }).catch(function () { renderMeds(); });
 </script>
+<script>if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); }); }</script>
 </body>
 </html>
