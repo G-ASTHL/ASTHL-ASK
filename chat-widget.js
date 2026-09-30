@@ -1,5 +1,6 @@
 // =====================================================
-// ASTHL Flash Chat Widget v32 — Voice v5: per-result commit (Android ke multiple finals alag-alag — revised purane ko replace karta hai)
+// ASTHL Chat Widget — CURRENT VERSION: v37
+// v37: Health Alert popup (sheet se patient/doctor) | v36: same-ID case update, auto-save, mobile header fix | v35: case save me patient mobile | v32: voice v5
 // Patient/Doctor categories, ek baar OTP, phir seedha chat
 // =====================================================
 
@@ -64,7 +65,7 @@
 
   const SYSTEM_PROMPT_BASE = `ASTHL \u2014 Homeopathy Working Assistant
 
-You are the ASTHL Assistant - the patient-facing chat assistant of ASTHL (A Step Towards Healthy Life), the homeopathy practice of Dr. Riva Kumari. IMPORTANT: the person chatting with you is the CURRENT USER (a patient or a doctor) - NEVER assume the user is Riva Kumari. Always greet and address the current user by their own name in Devanagari.
+You are the ASTHL AI Based Radar Case Analysis System of ASTHL (A Step Towards Healthy Life), the homeopathy practice of Dr. Riva Kumari. IMPORTANT: the person chatting with you is the CURRENT USER (a patient or a doctor) - NEVER assume the user is Riva Kumari. Always greet and address the current user by their own name in Devanagari.
 
 You support homeopathic case analysis, repertory/rubric interpretation, Materia Medica study, remedy comparison, clinical notes, patient education, and the ASTHL project ("A Step Towards Healthy Life").
 
@@ -370,6 +371,7 @@ Step 11 (repertory se medicines) ke BAAD aur Step 12 (final medicine list) se PE
     #asthl-chat-send svg { width: 18px; height: 18px; fill: white; }
     #asthl-chat-disclaimer { font-size: 11px; color: #0f766e; text-align: center; padding: 6px 10px; background: #f0fdfa; font-weight: 500; border-top: 1px solid #ccfbf1; }
     @media (max-width: 600px) { #asthl-chat-window { width: 100vw; height: 100dvh; right: 0; bottom: 0; border-radius: 0; border: none; } #asthl-flash { right: 10px; left: 10px; max-width: none; } #asthl-chat-btn { bottom: 16px; right: 16px; } }
+  @media (max-width: 600px) { #asthl-chat-window-header { flex-wrap: wrap; row-gap: 5px; padding: 10px 12px; } #asthl-save-case-btn, #asthl-cases-btn, #asthl-report-btn, #asthl-new-chat-btn { font-size: 10px; padding: 4px 7px; margin-right: 2px; } }
   `;
   document.head.appendChild(style);
 
@@ -394,7 +396,7 @@ Step 11 (repertory se medicines) ke BAAD aur Step 12 (final medicine list) se PE
     <div id="asthl-chat-window-header">
       <div class="avatar">A</div>
       <div class="info">
-        <div class="name">ASTHL Assistant</div>
+        <div class="name">ASTHL AI RADAR</div>
         <div class="status"><span class="dot"></span> Online</div>
       </div>
       <button id="asthl-save-case-btn">💾 Save</button>
@@ -834,9 +836,60 @@ Step 11 (repertory se medicines) ke BAAD aur Step 12 (final medicine list) se PE
     clearInterval(resendTimer);
   }
 
+
+  // ===== v37: HEALTH ALERT POPUP (sheet se — patient/doctor) =====
+  function asthlHash(s) { var h = 0; for (var i = 0; i < s.length; i++) { h = ((h << 5) - h + s.charCodeAt(i)) | 0; } return Math.abs(h); }
+  function asthlImgUrl(u) {
+    u = String(u || '').trim(); if (!u) return '';
+    var m = u.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (m) return 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w1200';
+    m = u.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+    if (m) return 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w1200';
+    m = u.match(/drive\.google\.com\/uc\?id=([a-zA-Z0-9_-]+)/);
+    if (m) return 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w1200';
+    return u;
+  }
+  function showHealthAlert(audience) {
+    try {
+      fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'getHealthAlert', audience: audience }) })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d || d.status !== 'ok' || !d.alert || !d.alert.title) return;
+          var a = d.alert;
+          var key = 'asthl_ha_' + asthlHash(a.title + '|' + a.text) + '_' + new Date().toISOString().slice(0, 10);
+          try { if (localStorage.getItem(key)) return; localStorage.setItem(key, '1'); } catch (e) {}
+          var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&' + 'amp;', '<': '&' + 'lt;', '>': '&' + 'gt;', '"': '&' + 'quot;', "'": '&' + '#39;' }[c]; }); };
+          var img = asthlImgUrl(a.image);
+          var ov = document.createElement('div');
+          ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:1000001;display:flex;align-items:center;justify-content:center;padding:16px;';
+          var card = document.createElement('div');
+          card.style.cssText = 'background:#fff;border-radius:20px;max-width:420px;width:100%;max-height:88vh;overflow-y:auto;position:relative;font-family:inherit;';
+          card.innerHTML =
+            '<div id="asthl-ha-close" style="position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:19px;line-height:32px;text-align:center;cursor:pointer;z-index:2;">\u00D7</div>'
+            + (img ? '<img src="' + esc(img) + '" alt="" style="width:100%;display:block;max-height:230px;object-fit:cover;">' : '')
+            + '<div style="padding:16px 18px 18px;">'
+            + '<h3 style="margin:0 0 8px;font-size:17px;color:#134e4a;line-height:1.4;">' + esc(a.title) + '</h3>'
+            + (a.text ? '<p style="margin:0;font-size:13.5px;color:#334155;line-height:1.65;">' + esc(a.text) + '</p>' : '')
+            + '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">'
+            + (a.knowMore ? '<a href="' + esc(a.knowMore) + '" target="_blank" rel="noopener" style="flex:1;min-width:130px;text-align:center;background:#0d9488;color:#fff;border-radius:12px;padding:10px 8px;font-size:13.5px;font-weight:700;text-decoration:none;">Know More \u2192</a>' : '')
+            + '<a href="tel:+917903873282" style="flex:1;min-width:100px;text-align:center;background:#166534;color:#fff;border-radius:12px;padding:10px 8px;font-size:13.5px;font-weight:700;text-decoration:none;">\U0001F4DE Call</a>'
+            + '<a href="https://wa.me/917903873282" target="_blank" rel="noopener" style="flex:1;min-width:100px;text-align:center;background:#16a34a;color:#fff;border-radius:12px;padding:10px 8px;font-size:13.5px;font-weight:700;text-decoration:none;">\U0001F4AC WhatsApp</a>'
+            + '</div>'
+            + '<p style="font-size:12px;color:#64748b;margin:12px 0 0;text-align:center;line-height:1.5;">\u0905\u0917\u0930 \u0906\u092A\u0915\u094B \u0928\u0947\u0938\u0940 \u0915\u094B\u0908 \u0938\u092E\u0938\u094D\u092F\u093E \u0939\u0948 \u0924\u094B ASTHL \u092E\u0947\u0902 Call / WhatsApp \u0915\u0930\u0947\u0902: <b>+91-7903873282</b></p>'
+            + '</div>';
+          ov.appendChild(card);
+          document.body.appendChild(ov);
+          var close = function () { ov.remove(); };
+          card.querySelector('#asthl-ha-close').addEventListener('click', close);
+          ov.addEventListener('click', function (e) { if (e.target === ov) close(); });
+        }).catch(function () {});
+    } catch (e) {}
+  }
+
   // ===== Start chat =====
   function startChat() {
     chatStarted = true;
+    showHealthAlert(FULLPAGE_MODE ? 'doctor' : 'patient');
     newChatBtn.style.display = 'block';
     if (FULLPAGE_MODE) {
       document.getElementById('asthl-save-case-btn').style.display = 'inline-block';
@@ -1003,6 +1056,9 @@ Step 11 (repertory se medicines) ke BAAD aur Step 12 (final medicine list) se PE
     var ok = confirm('\u0928\u0908 \u091a\u0948\u091f \u0936\u0941\u0930\u0942 \u0915\u0930\u0947\u0902?\n\n\u092a\u0941\u0930\u093e\u0928\u0940 \u092c\u093e\u0924\u091a\u0940\u0924 \u0915\u093e \u0938\u0902\u0926\u0930\u094d\u092d \u0939\u091f \u091c\u093e\u090f\u0917\u093e \u2014 AI \u0915\u094b \u0907\u0938 \u091a\u0948\u091f \u0915\u0940 \u092c\u093e\u0924\u0947\u0902 \u092f\u093e\u0926 \u0928\u0939\u0940\u0902 \u0930\u0939\u0947\u0902\u0917\u0940\u0964');
     if (!ok) return;
     SESSION_ID = 'P' + Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+    loadedCaseId = null;
+    window._asthlAutoSave = false;
+    var cs = document.getElementById('asthl-case-strip'); if (cs) cs.style.display = 'none';
     buildMessages();
     msgContainer.innerHTML = '';
     addMsg('\u0928\u0908 \u091a\u0948\u091f \u0936\u0941\u0930\u0942 \u0939\u0941\u0908 🔄\n\u0905\u092c \u092e\u0948\u0902 \u092a\u093f\u091b\u0932\u0940 \u092c\u093e\u0924\u091a\u0940\u0924 \u0928\u0939\u0940\u0902 \u091c\u093e\u0928\u0924\u093e \u2014 \u0905\u092a\u0928\u093e \u0928\u092f\u093e \u0938\u0935\u093e\u0932 \u092a\u0942\u091b\u0947\u0902\u0964', 'bot');
@@ -1064,6 +1120,7 @@ Step 11 (repertory se medicines) ke BAAD aur Step 12 (final medicine list) se PE
       var reply = data.reply || '\u0915\u094D\u0937\u092E\u093E \u0915\u0930\u0947\u0902, \u0926\u094B\u092C\u093E\u0930\u093E \u092A\u094D\u0930\u092F\u093E\u0938 \u0915\u0930\u0947\u0902\u0964';
       addMsg(reply, 'bot');
       messages.push({ role: 'model', parts: [{ text: reply }] });
+      queueAutoSave();
     } catch (err) {
       hideTyping();
       addMsg('\u0924\u094D\u0930\u0941\u091F\u093F: ' + err.message + '. \u0925\u094B\u0921\u093C\u0940 \u0926\u0947\u0930 \u092C\u093E\u0926 \u092A\u094D\u0930\u092F\u093E\u0938 \u0915\u0930\u0947\u0902\u0964', 'error');
@@ -1121,7 +1178,7 @@ Step 11 (repertory se medicines) ke BAAD aur Step 12 (final medicine list) se PE
     if (!accId) { alert('\u092A\u0939\u0932\u0947 ID se login \u0915\u0930\u0947\u0902\u0964'); return; }
     if (messages.length < 3) { alert('\u092A\u0939\u0932\u0947 \u0915\u094B\u0908 \u091A\u0948\u091F/\u0915\u0947\u0938 \u0915\u0930\u0947\u0902 \u2014 \u092B\u093E\u0930\u094D\u092E \u0916\u093E\u0932\u0940 \u0939\u0948\u0964'); return; }
     var ov = openModal(
-      '<h3 style="margin:0 0 6px;color:#134e4a">💾 \u0915\u0947\u0938 \u0938\u0947\u0935 \u0915\u0930\u0947\u0902</h3>'
+      '<h3 style="margin:0 0 6px;color:#134e4a">💾 ' + (loadedCaseId ? '\u0915\u0947\u0938 \u0905\u092A\u0921\u0947\u091F \u0915\u0930\u0947\u0902 — ' + loadedCaseId : '\u0915\u0947\u0938 \u0938\u0947\u0935 \u0915\u0930\u0947\u0902') + '</h3>'
       + '<div class="asthl-form-group"><label>\u092E\u0930\u0940\u095B \u0915\u093E \u0928\u093E\u092E *</label><input id="asthl-case-name" type="text" placeholder="\u0928\u093E\u092E \u0932\u093F\u0916\u0947\u0902" /></div>'
       + '<div class="asthl-form-group"><label>मरीड़ का मोबाइल (दवा बिल के लिए)</label><input id="asthl-case-mobile" type="tel" inputmode="numeric" placeholder="10 अंकों का नंबर" /></div>'
       + '<div class="asthl-form-group"><label>\u0938\u092E\u0938\u094D\u092F\u093E / Issue *</label><input id="asthl-case-issue" type="text" placeholder="\u091C\u0948\u0938\u0947: \u0917\u0948\u0938, \u092E\u0932 \u0924\u094D\u092F\u093E\u0917 \u0915\u0940 \u0938\u092E\u0938\u094D\u092F\u093E" /></div>'
@@ -1138,12 +1195,12 @@ Step 11 (repertory se medicines) ke BAAD aur Step 12 (final medicine list) se PE
       btn.disabled = true; btn.textContent = '\u0938\u0947\u0935 \u0939\u094B \u0930\u0939\u093E \u0939\u0948...';
       try {
         var conv = messages.slice(1);
-        var res = await fetch(CASES_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save', accessId: accId, name: name, issue: issue, mobile: mob, conversation: JSON.stringify(conv) }) });
+        var res = await fetch(CASES_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save', caseId: loadedCaseId || '', accessId: accId, name: name, issue: issue, mobile: mob, conversation: JSON.stringify(conv) }) });
         var data = await res.json();
         if (data.status === 'ok' && data.caseId) {
           loadedCaseId = data.caseId;
           ov.remove();
-          alert('\u2705 \u0915\u0947\u0938 \u0938\u0947\u0935 \u0939\u094B \u0917\u092F\u093E: ' + data.caseId + '\n(\u0928\u093E\u092E: ' + name + ' | ' + issue + ')\n(Login ID: ' + accId + ' \u0938\u0947 \u0938\u0947\u0935 \u0939\u0941\u0926\u093E \u2014 \u0907\u0938\u0940 ID se login karke hi \u092F\u0939 case \u0926\u093F\u0916\u0947\u0917\u093E)\n\n\u092F\u0939 \u0915\u0947\u0938 \u0905\u092C 📂 Cases \u092E\u0947\u0902 \u092E\u093F\u0932\u0947\u0917\u093E \u2014 \u092C\u093E\u0926 \u092E\u0947\u0902 \u0916\u094B\u0932\u0915\u0930 follow-up \u0915\u0930 \u0938\u0915\u0924\u0947 \u0939\u0948\u0902\u0964');
+          alert('\u2705 ' + (data.updated ? '\u0915\u0947\u0938 \u0905\u092A\u0921\u0947\u091F \u0939\u094B \u0917\u092F\u093E (\u0935\u0939\u0940\u0902 \u092A\u0941\u0930\u093E\u0928\u0940 ID): ' : '\u0915\u0947\u0938 \u0938\u0947\u0935 \u0939\u094B \u0917\u092F\u093E: ') + data.caseId + '\n(\u0928\u093E\u092E: ' + name + ' | ' + issue + ')\n(Login ID: ' + accId + ' \u0938\u0947 \u0938\u0947\u0935 \u0939\u0941\u0926\u093E \u2014 \u0907\u0938\u0940 ID se login karke hi \u092F\u0939 case \u0926\u093F\u0916\u0947\u0917\u093E)\n\n\u092F\u0939 \u0915\u0947\u0938 \u0905\u092C 📂 Cases \u092E\u0947\u0902 \u092E\u093F\u0932\u0947\u0917\u093E \u2014 \u092C\u093E\u0926 \u092E\u0947\u0902 \u0916\u094B\u0932\u0915\u0930 follow-up \u0915\u0930 \u0938\u0915\u0924\u0947 \u0939\u0948\u0902\u0964');
         } else if (data.status === 'ok') {
           alert('⚠️ Google Sheet ka Apps Script PURANA version hai!\n\nscript.google.com par jaiye > apna ASTHL project > poori file replace karein naye google-sheet-script.js (v9) se > Deploy > Manage deployments > Edit (pencil) > Version: New version > Deploy.\n\nUske baad wapas yahan Save karein.');
         } else { alert('त्रुटि: ' + (data.error || 'save fail')); }
@@ -1225,6 +1282,45 @@ var isClosed = (c.caseStatus === 'Closed');
     } catch (err) { alert('कनेक्शन त्रुटि। दोबारा कोशिश करें।'); }
   }
 
+  // ===== v36: AUTO-SAVE (opened case ke liye) =====
+  var autoSaveTimer = null;
+  window._asthlAutoSave = false;
+  function queueAutoSave() {
+    if (!window._asthlAutoSave || !loadedCaseId) return;
+    clearTimeout(autoSaveTimer);
+    autoSaveTimer = setTimeout(doAutoSave, 5000);
+  }
+  function doAutoSave() {
+    if (!window._asthlAutoSave || !loadedCaseId) return;
+    var acc = getAccessId();
+    if (!acc || !window._loadedCaseMeta) return;
+    fetch(CASES_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'save', caseId: loadedCaseId, accessId: acc, name: window._loadedCaseMeta.name, issue: window._loadedCaseMeta.issue, mobile: window._loadedCaseMeta.mobile || '', conversation: JSON.stringify(messages.slice(1)) }) }).catch(function () {});
+  }
+  function showCaseStrip(cid) {
+    var inputArea = document.getElementById('asthl-chat-input-area');
+    if (!inputArea) return;
+    var strip = document.getElementById('asthl-case-strip');
+    if (!strip) {
+      strip = document.createElement('div');
+      strip.id = 'asthl-case-strip';
+      strip.style.cssText = 'display:flex;align-items:center;gap:8px;background:#e0f2fe;border-top:1px solid #bae6fd;padding:5px 10px;font-size:11.5px;color:#075985;font-family:inherit;';
+      inputArea.parentNode.insertBefore(strip, inputArea);
+    }
+    window._asthlAutoSave = true;
+    strip.innerHTML = '📂 केस: <b>' + cid + '</b> • ⚡ अपटो-सेव: <b id="asthl-as-state">ऑन</b>';
+    var tg = document.createElement('button');
+    tg.textContent = 'बंद करें';
+    tg.style.cssText = 'margin-left:auto;border:1px solid #38bdf8;background:#fff;color:#075985;border-radius:8px;padding:3px 10px;font-size:11px;cursor:pointer;font-family:inherit;';
+    tg.onclick = function () {
+      window._asthlAutoSave = !window._asthlAutoSave;
+      var st = document.getElementById('asthl-as-state');
+      if (st) st.textContent = window._asthlAutoSave ? 'ऑन' : 'ऑफ';
+      tg.textContent = window._asthlAutoSave ? 'बंद करें' : 'चालू करें';
+    };
+    strip.appendChild(tg);
+    strip.style.display = 'flex';
+  }
+
   async function loadCaseById(cid, accId) {
     try {
       var res = await fetch(CASES_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'load', accessId: accId, caseId: cid }) });
@@ -1247,6 +1343,8 @@ var isClosed = (c.caseStatus === 'Closed');
         addMsg(t, conv[i].role === 'user' ? 'user' : 'bot');
       }
       loadedCaseId = cid;
+      window._loadedCaseMeta = { name: data.name || '', issue: data.issue || '', mobile: '' };
+      showCaseStrip(cid);
       addMsg('📂 \u0915\u0947\u0938 ' + cid + ' \u0932\u094B\u0921 \u0939\u0941\u0906 \u2014 ' + data.name + ' (' + data.issue + ')' + (data.caseStatus === 'Closed' ? ' \u2014 \u2705 \u092C\u0902\u0926 \u0915\u0947\u0938' : '') + '\u0964 \u092A\u0942\u0930\u093E \u0915\u0947\u0938 + \u0926\u0935\u093E \u092F\u093E\u0926 \u0939\u0948\u0964 \u0905\u092C \u0928\u092F\u093E \u0932\u0915\u094D\u0937\u0923 \u092F\u093E follow-up \u092A\u094D\u0930\u0936\u094D\u0928 \u0932\u093F\u0916\u0947\u0902\u0964', 'bot');
       setTimeout(function() { input.focus(); }, 300);
     } catch (err) { alert('\u0915\u0947\u0938 \u0932\u094B\u0921 \u0924\u094D\u0930\u0941\u091F\u093F\u0964'); }

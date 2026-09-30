@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0d9488">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icon-192.png">
-<title>ASTHL — डॉक्टर रजिस्ट्रेशन | ₹299/माह</title>
+<title>ASTHL — डॉक्टर रजिस्ट्रेशन | ₹299/माह या ₹5,999 Lifetime</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -75,6 +75,7 @@
     <div class="old">₹999</div>
     <div class="new">₹299<small>/माह</small></div>
     <div class="off">70% OFF</div>
+    <div style="font-size:15px; margin-top:10px; font-weight:700; color:#fde047;">या ₹5,999 — LIFETIME (एक बार भुगतान, हमेशा के लिए)</div>
     <div style="font-size: 12.5px; margin-top: 8px; color: #dcfce7;">13-Point Selection • Materia Medica Verification • Voice Input • Case Files • PDF Report</div>
   </div>
 
@@ -96,7 +97,11 @@
     </div>
 
     <div class="paybox">
-      <h3>💰 ₹299 का भुगतान करें</h3>
+      <h3>💰 अपना प्लान चुनें और भुगतान करें</h3>
+      <div class="plan-row" style="display:flex; gap:8px; margin-bottom:12px;">
+        <button id="plan-m" type="button" onclick="setPlan(299)" style="flex:1; background:#166534; color:#fff; border:2px solid #22c55e; border-radius:12px; padding:10px; font-family:inherit; font-weight:700; font-size:14px; cursor:pointer;">मासिक ₹299</button>
+        <button id="plan-l" type="button" onclick="setPlan(5999)" style="flex:1; background:#fff; color:#166534; border:2px solid #bbf7d0; border-radius:12px; padding:10px; font-family:inherit; font-weight:700; font-size:14px; cursor:pointer;">लाइफटाइम ₹5,999</button>
+      </div>
       <img id="pay-qr" alt="UPI QR — ₹299 ASTHL">
       <div class="upi-id">asthl@ybl</div>
       <p>मोबाइल से नीचे बटन दबाइए — PhonePe / GPay / Paytm खुल जाएगा</p>
@@ -126,9 +131,26 @@
 <script>
 function $(id) { return document.getElementById(id); }
 var UPI_ID = 'asthl@ybl';
-var uri = 'upi://pay?pa=' + encodeURIComponent(UPI_ID) + '&pn=' + encodeURIComponent('ASTHL') + '&am=299&cu=INR&tn=' + encodeURIComponent('ASTHL Doctor ID');
-$('pay-qr').src = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=' + encodeURIComponent(uri);
-$('upi-btn').href = uri;
+var PLAN = { amount: 299 };
+function updatePay() {
+  var uri = 'upi://pay?pa=' + encodeURIComponent(UPI_ID) + '&pn=' + encodeURIComponent('ASTHL') + '&am=' + PLAN.amount + '&cu=INR&tn=' + encodeURIComponent('ASTHL Doctor ID ' + (PLAN.amount === 299 ? 'Monthly' : 'Lifetime'));
+  $('pay-qr').src = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=' + encodeURIComponent(uri);
+  $('upi-btn').href = uri;
+  $('upi-btn').textContent = '📱 ₹' + PLAN.amount + ' भुगतान करें (UPI)';
+  $('pay-qr').alt = 'UPI QR — ₹' + PLAN.amount + ' ASTHL';
+}
+function setPlan(a) {
+  PLAN.amount = a;
+  var pm = $('plan-m'), pl = $('plan-l');
+  pm.style.background = a === 299 ? '#166534' : '#fff';
+  pm.style.color = a === 299 ? '#fff' : '#166534';
+  pm.style.borderColor = a === 299 ? '#22c55e' : '#bbf7d0';
+  pl.style.background = a === 5999 ? '#166534' : '#fff';
+  pl.style.color = a === 5999 ? '#fff' : '#166534';
+  pl.style.borderColor = a === 5999 ? '#22c55e' : '#bbf7d0';
+  updatePay();
+}
+updatePay();
 
 $('d-mobile').addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 10); });
 
@@ -139,8 +161,8 @@ $('d-submit').addEventListener('click', function () {
   if (!/^\d{10}$/.test(mob)) { alert('सही 10 अंकों का मोबाइल नंबर लिखें।'); return; }
   if (!qual) { alert('योग्यता चुनें।'); return; }
   if (city.length < 2) { alert('शहर / जिला लिखें।'); return; }
-  var okPay = confirm('क्या आपने ₹299 का भुगतान कर दिया है? (हाँ = आगे बढ़ें)');
-  if (!okPay) { alert('पहले ऊपर UPI से ₹299 का भुगतान करें, फिर रजिस्ट्रेशन पूरा करें।'); return; }
+  var okPay = confirm('क्या आपने ₹' + PLAN.amount + (PLAN.amount === 299 ? ' (मासिक)' : ' (लाइफटाइम)') + ' का भुगतान कर दिया है? (हाँ = आगे बढ़ें)');
+  if (!okPay) { alert('पहले ऊपर UPI से ₹' + PLAN.amount + ' का भुगतान करें, फिर रजिस्ट्रेशन पूरा करें।'); return; }
   $('d-submit').disabled = true; $('d-submit').textContent = 'भेज रहे हैं...';
   fetch('/api/orders', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -148,8 +170,8 @@ $('d-submit').addEventListener('click', function () {
       action: 'saveOrder', type: 'doctor-registration', patientRef: mob,
       name: 'Dr. ' + name, mobile: mob, address: (city + (clinic ? ' • ' + clinic : '')),
       qual: qual, city: city, clinic: clinic,
-      pincode: '', items: 'डॉक्टर ID रजिस्ट्रेशन (₹299/माह) • योग्यता: ' + qual,
-      amount: '299', payRef: utr
+      pincode: '', items: 'डॉक्टर ID — ' + (PLAN.amount === 299 ? 'मासिक ₹299/माह' : 'LIFETIME ₹5,999') + ' • योग्यता: ' + qual,
+      amount: String(PLAN.amount), payRef: utr
     })
   }).then(function (r) { return r.json(); }).then(function (d) {
     if (d && d.status === 'ok') { $('reg-form').style.display = 'none'; $('done-sec').style.display = 'block'; window.scrollTo(0, 0); }

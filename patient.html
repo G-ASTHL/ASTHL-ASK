@@ -28,8 +28,8 @@
   .nav .appt { background: #fbbf24; color: #451a03; }
 
   /* ===== FLYER POPUP ===== */
-  #flyer { position: fixed; inset: 0; background: linear-gradient(165deg,#062e2a,#0d6e60); z-index: 200; overflow-y: auto; display: flex; align-items: center; justify-content: center; padding: 16px; }
-  .flyer-card { background: #fff; border-radius: 24px; max-width: 480px; width: 100%; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.4); }
+  #flyer { position: fixed; inset: 0; background: linear-gradient(165deg,#062e2a,#0d6e60); z-index: 200; overflow-y: auto; display: flex; align-items: flex-start; justify-content: center; padding: 16px; }
+  .flyer-card { background: #fff; border-radius: 24px; max-width: 480px; width: 100%; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.4); margin: auto; }
   .flyer-head { background: linear-gradient(135deg,#0f766e,#14b8a6); color: #fff; text-align: center; padding: 26px 18px 22px; }
   .flyer-head img { width: 84px; height: 84px; object-fit: contain; background: #fff; border-radius: 20px; padding: 6px; }
   .flyer-head h1 { font-size: 24px; margin-top: 12px; letter-spacing: 1px; }
@@ -49,8 +49,8 @@
   #flyer-next { background: linear-gradient(135deg,#0d9488,#0f766e); color: #fff; box-shadow: 0 6px 16px rgba(13,148,136,.35); }
 
   /* ===== REGISTRATION ===== */
-  #reg-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; overflow-y: auto; }
-  .reg-card { background: var(--surface); border: 1px solid var(--border); border-radius: 22px; box-shadow: var(--shadow); max-width: 430px; width: 100%; padding: 26px 24px; }
+  #reg-wrap { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 20px; overflow-y: auto; }
+  .reg-card { background: var(--surface); border: 1px solid var(--border); border-radius: 22px; box-shadow: var(--shadow); max-width: 430px; width: 100%; padding: 26px 24px; margin: auto; }
   .reg-card h2 { font-size: 21px; margin-bottom: 4px; }
   .reg-card .sub { font-size: 13.5px; color: var(--dim); margin-bottom: 18px; line-height: 1.5; }
   .fgrp { margin-bottom: 13px; }
@@ -145,7 +145,7 @@
   <div class="reg-card">
     <div id="step-form">
       <h2>👤 मरीज़ पंजीकरण</h2>
-      <div class="sub">पहली बार पंजीकरण में मोबाइल OTP से सत्यापन होगा। उसके बाद बार-बार OTP नहीं लगेगा।</div>
+      <div class="sub">पंजीकरण के तुरंत बाद आपकी FREE चैट शुरू हो जाएगी — कोई OTP नहीं, कोई इंतज़ार नहीं।</div>
       <div class="fgrp">
         <label>पूरा नाम *</label>
         <input id="p-name" type="text" placeholder="अपना नाम लिखें">
@@ -178,7 +178,7 @@
         <input id="p-address" type="text" placeholder="गाँव / शहर, जिला">
         <div class="ferr" id="err-address">कृपया पता लिखें</div>
       </div>
-      <button class="btn-main" id="btn-send-otp">OTP भेजें →</button>
+      <button class="btn-main" id="btn-send-otp">पंजीकरण करें → चैट शुरू करें</button>
     </div>
 
     <div id="step-otp" style="display:none">
@@ -202,7 +202,7 @@
 <div id="chat-wrap">
   <div id="chat-head">
     <div class="dot"></div>
-    <div><b>ASTHL स्वास्थ्य सहायक</b><br><span id="pat-info">मरीज़</span></div>
+    <div><b>ASTHL AI Based Radar System</b><br><span id="pat-info">मरीज़</span></div>
     <button class="newbtn" id="btn-new-patient" title="नया मरीज़">नया मरीज़</button>
   </div>
   <div id="chat-log"></div>
@@ -210,7 +210,7 @@
     <textarea id="chat-input" rows="1" placeholder="अपनी समस्या लिखें..."></textarea>
     <button id="chat-send">➤</button>
   </div>
-  <div class="disclaimer">यह AI सहायक है, डॉक्टर नहीं। गंभीर समस्या में डॉक्टर से मिलें — 📞 +91-7903873282</div>
+  <div class="disclaimer">यह AI Based Radar Case Analysis System है, डॉक्टर नहीं। गंभीर समस्या में डॉक्टर से मिलें — 📞 +91-7903873282</div>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -228,7 +228,7 @@
   var confirmationResult = null, resendTimer = null;
 
   var $ = function (id) { return document.getElementById(id); };
-  var PATIENT_PROMPT = 'आप ASTHL होम्योपैथी क्लिनिक के स्वास्थ्य सहायक हैं। आपसे बात करने वाला एक मरीज़ है। नियम: (1) सरल हिंदी में, छोटे उत्तर दें (ज़्यादा से ज़्यादा 150 शब्द)। (2) मरीज़ की समस्या सुनकर उसके लिए सामान्य होम्योपैथिक जानकारी, घरेलू सावधानी और आहार सलाह दे सकते हैं। (3) किसी भी दवा की मात्रा (dose) या शक्ति (potency) खुद से न बताएँ — कहें कि डॉक्टर की सलाह से सही दवा व मात्रा तय होगी। (4) गंभीर या आपातकालीन लक्षण (सीने में दर्द, सांस की तकलीफ, लगातार उल्टी, बहुत तेज़ बुखार, बेहोशी आदि) में तुरंत डॉक्टर से मिलने या अस्पताल जाने की सलाह दें और ASTHL क्लिनिक से संपर्क बताएं: Call/WhatsApp +91-7903873282। (5) भरोसा बनाए रखें, डराएँ नहीं। (6) इलाज व दवा के लिए अपॉइंटमेंट की सलाह दें — asthl.in पर बुक होता है। (7) अंत में ज़रूरत पड़ने पर यह जानकारी भी दे सकते हैं: ASTHL HOMEOPATHY CLINIC, गायत्री मंदिर के सामने, नंदुआ स्थान, चासा — समय: 9am-1pm, 3pm-7pm।';
+  var PATIENT_PROMPT = 'आप ASTHL होम्योपैथी क्लिनिक के AI Based Radar System हैं। आपसे बात करने वाला एक मरीज़ है। नियम: (1) सरल हिंदी में, छोटे उत्तर दें (ज़्यादा से ज़्यादा 150 शब्द)। (2) मरीज़ की समस्या सुनकर उसके लिए सामान्य होम्योपैथिक जानकारी, घरेलू सावधानी और आहार सलाह दे सकते हैं। (3) किसी भी दवा की मात्रा (dose) या शक्ति (potency) खुद से न बताएँ — कहें कि डॉक्टर की सलाह से सही दवा व मात्रा तय होगी। (4) गंभीर या आपातकालीन लक्षण (सीने में दर्द, सांस की तकलीफ, लगातार उल्टी, बहुत तेज़ बुखार, बेहोशी आदि) में तुरंत डॉक्टर से मिलने या अस्पताल जाने की सलाह दें और ASTHL क्लिनिक से संपर्क बताएं: Call/WhatsApp +91-7903873282। (5) भरोसा बनाए रखें, डराएँ नहीं। (6) इलाज व दवा के लिए अपॉइंटमेंट की सलाह दें — asthl.in पर बुक होता है। (7) अंत में ज़रूरत पड़ने पर यह जानकारी भी दे सकते हैं: ASTHL HOMEOPATHY CLINIC, गायत्री मंदिर के सामने, नंदुआ स्थान, चासा — समय: 9am-1pm, 3pm-7pm।';
 
   var messages = [];
   var patient = null;
@@ -261,7 +261,10 @@
     });
     if (!ok) return;
     window._pendingReg = { name: name, age: age, gender: gender, mobile: mobile, address: address };
-    sendOTP(mobile);
+    // OTP abhi OFF hai (Firebase paid plan pending) — details save karke seedha login:
+    patient = window._pendingReg;
+    try { localStorage.setItem('asthlPatientV35', JSON.stringify(patient)); } catch (e) {}
+    startChat();
   });
 
   function sendOTP(mobile) {
@@ -303,6 +306,56 @@
     }).catch(function () { $('err-otp').style.display = 'block'; });
   });
 
+
+  // ===== v37: HEALTH ALERT POPUP (sheet se — patient/doctor) =====
+  function asthlHash(s) { var h = 0; for (var i = 0; i < s.length; i++) { h = ((h << 5) - h + s.charCodeAt(i)) | 0; } return Math.abs(h); }
+  function asthlImgUrl(u) {
+    u = String(u || '').trim(); if (!u) return '';
+    var m = u.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+    if (m) return 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w1200';
+    m = u.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+    if (m) return 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w1200';
+    m = u.match(/drive\.google\.com\/uc\?id=([a-zA-Z0-9_-]+)/);
+    if (m) return 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w1200';
+    return u;
+  }
+  function showHealthAlert(audience) {
+    try {
+      fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'getHealthAlert', audience: audience }) })
+        .then(function (r) { return r.json(); })
+        .then(function (d) {
+          if (!d || d.status !== 'ok' || !d.alert || !d.alert.title) return;
+          var a = d.alert;
+          var key = 'asthl_ha_' + asthlHash(a.title + '|' + a.text) + '_' + new Date().toISOString().slice(0, 10);
+          try { if (localStorage.getItem(key)) return; localStorage.setItem(key, '1'); } catch (e) {}
+          var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&' + 'amp;', '<': '&' + 'lt;', '>': '&' + 'gt;', '"': '&' + 'quot;', "'": '&' + '#39;' }[c]; }); };
+          var img = asthlImgUrl(a.image);
+          var ov = document.createElement('div');
+          ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:1000001;display:flex;align-items:center;justify-content:center;padding:16px;';
+          var card = document.createElement('div');
+          card.style.cssText = 'background:#fff;border-radius:20px;max-width:420px;width:100%;max-height:88vh;overflow-y:auto;position:relative;font-family:inherit;';
+          card.innerHTML =
+            '<div id="asthl-ha-close" style="position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:19px;line-height:32px;text-align:center;cursor:pointer;z-index:2;">\u00D7</div>'
+            + (img ? '<img src="' + esc(img) + '" alt="" style="width:100%;display:block;max-height:230px;object-fit:cover;">' : '')
+            + '<div style="padding:16px 18px 18px;">'
+            + '<h3 style="margin:0 0 8px;font-size:17px;color:#134e4a;line-height:1.4;">' + esc(a.title) + '</h3>'
+            + (a.text ? '<p style="margin:0;font-size:13.5px;color:#334155;line-height:1.65;">' + esc(a.text) + '</p>' : '')
+            + '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;">'
+            + (a.knowMore ? '<a href="' + esc(a.knowMore) + '" target="_blank" rel="noopener" style="flex:1;min-width:130px;text-align:center;background:#0d9488;color:#fff;border-radius:12px;padding:10px 8px;font-size:13.5px;font-weight:700;text-decoration:none;">Know More \u2192</a>' : '')
+            + '<a href="tel:+917903873282" style="flex:1;min-width:100px;text-align:center;background:#166534;color:#fff;border-radius:12px;padding:10px 8px;font-size:13.5px;font-weight:700;text-decoration:none;">\U0001F4DE Call</a>'
+            + '<a href="https://wa.me/917903873282" target="_blank" rel="noopener" style="flex:1;min-width:100px;text-align:center;background:#16a34a;color:#fff;border-radius:12px;padding:10px 8px;font-size:13.5px;font-weight:700;text-decoration:none;">\U0001F4AC WhatsApp</a>'
+            + '</div>'
+            + '<p style="font-size:12px;color:#64748b;margin:12px 0 0;text-align:center;line-height:1.5;">\u0905\u0917\u0930 \u0906\u092A\u0915\u094B \u0928\u0947\u0938\u0940 \u0915\u094B\u0908 \u0938\u092E\u0938\u094D\u092F\u093E \u0939\u0948 \u0924\u094B ASTHL \u092E\u0947\u0902 Call / WhatsApp \u0915\u0930\u0947\u0902: <b>+91-7903873282</b></p>'
+            + '</div>';
+          ov.appendChild(card);
+          document.body.appendChild(ov);
+          var close = function () { ov.remove(); };
+          card.querySelector('#asthl-ha-close').addEventListener('click', close);
+          ov.addEventListener('click', function (e) { if (e.target === ov) close(); });
+        }).catch(function () {});
+    } catch (e) {}
+  }
+
   // ===== CHAT =====
   function addMsg(text, who) {
     var d = document.createElement('div');
@@ -314,12 +367,13 @@
   }
 
   function startChat() {
+    showHealthAlert('patient');
     $('flyer').style.display = 'none';
     $('reg-wrap').style.display = 'none';
     $('chat-wrap').style.display = 'flex';
     $('pat-info').textContent = patient.name + ' • ' + patient.age + ' वर्ष • ' + patient.gender + ' • ' + patient.mobile;
-    messages = [{ role: 'user', parts: [{ text: PATIENT_PROMPT }] }, { role: 'model', parts: [{ text: 'नमस्ते ' + patient.name + ' जी! 👋 मैं ASTHL स्वास्थ्य सहायक हूँ। अपनी समस्या बताइए — मैं होम्योपैथी में आपकी मदद करूँगा।' }] }];
-    addMsg('नमस्ते ' + patient.name + ' जी! 👋 मैं ASTHL स्वास्थ्य सहायक हूँ। अपनी समस्या बताइए — मैं होम्योपैथी में आपकी मदद करूँगा।', 'bot');
+    messages = [{ role: 'user', parts: [{ text: PATIENT_PROMPT }] }, { role: 'model', parts: [{ text: 'नमस्ते ' + patient.name + ' जी! 👋 मैं ASTHL AI Based Radar System हूँ। अपनी समस्या बताइए — मैं होम्योपैथी में आपकी मदद करूँगा।' }] }];
+    addMsg('नमस्ते ' + patient.name + ' जी! 👋 मैं ASTHL AI Based Radar System हूँ। अपनी समस्या बताइए — मैं होम्योपैथी में आपकी मदद करूँगा।', 'bot');
   }
 
   $('btn-new-patient').addEventListener('click', function () {
@@ -342,7 +396,7 @@
       body: JSON.stringify({
         messages: messages, sessionId: 'p-' + patient.mobile,
         patientName: patient.name, patientAge: patient.age + ' / ' + patient.gender,
-        patientMobile: patient.mobile, mobileVerified: 'Yes', category: 'patient',
+        patientMobile: patient.mobile, mobileVerified: 'No', category: 'patient',
         clinic: 'ASTHL Clinic', address: patient.address
       })
     }).then(function (r) { return r.json(); }).then(function (d) {
