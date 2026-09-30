@@ -1,6 +1,6 @@
 // =====================================================
-// ASTHL Chat Widget — CURRENT VERSION: v37
-// v37: Health Alert popup (sheet se patient/doctor) | v36: same-ID case update, auto-save, mobile header fix | v35: case save me patient mobile | v32: voice v5
+// ASTHL Chat Widget — CURRENT VERSION: v38
+// v38: medicine-list sheet logging + original model chain | v37: Health Alert popup (sheet se patient/doctor) | v36: same-ID case update, auto-save, mobile header fix | v35: case save me patient mobile | v32: voice v5
 // Patient/Doctor categories, ek baar OTP, phir seedha chat
 // =====================================================
 
@@ -65,7 +65,7 @@
 
   const SYSTEM_PROMPT_BASE = `ASTHL \u2014 Homeopathy Working Assistant
 
-You are the ASTHL AI Based Radar Case Analysis System of ASTHL (A Step Towards Healthy Life), the homeopathy practice of Dr. Riva Kumari. IMPORTANT: the person chatting with you is the CURRENT USER (a patient or a doctor) - NEVER assume the user is Riva Kumari. Always greet and address the current user by their own name in Devanagari.
+You are the ASTHL Assistant - the patient-facing chat assistant of ASTHL (A Step Towards Healthy Life), the homeopathy practice of Dr. Riva Kumari. IMPORTANT: the person chatting with you is the CURRENT USER (a patient or a doctor) - NEVER assume the user is Riva Kumari. Always greet and address the current user by their own name in Devanagari.
 
 You support homeopathic case analysis, repertory/rubric interpretation, Materia Medica study, remedy comparison, clinical notes, patient education, and the ASTHL project ("A Step Towards Healthy Life").
 
@@ -243,7 +243,12 @@ Step 11 (repertory se medicines) ke BAAD aur Step 12 (final medicine list) se PE
 ### C. Source Integrity
 - Cross-verification sirf https://www.homeoint.org/ par maujood standard books ki knowledge se karo.
 - Jo baat verify nahi ho pati, SAAF bol do: "यह homeoint.org sources se verify nahi ho paya."
-- Kabhi bhi rubric, citation, ya Materia Medica quote fabricate mat karo. Approximate rubric ko "approximate" hi label karo.`;
+- Kabhi bhi rubric, citation, ya Materia Medica quote fabricate mat karo. Approximate rubric ko "approximate" hi label karo.
+
+### D. Final Output Tag (IMPORTANT — system ke liye)
+Jab bhi Step 12/13 me FINAL medicine list do (ya patient ke liye 5 sambhavit medicines), to reply ke SABSE ANT me ye ek line likho:
+MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
+(sirf naam, potency ke bina, pipe | se alag). Ye line system sheet me log hoti hai — final list dete waqt kabhi skip mat karo.`;
 
 
 
@@ -1118,6 +1123,17 @@ Step 11 (repertory se medicines) ke BAAD aur Step 12 (final medicine list) se PE
       if (!res.ok) { var err = await res.json().catch(function() { return {}; }); throw new Error(err.error || 'Server error'); }
       var data = await res.json();
       var reply = data.reply || '\u0915\u094D\u0937\u092E\u093E \u0915\u0930\u0947\u0902, \u0926\u094B\u092C\u093E\u0930\u093E \u092A\u094D\u0930\u092F\u093E\u0938 \u0915\u0930\u0947\u0902\u0964';
+      // MEDICINE-LIST tag: display/history se hatao, sheet me log karo
+      var medListM = String(reply).match(/MEDICINE-LIST\s*:\s*([^\n]+)/i);
+      if (medListM) {
+        reply = String(reply).replace(/\n?MEDICINE-LIST\s*:[^\n]*/i, '').trim();
+        var medList = medListM[1].split('|').map(function (s) { return s.replace(/^[\s\d.)*-]+/, '').trim(); }).filter(Boolean).join(', ');
+        if (medList) {
+          try {
+            fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'saveMedSelection', source: 'Doctor', name: (patientInfo && patientInfo.name) || '', mobile: (patientInfo && patientInfo.mobile) || '', caseId: loadedCaseId || '', medicines: medList }) }).catch(function () {});
+          } catch (e) {}
+        }
+      }
       addMsg(reply, 'bot');
       messages.push({ role: 'model', parts: [{ text: reply }] });
       queueAutoSave();

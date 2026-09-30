@@ -41,7 +41,7 @@
   .chip { background: #f0fdfa; border: 1px solid #99f6e4; color: #0f766e; font-size: 12.5px; font-weight: 600; padding: 7px 11px; border-radius: 999px; }
   .flyer-imp { margin-top: 14px; background: #fffbeb; border: 1.5px solid #fde68a; border-radius: 14px; padding: 12px 14px; font-size: 14.5px; font-weight: 600; color: #78350f; line-height: 1.5; }
   .flyer-meta { margin-top: 14px; display: grid; gap: 8px; font-size: 13.5px; }
-  .flyer-meta div { display: flex; gap: 8px; align-items: flex-start; line-height: 1.5; }
+  .flyer-meta div { line-height: 1.65; }
   .flyer-meta b { color: #0f766e; }
   .flyer-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 16px 18px 20px; }
   .flyer-btns button { font-family: inherit; font-size: 15px; font-weight: 700; padding: 14px 8px; border-radius: 14px; border: none; cursor: pointer; }
@@ -127,7 +127,7 @@
       </div>
       <div class="flyer-imp">💯 100% सुरक्षित — बिना साइड इफेक्ट और स्थायी इलाज। क्रोनिक बीमारियों का सफल उपचार — वर्षों का अनुभव और भरोसा।</div>
       <div class="flyer-meta">
-        <div><b>📍 पता:</b> गायत्री मंदिर के सामने, नंदुआ स्थान, अटल क्लिनिक के पास, शिव शक्ति नगर, चासा</div>
+        <div><b>📍 पता:</b> गायत्री मंदिर के सामने, नंदुआ स्थान, शिव शक्ति नगर, चास — <a href="https://maps.app.goo.gl/3pvSeU5PHnchLLUa7" target="_blank" rel="noopener" style="color:#0d9488;font-weight:700;">🗺️ Google Map पर देखें</a></div>
         <div><b>📞 Call/WhatsApp:</b> 7903873282</div>
         <div><b>🕘 समय:</b> 9 am – 1 pm, 3 pm – 7 pm</div>
         <div><b>💬 समस्या है तो समाधान है।</b></div>
@@ -228,7 +228,7 @@
   var confirmationResult = null, resendTimer = null;
 
   var $ = function (id) { return document.getElementById(id); };
-  var PATIENT_PROMPT = 'आप ASTHL होम्योपैथी क्लिनिक के AI Based Radar System हैं। आपसे बात करने वाला एक मरीज़ है। नियम: (1) सरल हिंदी में, छोटे उत्तर दें (ज़्यादा से ज़्यादा 150 शब्द)। (2) मरीज़ की समस्या सुनकर उसके लिए सामान्य होम्योपैथिक जानकारी, घरेलू सावधानी और आहार सलाह दे सकते हैं। (3) किसी भी दवा की मात्रा (dose) या शक्ति (potency) खुद से न बताएँ — कहें कि डॉक्टर की सलाह से सही दवा व मात्रा तय होगी। (4) गंभीर या आपातकालीन लक्षण (सीने में दर्द, सांस की तकलीफ, लगातार उल्टी, बहुत तेज़ बुखार, बेहोशी आदि) में तुरंत डॉक्टर से मिलने या अस्पताल जाने की सलाह दें और ASTHL क्लिनिक से संपर्क बताएं: Call/WhatsApp +91-7903873282। (5) भरोसा बनाए रखें, डराएँ नहीं। (6) इलाज व दवा के लिए अपॉइंटमेंट की सलाह दें — asthl.in पर बुक होता है। (7) अंत में ज़रूरत पड़ने पर यह जानकारी भी दे सकते हैं: ASTHL HOMEOPATHY CLINIC, गायत्री मंदिर के सामने, नंदुआ स्थान, चासा — समय: 9am-1pm, 3pm-7pm।';
+  var PATIENT_PROMPT = 'आप ASTHL होम्योपैथी क्लिनिक के AI Based Radar System हैं। आपसे बात करने वाला एक मरीज़ है। नियम: (1) सरल हिंदी में, छोटे उत्तर दें (ज़्यादा से ज़्यादा 150 शब्द)। (2) मरीज़ की समस्या सुनकर उसके लिए सामान्य होम्योपैथिक जानकारी, घरेलू सावधानी और आहार सलाह दे सकते हैं। (3) किसी भी दवा की मात्रा (dose) या शक्ति (potency) खुद से न बताएँ — कहें कि डॉक्टर की सलाह से सही दवा व मात्रा तय होगी। (4) गंभीर या आपातकालीन लक्षण (सीने में दर्द, सांस की तकलीफ, लगातार उल्टी, बहुत तेज़ बुखार, बेहोशी आदि) में तुरंत डॉक्टर से मिलने या अस्पताल जाने की सलाह दें और ASTHL क्लिनिक से संपर्क बताएं: Call/WhatsApp +91-7903873282। (5) भरोसा बनाए रखें, डराएँ नहीं। (6) हर जवाब में ASTHL का नाम, क्लिनिक का पता या फ़ोन नंबर दोहराना मना है — जवाब सीधे मरीज़ की समस्या पर रहे। (7) अपॉइंटमेंट, क्लिनिक का पता/समय/नंबर सिर्फ़ तब बताएँ जब मरीज़ खुद पूछे (अपॉइंटमेंट asthl.in पर बुक होता है)। (8) जब मरीज़ की समस्या के लिए होम्योपैथिक दवाओं का सुझाव देना उचित हो, तो 5 संभावित दवाओं के नाम उनके प्रमुख लक्षणों (keynotes — Materia Medica आधारित) के साथ सूची में दें, ताकि मरीज़ लक्षण पढ़कर सही दवा चुन सके। हर दवा के नीचे लिखें कि वह किस तरह के लक्षणों के लिए प्रसिद्ध है। (9) 5-दवा सूची देते समय जवाब के सबसे अंत में यह पंक्ति लिखें: MEDICINE-LIST: नाम1 | नाम2 | नाम3 | नाम4 | नाम5 (सिर्फ़ नाम, potency नहीं)।';
 
   var messages = [];
   var patient = null;
@@ -402,6 +402,16 @@
     }).then(function (r) { return r.json(); }).then(function (d) {
       typing.remove();
       var reply = (d && d.reply) ? d.reply : '⚠️ ' + ((d && d.error) ? d.error : 'कनेक्शन त्रुटि। दोबारा कोशिश करें।');
+      var medListM = String(reply).match(/MEDICINE-LIST\s*:\s*([^\n]+)/i);
+      if (medListM) {
+        reply = String(reply).replace(/\n?MEDICINE-LIST\s*:[^\n]*/i, '').trim();
+        var medList = medListM[1].split('|').map(function (s) { return s.replace(/^[\s\d.)*-]+/, '').trim(); }).filter(Boolean).join(', ');
+        if (medList) {
+          try {
+            fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'saveMedSelection', source: 'Patient', name: (patient && patient.name) || '', mobile: (patient && patient.mobile) || '', caseId: '', medicines: medList }) }).catch(function () {});
+          } catch (e) {}
+        }
+      }
       messages.push({ role: 'model', parts: [{ text: reply }] });
       addMsg(reply, 'bot');
     }).catch(function () {

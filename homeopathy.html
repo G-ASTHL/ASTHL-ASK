@@ -34,12 +34,13 @@
   .vcol.allo h3 { color: #b91c1c; }
   .vcol.homo h3 { color: #15803d; }
   .vcol ul { list-style: none; display: grid; gap: 10px; }
-  .vcol li { font-size: 14px; line-height: 1.6; display: flex; gap: 8px; }
-  .vcol.allo li::before { content: '✖'; color: #dc2626; font-weight: 700; }
-  .vcol.homo li::before { content: '✔'; color: #16a34a; font-weight: 700; }
+  .vcol li { font-size: 14px; line-height: 1.65; padding-left: 24px; position: relative; }
+  .vcol.allo li::before { content: '✖'; color: #dc2626; font-weight: 700; position: absolute; left: 0; top: 0; }
+  .vcol.homo li::before { content: '✔'; color: #16a34a; font-weight: 700; position: absolute; left: 0; top: 0; }
 
   table { width: 100%; border-collapse: collapse; background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 18px rgba(13,148,136,.1); margin-bottom: 26px; }
   th, td { padding: 11px 10px; font-size: 13.5px; text-align: left; line-height: 1.55; border-bottom: 1px solid #f1f5f9; }
+  @media (max-width: 640px) { th, td { font-size: 12.5px; padding: 9px 7px; } .vcol li { font-size: 13.5px; } }
   th { background: linear-gradient(135deg,#0f766e,#0d9488); color: #fff; font-size: 13px; }
   tr:last-child td { border-bottom: none; }
   td:first-child { font-weight: 600; }
