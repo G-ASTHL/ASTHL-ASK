@@ -15,7 +15,7 @@ module.exports = async (req, res) => {
     }
 
     const { action } = req.body || {};
-    if (!action || !['saveOrder', 'listMedicines', 'getPatientBill', 'getHealthAlert'].includes(action)) {
+    if (!action || !['saveOrder', 'listMedicines', 'getPatientBill', 'getHealthAlert', 'saveMedSelection'].includes(action)) {
       return res.status(400).json({ error: 'Invalid action' });
     }
 

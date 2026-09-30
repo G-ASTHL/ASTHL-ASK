@@ -43,19 +43,19 @@ module.exports = async (req, res) => {
       return res.status(500).json({ error: 'GEMINI_API_KEY not set on server' });
     }
 
-    // v33: 4 ALAG-ALAG models — har model ka apna quota hota hai
-    // (gemini-flash-latest = gemini-2.5-flash hi hai, duplicate try bekar tha)
-    // Free tier limits (2026): flash 250/din, flash-lite 1000/din, pro 100/din
+    // v35: v32 wala PRIMARY model wapas — gemini-flash-latest hi achhe result ka asli model tha
+// (v33 me primary badalne se medicine selection quality giri thi — ab restore)
     const models = [
-      'gemini-2.5-flash',        // sabse achha quality
-      'gemini-2.5-flash-lite',   // 4x zyada daily quota — fallback hero
-      'gemini-2.0-flash',        // purana model, agar zinda ho to kaam aayega
-      'gemini-2.5-pro'           // last resort (kam quota, best quality)
+      'gemini-flash-latest',      // PRIMARY (v32 jaisa) — best quality
+      'gemini-2.5-flash',         // fallback 1
+      'gemini-2.5-flash-lite',    // fallback 2 — 4x zyada quota
+      'gemini-2.5-pro'            // last resort (kam quota)
     ];
 
     let reply = null;
     let lastErr = 0; // v33: aakhri error status yaad rakho (429=quota, 400/403=key)
 
+    const tryGemini = async function () {
     for (const model of models) {
       try {
         console.log('Trying model:', model);
@@ -87,19 +87,20 @@ module.exports = async (req, res) => {
 
         if (reply) {
           console.log('Success with model:', model);
-          break;
+          return reply;
         }
       } catch (modelErr) {
         console.error(`Model ${model} failed:`, modelErr.message);
         continue;
       }
     }
+      return null;
+    };
 
-    // ===== v34: GROQ FREE BACKUP =====
-    // Agar Gemini ke sab models fail ho jayein AUR Vercel me GROQ_API_KEY set ho,
-    // to Groq ke free models try karo (console.groq.com — FREE, koi card nahi)
-    // Note: Hindi quality Gemini se thodi kam — sirf emergency backup ke liye
-    if (!reply && process.env.GROQ_API_KEY) {
+    // ===== v34: GROQ (FREE, unlimited) — v36 se PATIENT chat ka PRIMARY =====
+    // console.groq.com — FREE, koi card nahi. Doctor chat me sirf backup.
+    const tryGroq = async function () {
+      if (!process.env.GROQ_API_KEY) return null;
       const groqModels = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'];
       const groqMessages = trimmedMessages.map(m => {
         const txt = (m.parts && m.parts[0] && m.parts[0].text) || m.content || '';
@@ -131,12 +132,24 @@ module.exports = async (req, res) => {
           }
           const gdata = await gr.json();
           const greply = gdata.choices && gdata.choices[0] && gdata.choices[0].message && gdata.choices[0].message.content;
-          if (greply) { reply = greply; console.log('Success via Groq:', gm); break; }
+          if (greply) { console.log('Success via Groq:', gm); return greply; }
         } catch (gerr) {
           console.error('Groq model failed:', gm, gerr.message);
           continue;
         }
       }
+      return null;
+    };
+
+    // ===== v36: ORDER — PATIENT chat = GROQ pehle (Gemini quota bachti hai),
+    // DOCTOR chat = GEMINI pehle (13-point deep analysis quality) =====
+    const isPatient = String(category || '').trim().toLowerCase() === 'patient';
+    if (isPatient) {
+      reply = await tryGroq();
+      if (!reply) reply = await tryGemini();
+    } else {
+      reply = await tryGemini();
+      if (!reply) reply = await tryGroq();
     }
 
     if (reply) {
