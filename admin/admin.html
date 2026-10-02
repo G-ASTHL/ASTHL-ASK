@@ -49,6 +49,16 @@
   tr:nth-child(even) td { background: #f8fefe; }
   .apt td, .apt th { min-width: 76px; font-size: 12px; }
   .apt td { max-width: 190px; }
+  #queue { margin-bottom: 16px; }
+  #queue h3 { font-size: 16px; color: var(--dark); margin-bottom: 8px; }
+  .qcards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+  .qcard { background: #fff; border: 1.5px solid #fde68a; border-radius: 16px; padding: 13px; display: flex; flex-direction: column; gap: 8px; }
+  .qcard.done { border-color: #bbf7d0; background: #f0fdf4; }
+  .qcard .qt { font-size: 13.5px; font-weight: 700; color: #78350f; }
+  .qcard.done .qt { color: #166534; }
+  .qcard .qn { font-size: 24px; font-weight: 800; color: var(--dark); }
+  .qcard button { font-family: inherit; font-size: 12.5px; font-weight: 700; padding: 9px 12px; border-radius: 10px; border: none; background: var(--accent); color: #fff; cursor: pointer; }
+  .wa { display: inline-block; background: #16a34a !important; color: #fff !important; text-decoration: none; font-weight: 700; }
   .empty { padding: 30px; text-align: center; color: var(--dim); font-size: 14px; }
   .note { font-size: 12px; color: var(--dim); margin-top: 8px; }
 </style>
@@ -80,6 +90,7 @@
     <button id="alogout">🚪 लॉगआउट</button>
   </div>
   <div class="wrap">
+    <div id="queue"></div>
     <div class="cards" id="cards"></div>
     <div class="earn" id="earn"></div>
     <div class="tabs" id="tabs"></div>
@@ -94,12 +105,26 @@
 
 <script>
 var PW = '';
+// v6: API ka pura address — isse admin page kisi bhi domain par chalega (admin.asthl.in ho ya asthl-admin.vercel.app)
+var API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1') ? '' : 'https://ai.asthl.in';
+function apiUrl() { return API_BASE + '/api/admin'; }
 var DATA = null;
 var TAB = 'Doctor Registration';
 var COMMISSION = 13; // ASTHL commission % (baad me 23 kar sakte hain)
 
 function $(id) { return document.getElementById(id); }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function rowNum(r) { return r[r.length - 1]; }
+function waLink(mobile, text) {
+  var d = String(mobile || '').replace(/\D/g, '').slice(-10);
+  if (!d) return '';
+  return 'https://wa.me/91' + d + '?text=' + encodeURIComponent(text);
+}
+function waBtn(mobile, text, label) {
+  var l = waLink(mobile, text);
+  if (!l) return '';
+  return '<a class="wa" href="' + l + '" target="_blank" rel="noopener" style="font-size:12px;padding:7px 10px;border-radius:9px;white-space:nowrap">' + (label || '📲 WhatsApp') + '</a>';
+}
 function netPayable() {
   var ap = rows('Assign & Pay'), byDoc = {}, grand = 0;
   ap.forEach(function (r) {
@@ -129,7 +154,7 @@ function doLogin() {
   var pw = $('apw').value;
   if (!pw) { showErr('पासवर्ड डालें।'); return; }
   $('alogin').disabled = true; $('alogin').textContent = 'जाँच रहे हैं...';
-  fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'ping', password: pw }) })
+  fetch(apiUrl(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'ping', password: pw }) })
     .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
     .then(function (res) {
       $('alogin').disabled = false; $('alogin').textContent = '🔓 लॉगिन करें';
@@ -147,12 +172,12 @@ function showDash() { $('login').style.display = 'none'; $('dash').style.display
 // ===== DATA =====
 function loadData() {
   $('atable').innerHTML = '<div class="empty">लोड हो रहा है...</div>';
-  fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'getAll', password: PW }) })
+  fetch(apiUrl(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'getAll', password: PW }) })
     .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
     .then(function (res) {
       if (!res.ok) { $('atable').innerHTML = '<div class="empty">' + esc((res.d && res.d.error) || 'डेटा नहीं आया।') + '</div>'; return; }
       DATA = res.d.tabs || {};
-      renderTabs(); renderCards(); renderEarn(); renderTable();
+      renderTabs(); renderQueue(); renderCards(); renderEarn(); renderTable();
       $('anote').textContent = 'अंतिम अपडेट: ' + fmtDate(res.d.serverTime) + ' • हर टैब के आख़िरी 400 रिकॉर्ड दिखते हैं';
     })
     .catch(function () { $('atable').innerHTML = '<div class="empty">कनेक्शन त्रुटि — रीफ़्रेश करें।</div>'; });
@@ -170,6 +195,37 @@ function renderTabs() {
 }
 function setTab(n) { TAB = n; renderTabs(); renderTable(); }
 
+function renderQueue() {
+  var docs = rows('Doctor Registration');
+  var dId = headers('Doctor Registration').indexOf('Login ID Given');
+  var dSt = headers('Doctor Registration').indexOf('Payment Status');
+  var newDocs = docs.filter(function (r) { return !String(r[dId] || '').trim() || String(r[dSt] || '').toLowerCase().indexOf('verif') === -1; });
+  var ords = rows('Medicine Order');
+  var oSt = headers('Medicine Order').indexOf('Payment Status');
+  var newOrds = ords.filter(function (r) { return String(r[oSt] || '').toLowerCase().indexOf('verif') === -1; });
+  var ap = rows('Assign & Pay');
+  var pendPay = ap.filter(function (r) { return String(r[8] || '').toLowerCase().indexOf('confirm') === -1 && String(r[9] || '').toLowerCase().indexOf('yes') === -1; });
+  var overdue = ap.filter(function (r) { return String(r[10] || '').toLowerCase().indexOf('sent') !== -1 && daysOld(r[0]) > 7; });
+  var np = netPayable();
+  var items = [
+    { t: 'नए डॉक्टर — verify + ID देना', n: newDocs.length, tab: 'Doctor Registration', ok: 'सब verify हो गए' },
+    { t: 'दवा ऑर्डर — भुगतान verify', n: newOrds.length, tab: 'Medicine Order', ok: 'सब verify हो गए' },
+    { t: 'केस भुगतान — पुष्टि करना', n: pendPay.length, tab: 'Assign & Pay', ok: 'कोई बाक़ी नहीं' },
+    { t: '7 दिन से लंबित केस', n: overdue.length, tab: 'Assign & Pay', ok: 'कोई लंबित नहीं' }
+  ];
+  var html = '<h3>🏠 आज के काम</h3><div class="qcards">';
+  items.forEach(function (it) {
+    html += '<div class="qcard' + (it.n ? '' : ' done') + '">' +
+      '<div class="qt">' + it.t + '</div>' +
+      '<div class="qn">' + it.n + '</div>' +
+      (it.n ? '<button onclick="setTab(\'' + it.tab + '\')">अभी देखें →</button>' : '<div style="font-size:12.5px;color:#166534">✅ ' + it.ok + '</div>') +
+      '</div>';
+  });
+  html += '<div class="qcard' + (np.grand ? '' : ' done') + '"><div class="qt">💰 इस महीने डॉक्टरों को देना है</div><div class="qn">₹' + np.grand + '</div>' +
+    (np.grand ? '<button onclick="document.getElementById(\'earn\').scrollIntoView({behavior:\'smooth\'})">हिसाब देखें →</button>' : '<div style="font-size:12.5px;color:#166534">✅ कुछ बाक़ी नहीं</div>') + '</div>';
+  html += '</div>';
+  $('queue').innerHTML = html;
+}
 function renderCards() {
   var docs = rows('Doctor Registration');
   var chats = rows('Chat Log');
@@ -255,7 +311,7 @@ function transferAssign(caseId, oldCid) {
   var newName = '';
   docs.forEach(function (r) { if (String(r[iId] || '').trim() === newId) newName = String(r[iName] || ''); });
   if (!confirm('केस ' + caseId + ' ab ' + (newName || newId) + ' ko bhejna hai?')) return;
-  fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'adminTransferAssign', password: PW, caseId: caseId, oldConsultantId: oldCid, newConsultantId: newId, newConsultantName: newName }) })
+  fetch(apiUrl(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'adminTransferAssign', password: PW, caseId: caseId, oldConsultantId: oldCid, newConsultantId: newId, newConsultantName: newName }) })
     .then(function (r) { return r.json(); })
     .then(function (d) {
       if (d && d.status === 'ok') { alert('✅ केस ' + (newName || newId) + ' ko bhej diya gaya।'); loadData(); }
@@ -263,9 +319,33 @@ function transferAssign(caseId, oldCid) {
     })
     .catch(function () { alert('कनेक्शन त्रुटि।'); });
 }
+function verifyDoctor(mobile) {
+  if (!confirm('इस डॉक्टर का भुगतान verify करें?\n\nLogin ID अपने आप बन जाएगी (DOCT0001...)')) return;
+  fetch(apiUrl(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'adminVerifyDoctor', password: PW, mobile: mobile }) })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d && d.status === 'ok') {
+        alert('✅ ' + (d.name || 'डॉक्टर') + ' verify हो गया!\nLogin ID: ' + d.loginId + '\n\nAb "📲 ID भेजें" button se WhatsApp par bhej dein.');
+        loadData();
+      } else alert('नहीं हुआ: ' + ((d && d.error) || 'Apps Script ka naya version deploy karein'));
+    })
+    .catch(function () { alert('कनेक्शन त्रुटि।'); });
+}
+function editCell(row, colIdx, headerName, curVal) {
+  if (!row || isNaN(colIdx)) return;
+  var v = prompt('"' + headerName + '" ki value badlein:\n(row ' + row + ')', curVal || '');
+  if (v === null) return;
+  fetch(apiUrl(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'adminSetCell', password: PW, sheet: TAB, row: row, col: headerName, value: v }) })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d && d.status === 'ok') loadData();
+      else alert('नहीं हुआ: ' + ((d && d.error) || ''));
+    })
+    .catch(function () { alert('कनेक्शन त्रुटि।'); });
+}
 function payoutDone(cid) {
   if (!confirm('क्या इस डॉक्टर को भुगतान कर दिया?\n\n"हाँ" दबाते ही उनकी कमाई reset (0) हो जाएगी।')) return;
-  fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'adminPayoutDone', password: PW, consultantId: cid }) })
+  fetch(apiUrl(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'adminPayoutDone', password: PW, consultantId: cid }) })
     .then(function (r) { return r.json(); })
     .then(function (d) {
       if (d && d.status === 'ok') { alert('✅ ' + (d.marked || 0) + ' रिकॉर्ड "paid" mark हो गए — कमाई 0 हो गई।'); loadData(); }
@@ -282,12 +362,15 @@ function renderTable() {
     return;
   }
   var isAP = (TAB === 'Assign & Pay');
+  var isDR = (TAB === 'Doctor Registration');
   var AP_COLS = ['Date/Time', 'Case ID', 'Patient Name', 'Source', 'Consultant Name', 'Fee', 'UTR', 'Payment Status', 'Status', 'Accept Days & Time', 'Reject Reason/Suggestion', 'Rating'];
+  var DR_COLS = ['Date/Time', 'Name', 'Mobile (WhatsApp)', 'Qualification', 'City/District', 'Login ID Given', 'Payment Status', 'Amount', 'Experience (Years)', 'Expertise', 'Rate/Case', 'Plan', 'Max Cases/Week'];
   var idxs = [];
   if (isAP) { AP_COLS.forEach(function (n) { var i = hs.indexOf(n); if (i >= 0) idxs.push(i); }); }
+  else if (isDR) { DR_COLS.forEach(function (n) { var i = hs.indexOf(n); if (i >= 0) idxs.push(i); }); }
   else { hs.forEach(function (_, i) { idxs.push(i); }); }
   var html = '<table' + (isAP ? ' class="apt"' : '') + '><thead><tr>';
-  if (isAP) html += '<th>काम</th>';
+  if (isAP || isDR) html += '<th>काम</th>';
   idxs.forEach(function (i) { html += '<th>' + esc(hs[i]) + '</th>'; });
   html += '</tr></thead><tbody>';
   rs.slice().reverse().forEach(function (r) {
@@ -295,6 +378,19 @@ function renderTable() {
     var sent = String(r[10] || '').toLowerCase().indexOf('sent') !== -1;
     var od = sent && daysOld(r[0]) > 7;
     html += '<tr' + (od ? ' style="background:#fef2f2"' : '') + '>';
+    if (isDR) {
+      var idI = hs.indexOf('Login ID Given'), stI = hs.indexOf('Payment Status');
+      var lid = String(r[idI] || '').trim(), st = String(r[stI] || '').toLowerCase();
+      var mobI = hs.indexOf('Mobile (WhatsApp)');
+      var nmI = hs.indexOf('Name');
+      var mob = String(r[mobI] || ''), nm = String(r[nmI] || '');
+      if (!lid || st.indexOf('verif') === -1) {
+        html += '<td><button class="vfbtn" data-row="' + esc(rowNum(r)) + '" data-mob="' + esc(mob) + '" style="font-family:inherit;font-size:12px;font-weight:700;padding:7px 10px;border-radius:9px;border:none;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;cursor:pointer;white-space:nowrap">✅ Verify करें</button></td>';
+      } else {
+        var msg = 'नमस्ते ' + nm + ' 🙏\nASTHL में आपका रजिस्ट्रेशन सत्यापित हो गया है।\nआपकी Login ID: ' + lid + '\nअब ai.asthl.in → डॉक्टर → ID डालकर 13-Point Deep Analysis का उपयोग करें।\nधन्यवाद — ASTHL (A Step Towards Healthy Life)\n+91-7903873282';
+        html += '<td>' + (waBtn(mob, msg, '📲 ID भेजें') || '<b style="color:#166534">✓ ' + esc(lid) + '</b>') + '</td>';
+      }
+    }
     if (isAP) {
       var rej = String(r[10] || '').toLowerCase().indexOf('reject') !== -1;
       html += '<td>' + (!paid
@@ -306,9 +402,10 @@ function renderTable() {
     idxs.forEach(function (i) {
       var v = r[i];
       if (v instanceof Object || (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v))) v = fmtDate(v);
+      var raw = String(r[i] == null ? '' : r[i]);
       var s = esc(v);
       if (s.length > 260) s = s.slice(0, 260) + '…';
-      html += '<td>' + s + '</td>';
+      html += '<td class="edt" data-r="' + esc(rowNum(r)) + '" data-c="' + i + '" data-h="' + esc(hs[i]) + '" data-v="' + esc(raw).slice(0, 200) + '" style="cursor:pointer" title="बदलने के लिए क्लिक करें">' + s + '</td>';
     });
     html += '</tr>';
   });
@@ -320,6 +417,18 @@ function renderTable() {
       return function () { confirmAssign(b.getAttribute('data-case'), b.getAttribute('data-cid')); };
     })(cbs[ci]));
   }
+  var vfs = $('atable').querySelectorAll('.vfbtn');
+  for (var vi = 0; vi < vfs.length; vi++) {
+    vfs[vi].addEventListener('click', (function (b) {
+      return function () { verifyDoctor(b.getAttribute('data-mob')); };
+    })(vfs[vi]));
+  }
+  var eds = $('atable').querySelectorAll('td.edt');
+  for (var ei = 0; ei < eds.length; ei++) {
+    eds[ei].addEventListener('click', (function (td) {
+      return function () { editCell(td.getAttribute('data-r'), parseInt(td.getAttribute('data-c'), 10), td.getAttribute('data-h'), td.getAttribute('data-v')); };
+    })(eds[ei]));
+  }
   var tbs = $('atable').querySelectorAll('.trbtn');
   for (var ti = 0; ti < tbs.length; ti++) {
     tbs[ti].addEventListener('click', (function (b) {
@@ -330,7 +439,7 @@ function renderTable() {
 
 function confirmAssign(caseId, cid) {
   if (!confirm('भुगतान की पुष्टि करें?\n\nकेस ' + caseId + ' — पुष्टि करते ही यह केस डॉक्टर को भेजा जाएगा।')) return;
-  fetch('/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'adminConfirmAssign', password: PW, caseId: caseId, consultantId: cid }) })
+  fetch(apiUrl(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'adminConfirmAssign', password: PW, caseId: caseId, consultantId: cid }) })
     .then(function (r) { return r.json(); })
     .then(function (d) {
       if (d && d.status === 'ok') { alert('✅ पुष्टि हो गई — केस डॉक्टर को भेज दिया गया।'); loadData(); }
