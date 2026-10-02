@@ -23,6 +23,37 @@ module.exports = async (req, res) => {
     const action = body.action || 'getAll';
     if (action === 'ping') return res.status(200).json({ status: 'ok' });
 
+    if (action === 'adminConfirmAssign') {
+      const r = await fetch(sheetUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'adminConfirmAssign', caseId: body.caseId, consultantId: body.consultantId })
+      });
+      const text = await r.text();
+      let data; try { data = JSON.parse(text); } catch (e) { return res.status(502).json({ error: 'Apps Script purana version hai — naya deploy karein.' }); }
+      return res.status(200).json(data);
+    }
+
+    if (action === 'adminPayoutDone') {
+      const r = await fetch(sheetUrl, {
+        method: 'POST', headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'adminPayoutDone', consultantId: body.consultantId || '' })
+      });
+      const text = await r.text();
+      let data; try { data = JSON.parse(text); } catch (e) { return res.status(502).json({ error: 'Apps Script purana version hai — naya deploy karein.' }); }
+      return res.status(200).json(data);
+    }
+
+    if (action === 'adminTransferAssign') {
+      const r = await fetch(sheetUrl, {
+        method: 'POST', headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify({ action: 'adminTransferAssign', caseId: body.caseId, oldConsultantId: body.oldConsultantId || '', newConsultantId: body.newConsultantId, newConsultantName: body.newConsultantName || '' })
+      });
+      const text = await r.text();
+      let data; try { data = JSON.parse(text); } catch (e) { return res.status(502).json({ error: 'Apps Script purana version hai — naya deploy karein.' }); }
+      return res.status(200).json(data);
+    }
+
     if (action === 'getAll') {
       const r = await fetch(sheetUrl, {
         method: 'POST',
