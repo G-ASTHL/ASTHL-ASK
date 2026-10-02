@@ -54,6 +54,16 @@ module.exports = async (req, res) => {
       return res.status(200).json(data);
     }
 
+    if (action === 'adminSetCell' || action === 'adminVerifyDoctor') {
+      const r = await fetch(sheetUrl, {
+        method: 'POST', headers: { 'Content-Type': 'text/plain' },
+        body: JSON.stringify(Object.assign({ action: action }, body))
+      });
+      const text = await r.text();
+      let data; try { data = JSON.parse(text); } catch (e) { return res.status(502).json({ error: 'Apps Script purana version hai — naya deploy karein.' }); }
+      return res.status(200).json(data);
+    }
+
     if (action === 'getAll') {
       const r = await fetch(sheetUrl, {
         method: 'POST',
