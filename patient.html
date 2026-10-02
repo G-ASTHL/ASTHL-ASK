@@ -378,6 +378,7 @@
     messages = [{ role: 'user', parts: [{ text: PATIENT_PROMPT }] }, { role: 'model', parts: [{ text: 'नमस्ते ' + patient.name + ' जी! 👋 मैं ASTHL AI Based Radar System हूँ। अपनी समस्या बताइए — मैं होम्योपैथी में आपकी मदद करूँगा।' }] }];
     addMsg('नमस्ते ' + patient.name + ' जी! 👋 मैं ASTHL AI Based Radar System हूँ। अपनी समस्या बताइए — मैं होम्योपैथी में आपकी मदद करूँगा।', 'bot');
     setTimeout(function () { checkApptStatus(); }, 2200);
+    try { if (location.search.indexOf('appt=1') !== -1) setTimeout(function () { openAppt(); }, 900); } catch (e) {}
   }
 
   // ===== v2: appointment status + rating =====
