@@ -1,6 +1,6 @@
 // =====================================================
-// ASTHL Chat Widget — CURRENT VERSION: v41
-// v41: MEDICINE SET PATTERN (nosode/sarcode opening + constitutional + biochemic/mother-tincture supporting) + doctor short English names + differentiation rule + link-mention ban | v40: normal dose wapas + asthl.in | v38: medicine-list sheet logging + original model chain | v37: Health Alert popup (sheet se patient/doctor) | v36: same-ID case update, auto-save, mobile header fix | v35: case save me patient mobile | v32: voice v5
+// ASTHL Chat Widget — CURRENT VERSION: v43
+// v43: Assign & Pay (case ko experienced doctor ko bhejein — search, details, QR, UTR) | v41: MEDICINE SET PATTERN (nosode/sarcode opening + constitutional + biochemic/mother-tincture supporting) + doctor short English names + differentiation rule + link-mention ban | v40: normal dose wapas + asthl.in | v38: medicine-list sheet logging + original model chain | v37: Health Alert popup (sheet se patient/doctor) | v36: same-ID case update, auto-save, mobile header fix | v35: case save me patient mobile | v32: voice v5
 // Patient/Doctor categories, ek baar OTP, phir seedha chat
 // =====================================================
 
@@ -22,6 +22,7 @@
 
   const API_URL = 'https://asthl-ask.vercel.app/api/chat';
   const CASES_URL = 'https://asthl-ask.vercel.app/api/cases';
+  const ORDERS_URL = 'https://asthl-ask.vercel.app/api/orders';   // v43: Assign & Pay
   // Secure fullpage chat page (OTP yahan hamesha chalta hai)
   const CHAT_PAGE_URL = 'https://asthl-ask.vercel.app/chat.html';
   // chat.html is widget ko fullpage mode mein render karta hai
@@ -312,7 +313,7 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
     #asthl-chat-window-header .info .name { font-size: 14px; font-weight: 600; }
     #asthl-chat-window-header .info .status { font-size: 11px; opacity: 0.9; display: flex; align-items: center; gap: 4px; }
     #asthl-chat-window-header .info .status .dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; }
-    #asthl-new-chat-btn { background: rgba(255,255,255,0.2); border: none; border-radius: 12px; padding: 5px 10px; font-size: 11px; color: white; cursor: pointer; font-family: inherit; font-weight: 500; display: none; flex-shrink: 0; margin-right: 6px; transition: background 0.15s; } #asthl-new-chat-btn:hover { background: rgba(255,255,255,0.4); } #asthl-save-case-btn, #asthl-cases-btn, #asthl-report-btn { background: rgba(255,255,255,0.2); border: none; border-radius: 12px; padding: 5px 8px; font-size: 11px; color: white; cursor: pointer; font-family: inherit; font-weight: 500; flex-shrink: 0; margin-right: 4px; display: none; } #asthl-save-case-btn:hover, #asthl-cases-btn:hover, #asthl-report-btn:hover { background: rgba(255,255,255,0.4); } .asthl-case-row.closed { opacity: 0.75; background: #f1f5f9; } .asthl-case-row.closed .asthl-case-tg { opacity: 1; } .asthl-case-tg { flex-shrink: 0; margin-left: 10px; border: none; border-radius: 10px; padding: 6px 13px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,0.18); } .asthl-case-tg[data-tg="close"] { background: #16a34a; color: #ffffff; } .asthl-case-tg[data-tg="close"]:hover { background: #15803d; } .asthl-case-tg[data-tg="open"] { background: #ea580c; color: #ffffff; } .asthl-case-tg[data-tg="open"]:hover { background: #c2410c; } .asthl-case-pb { flex-shrink: 0; margin-left: 6px; border: 1.5px solid #94a3b8; background: #ffffff; color: #334155; border-radius: 10px; padding: 6px 11px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; } .asthl-case-pb[data-pb="public"] { background: #7c3aed; border-color: #7c3aed; color: #ffffff; } .asthl-case-pb[data-pb="public"]:hover { background: #6d28d9; } .asthl-case-pb[data-pb="private"]:hover { background: #f1f5f9; } .asthl-case-row.closed .asthl-case-pb { opacity: 1; }
+    #asthl-new-chat-btn { background: rgba(255,255,255,0.2); border: none; border-radius: 12px; padding: 5px 10px; font-size: 11px; color: white; cursor: pointer; font-family: inherit; font-weight: 500; display: none; flex-shrink: 0; margin-right: 6px; transition: background 0.15s; } #asthl-new-chat-btn:hover { background: rgba(255,255,255,0.4); } #asthl-save-case-btn, #asthl-cases-btn, #asthl-report-btn { background: rgba(255,255,255,0.2); border: none; border-radius: 12px; padding: 5px 8px; font-size: 11px; color: white; cursor: pointer; font-family: inherit; font-weight: 500; flex-shrink: 0; margin-right: 4px; display: none; } #asthl-save-case-btn:hover, #asthl-cases-btn:hover, #asthl-report-btn:hover { background: rgba(255,255,255,0.4); } .asthl-case-row.closed { opacity: 0.75; background: #f1f5f9; } .asthl-case-row.closed .asthl-case-tg { opacity: 1; } .asthl-case-tg { flex-shrink: 0; margin-left: 10px; border: none; border-radius: 10px; padding: 6px 13px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,0.18); } .asthl-case-tg[data-tg="close"] { background: #16a34a; color: #ffffff; } .asthl-case-tg[data-tg="close"]:hover { background: #15803d; } .asthl-case-tg[data-tg="open"] { background: #ea580c; color: #ffffff; } .asthl-case-tg[data-tg="open"]:hover { background: #c2410c; } .asthl-case-pb { flex-shrink: 0; margin-left: 6px; border: 1.5px solid #94a3b8; background: #ffffff; color: #334155; border-radius: 10px; padding: 6px 11px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; } .asthl-case-pb[data-pb="public"] { background: #7c3aed; border-color: #7c3aed; color: #ffffff; } .asthl-case-pb[data-pb="public"]:hover { background: #6d28d9; } .asthl-case-pb[data-pb="private"]:hover { background: #f1f5f9; } .asthl-case-row.closed .asthl-case-pb { opacity: 1; } .asthl-case-as { flex-shrink: 0; margin-left: 6px; border: none; background: linear-gradient(135deg,#0d9488,#0f766e); color: #ffffff; border-radius: 10px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; box-shadow: 0 1px 4px rgba(13,148,136,0.35); } .asthl-case-as:hover { background: #0f766e; } .asthl-case-row.closed .asthl-case-as { opacity: 1; }
     #asthl-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; z-index: 1000000; padding: 16px; }
     #asthl-modal { background: #ffffff; border-radius: 16px; max-width: 420px; width: 100%; max-height: 80dvh; overflow-y: auto; padding: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
     .asthl-case-row { border: 1px solid #ccfbf1; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; background: #f0fdfa; }
@@ -895,7 +896,7 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
             + '<a href="tel:+917903873282" style="flex:1;min-width:100px;text-align:center;background:#166534;color:#fff;border-radius:12px;padding:10px 8px;font-size:13.5px;font-weight:700;text-decoration:none;">\U0001F4DE Call</a>'
             + '<a href="https://wa.me/917903873282" target="_blank" rel="noopener" style="flex:1;min-width:100px;text-align:center;background:#16a34a;color:#fff;border-radius:12px;padding:10px 8px;font-size:13.5px;font-weight:700;text-decoration:none;">\U0001F4AC WhatsApp</a>'
             + '</div>'
-            + '<p style="font-size:12px;color:#64748b;margin:12px 0 0;text-align:center;line-height:1.5;">\u0905\u0917\u0930 \u0906\u092A\u0915\u094B \u0928\u0947\u0938\u0940 \u0915\u094B\u0908 \u0938\u092E\u0938\u094D\u092F\u093E \u0939\u0948 \u0924\u094B ASTHL \u092E\u0947\u0902 Call / WhatsApp \u0915\u0930\u0947\u0902: <b>+91-7903873282</b></p>'
+            + '<p style="font-size:12px;color:#64748b;margin:12px 0 0;text-align:center;line-height:1.5;">\u0905\u0917\u0930 \u0906\u092A\u0915\u094B \u0910\u0938\u0940 \u0915\u094B\u0908 \u0938\u092E\u0938\u094D\u092F\u093E \u0939\u0948 \u0924\u094B ASTHL \u092A\u0930 Call / WhatsApp \u0915\u0930\u0947\u0902: <b>+91-7903873282</b></p>'
             + '</div>';
           ov.appendChild(card);
           document.body.appendChild(ov);
@@ -1195,6 +1196,123 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
 
   function getAccessId() { try { return localStorage.getItem('asthl_access_id') || ''; } catch (e) { return ''; } }
 
+  // ===== v43: ASSIGN & PAY — apna case experienced doctor ko bhejein =====
+  function asUpiLink(amount, note) {
+    return 'upi://pay?pa=' + encodeURIComponent('asthl@ybl') + '&pn=' + encodeURIComponent('ASTHL') + '&am=' + encodeURIComponent(amount) + '&cu=INR&tn=' + encodeURIComponent(note || 'ASTHL Consultant Fee');
+  }
+  async function openAssignPanel(caseId, caseName, accId) {
+    var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
+    var ov = openModal('<h3 style="margin:0 0 8px;color:#134e4a">📤 डॉक्टर सूची लोड हो रही है...</h3><p style="font-size:13px;color:#64748b">कृपया रुकें</p>');
+    var box = ov.querySelector('#asthl-modal');
+    var docs = [];
+    try {
+      var res = await fetch(ORDERS_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'listConsultants', selfId: accId }) });
+      var data = await res.json();
+      docs = (data && data.consultants) || [];
+    } catch (e) {
+      box.innerHTML = '<h3 style="margin:0 0 8px;color:#b91c1c">कनेक्शन त्रुटि</h3><p style="font-size:13px;color:#334155">दोबारा कोशिश करें।</p>';
+      return;
+    }
+    if (!docs.length) {
+      box.innerHTML = '<h3 style="margin:0 0 8px;color:#134e4a">📤 Assign &amp; Pay</h3><p style="font-size:13.5px;color:#64748b;line-height:1.6">अभी कोई परामर्श-योग्य डॉक्टर उपलब्ध नहीं है।<br><br>जब डॉक्टर रजिस्ट्रेशन में <b>अनुभव, फीस व विशेषज्ञता</b> भरकर परामर्श के लिए उपलब्ध होंगे, वे यहाँ दिखेंगे।</p>';
+      return;
+    }
+    docs.sort(function (a, b) { return (parseFloat(b.exp) || 0) - (parseFloat(a.exp) || 0); });
+    var headHtml =
+      '<h3 style="margin:0 0 4px;color:#134e4a">📤 Assign &amp; Pay</h3>' +
+      '<div style="font-size:12.5px;color:#64748b;margin-bottom:10px;line-height:1.5">केस: <b>' + esc(caseName) + '</b><br>ID: ' + esc(caseId) + ' • सबसे ऊपर सबसे अनुभवी डॉक्टर</div>' +
+      '<input id="as-search" placeholder="🔍 नाम / ID / विशेषज्ञता से खोजें" style="width:100%;font-family:inherit;font-size:14px;padding:11px 12px;border:1.5px solid #ccfbf1;border-radius:12px;outline:none;margin-bottom:10px">' +
+      '<div id="as-list" style="max-height:44vh;overflow-y:auto"></div>';
+    var curList = docs;
+    var listEl = null;
+
+    function renderList(q) {
+      curList = docs;
+      if (q) { var qq = String(q).toLowerCase(); curList = docs.filter(function (d) { return (d.name + ' ' + d.id + ' ' + d.expertise + ' ' + d.city).toLowerCase().indexOf(qq) !== -1; }); }
+      var h = '';
+      if (!curList.length) h = '<p style="font-size:13px;color:#64748b;padding:10px">कोई डॉक्टर नहीं मिला।</p>';
+      for (var i = 0; i < curList.length; i++) {
+        var d = curList[i];
+        h += '<div class="as-doc" data-i="' + i + '" style="border:1.5px solid #ccfbf1;border-radius:14px;padding:12px;margin-bottom:8px;cursor:pointer">' +
+             '<b style="color:#0f766e;font-size:14.5px">' + esc(d.name) + '</b> <span style="font-size:11.5px;color:#64748b">ID: ' + esc(d.id) + '</span>' +
+             '<div style="font-size:12.5px;color:#334155;margin-top:4px">🎓 ' + esc(d.qual) + ' • ⏳ ' + esc(d.exp) + ' वर्ष अनुभव</div>' +
+             '<div style="font-size:12.5px;color:#334155">🩺 ' + esc(d.expertise) + '</div>' +
+             '<div style="font-size:13.5px;font-weight:700;color:#b45309;margin-top:4px">₹' + esc(d.fee) + ' / केस</div>' +
+             '</div>';
+      }
+      listEl.innerHTML = h;
+      var items = listEl.querySelectorAll('.as-doc');
+      for (var k = 0; k < items.length; k++) {
+        items[k].addEventListener('click', (function (idx) { return function () { showDoc(curList[idx]); }; })(k));
+      }
+    }
+    function showList() {
+      box.innerHTML = headHtml;
+      listEl = box.querySelector('#as-list');
+      var inp = box.querySelector('#as-search');
+      inp.addEventListener('input', function () { renderList(inp.value); });
+      renderList('');
+    }
+    function showDoc(d) {
+      box.innerHTML =
+        '<h3 style="margin:0 0 8px;color:#134e4a">👨‍⚕️ ' + esc(d.name) + '</h3>' +
+        '<div style="font-size:13.5px;color:#334155;line-height:1.8">' +
+        '<b>ID:</b> ' + esc(d.id) + '<br>' +
+        '<b>योग्यता:</b> ' + esc(d.qual) + '<br>' +
+        '<b>अनुभव:</b> ' + esc(d.exp) + ' वर्ष<br>' +
+        '<b>विशेषज्ञता:</b> ' + esc(d.expertise) + '<br>' +
+        (d.clinic ? '<b>क्लिनिक:</b> ' + esc(d.clinic) + '<br>' : '') +
+        (d.city ? '<b>शहर:</b> ' + esc(d.city) + '<br>' : '') +
+        (d.about ? '<b>परिचय:</b> ' + esc(d.about) + '<br>' : '') +
+        '<b>परामर्श फीस:</b> <span style="color:#b45309;font-weight:800">₹' + esc(d.fee) + ' / केस</span>' +
+        '</div>' +
+        '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">' +
+        '<button id="as-back" style="flex:1;min-width:110px;font-family:inherit;font-size:14px;font-weight:700;padding:12px;border-radius:12px;border:none;background:#f1f5f9;color:#475569;cursor:pointer">← वापस</button>' +
+        '<button id="as-confirm" style="flex:2;min-width:170px;font-family:inherit;font-size:14px;font-weight:700;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;cursor:pointer">✅ चुनें व भुगतान करें — ₹' + esc(d.fee) + '</button>' +
+        '</div>';
+      box.querySelector('#as-back').addEventListener('click', showList);
+      box.querySelector('#as-confirm').addEventListener('click', function () { payStep(d); });
+    }
+    function payStep(d) {
+      var uri = asUpiLink(d.fee, 'ASTHL Consultant Fee ' + caseId);
+      var qr = 'https://api.qrserver.com/v1/create-qr-code/?size=210x210&margin=8&data=' + encodeURIComponent(uri);
+      box.innerHTML =
+        '<h3 style="margin:0 0 6px;color:#134e4a">💰 परामर्श फीस — ₹' + esc(d.fee) + '</h3>' +
+        '<div style="font-size:12.5px;color:#64748b;margin-bottom:10px;line-height:1.5">' + esc(d.name) + ' (' + esc(d.id) + ') • केस ' + esc(caseId) + '</div>' +
+        '<div style="text-align:center"><img src="' + qr + '" alt="UPI QR" onerror="this.style.display=\'none\';var w=document.getElementById(\'as-qrwarn\');if(w)w.style.display=\'block\';" style="width:190px;height:190px;border:1px solid #ccfbf1;border-radius:12px"><div id="as-qrwarn" style="display:none;font-size:12.5px;color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:8px;margin-top:6px">QR load nahi hua — niche wale UPI button se bhugtan karein.</div><div style="font-weight:700;color:#0f766e;margin-top:6px">asthl@ybl</div></div>' +
+        '<a href="' + uri + '" style="display:block;text-align:center;margin-top:10px;background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;font-weight:700;padding:12px;border-radius:12px;text-decoration:none">📱 ₹' + esc(d.fee) + ' भुगतान करें (UPI)</a>' +
+        '<input id="as-utr" placeholder="UTR / भुगतान संदर्भ नंबर" style="width:100%;font-family:inherit;font-size:14px;padding:11px 12px;border:1.5px solid #ccfbf1;border-radius:12px;outline:none;margin-top:12px">' +
+        '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
+        '<button id="as-back2" style="flex:1;min-width:110px;font-family:inherit;font-size:14px;font-weight:700;padding:12px;border-radius:12px;border:none;background:#f1f5f9;color:#475569;cursor:pointer">← वापस</button>' +
+        '<button id="as-submit" style="flex:2;min-width:150px;font-family:inherit;font-size:14px;font-weight:700;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;cursor:pointer">📩 भुगतान के बाद सबमिट करें</button>' +
+        '</div>' +
+        '<p style="font-size:11.5px;color:#64748b;margin-top:10px;line-height:1.5">भुगतान ASTHL (asthl@ybl) को होता है। ASTHL पुष्टि करने के बाद ही केस डॉक्टर को भेजा जाएगा — पुष्टि से पहले नहीं।</p>';
+      box.querySelector('#as-back2').addEventListener('click', function () { showDoc(d); });
+      box.querySelector('#as-submit').addEventListener('click', function () { submitAssign(d, box.querySelector('#as-utr').value.trim()); });
+    }
+    async function submitAssign(d, utr) {
+      var btn = box.querySelector('#as-submit');
+      btn.disabled = true; btn.textContent = 'भेज रहे हैं...';
+      try {
+        var r = await fetch(ORDERS_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+          action: 'saveAssignPay', caseId: caseId, patientName: caseName, assigningDoctor: accId,
+          consultantId: d.id, consultantName: d.name, fee: String(d.fee), utr: utr
+        }) });
+        var dd = await r.json();
+        if (dd && dd.status === 'ok') {
+          box.innerHTML = '<h3 style="margin:0 0 8px;color:#15803d">✅ अनुरोध भेज दिया गया!</h3><p style="font-size:13.5px;color:#334155;line-height:1.65">केस <b>' + esc(caseId) + '</b> — ' + esc(d.name) + ' को भेजने का अनुरोध ASTHL को मिल गया।<br><br><b>ASTHL भुगतान की पुष्टि करते ही</b> यह केस डॉक्टर को भेज दिया जाएगा — आपको सूचना मिलती रहेगी।</p>';
+        } else {
+          alert('सेव नहीं हुआ — दोबारा कोशिश करें।' + (dd && dd.error ? '\n' + dd.error : ''));
+          btn.disabled = false; btn.textContent = '📩 भुगतान के बाद सबमिट करें';
+        }
+      } catch (e) {
+        alert('कनेक्शन त्रुटि — दोबारा कोशिश करें।');
+        btn.disabled = false; btn.textContent = '📩 भुगतान के बाद सबमिट करें';
+      }
+    }
+    showList();
+  }
+
   function openModal(html) {
     var ov = document.createElement('div');
     ov.id = 'asthl-modal-overlay';
@@ -1257,7 +1375,7 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
       for (var i = 0; i < cases.length; i++) {
         var c = cases[i];
 var isClosed = (c.caseStatus === 'Closed');
-        html += '<div class="asthl-case-row' + (isClosed ? ' closed' : '') + '" data-cid="' + c.caseId + '"><b>' + c.name + '</b> <span class="asthl-case-pub">' + (c.isPublic ? '🌐 Public' : '') + (isClosed ? ' ✅ बंद' : '') + '</span><span class="asthl-case-meta">' + c.issue + '</span><span class="asthl-case-id">' + c.caseId + '</span>' + (isClosed ? '<button class="asthl-case-tg" data-tg="open">🔄 खोलें</button>' : '<button class="asthl-case-tg" data-tg="close">✅ बंद करें</button>') + (c.isPublic ? '<button class="asthl-case-pb" data-pb="private">🔒 Private</button>' : '<button class="asthl-case-pb" data-pb="public">🌐 Public</button>') + '</div>';
+        html += '<div class="asthl-case-row' + (isClosed ? ' closed' : '') + '" data-cid="' + c.caseId + '"><b>' + c.name + '</b> <span class="asthl-case-pub">' + (c.isPublic ? '🌐 Public' : '') + (isClosed ? ' ✅ बंद' : '') + '</span><span class="asthl-case-meta">' + c.issue + '</span><span class="asthl-case-id">' + c.caseId + '</span>' + (isClosed ? '<button class="asthl-case-tg" data-tg="open">🔄 खोलें</button>' : '<button class="asthl-case-tg" data-tg="close">✅ बंद करें</button>') + (c.isPublic ? '<button class="asthl-case-pb" data-pb="private">🔒 Private</button>' : '<button class="asthl-case-pb" data-pb="public">🌐 Public</button>') + '<button class="asthl-case-as">📤 Assign &amp; Pay</button>' + '</div>';
       }
       ov.querySelector('#asthl-modal').innerHTML = html;
       var rows = ov.querySelectorAll('.asthl-case-row');
@@ -1277,6 +1395,17 @@ var isClosed = (c.caseStatus === 'Closed');
             toggleCaseStatus(cid, wantClose ? 'close' : 'reopen', accId, ov);
           };
         })(tgBtns[t], tgBtns[t].closest('.asthl-case-row')));
+      }
+      var asBtns = ov.querySelectorAll('.asthl-case-as');
+      for (var ab = 0; ab < asBtns.length; ab++) {
+        asBtns[ab].addEventListener('click', (function(btn, row) {
+          return function(ev) {
+            ev.stopPropagation();
+            var cid = row.getAttribute('data-cid');
+            var cname = row.querySelector('b') ? row.querySelector('b').textContent : '';
+            openAssignPanel(cid, cname, accId);
+          };
+        })(asBtns[ab], asBtns[ab].closest('.asthl-case-row')));
       }
       var pbBtns = ov.querySelectorAll('.asthl-case-pb');
       for (var p = 0; p < pbBtns.length; p++) {
