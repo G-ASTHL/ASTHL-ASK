@@ -3,5 +3,8 @@
     "api/*.js": {
       "maxDuration": 60
     }
-  }
+  },
+  "rewrites": [
+    { "source": "/", "has": [{ "type": "host", "value": "admin.asthl.in" }], "destination": "/admin/admin.html" }
+  ]
 }

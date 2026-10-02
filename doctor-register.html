@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#0d9488">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icon-192.png">
-<title>ASTHL — डॉक्टर रजिस्ट्रेशन | ₹299/माह या ₹5,999 Lifetime</title>
+<title>ASTHL — डॉक्टर रजिस्ट्रेशन | ₹299/माह या ₹2,999 / 2 वर्ष</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -75,7 +75,7 @@
     <div class="old">₹999</div>
     <div class="new">₹299<small>/माह</small></div>
     <div class="off">70% OFF</div>
-    <div style="font-size:15px; margin-top:10px; font-weight:700; color:#fde047;">या ₹5,999 — LIFETIME (एक बार भुगतान, हमेशा के लिए)</div>
+    <div style="font-size:15px; margin-top:10px; font-weight:700; color:#fde047;">या ₹2,999 — 2 वर्ष (सिर्फ़ ₹125/माह के बराबर)</div>
     <div style="font-size: 12.5px; margin-top: 8px; color: #dcfce7;">13-Point Selection • Materia Medica Verification • Voice Input • Case Files • PDF Report</div>
   </div>
 
@@ -94,13 +94,22 @@
       </div>
       <div class="fgrp"><label>क्लिनिक / अस्पताल का नाम</label><input id="d-clinic" placeholder="जैसे: ASTHL Homeopathy Clinic"></div>
       <div class="fgrp"><label>शहर / जिला *</label><input id="d-city" placeholder="जैसे: चास"></div>
+      <div class="row2">
+        <div class="fgrp"><label>अनुभव (वर्ष) *</label><input id="d-exp" type="number" min="0" max="70" placeholder="जैसे: 8"></div>
+        <div class="fgrp"><label>प्रति केस फीस (₹) *</label><input id="d-fee" type="number" min="0" placeholder="परामर्श फीस — जैसे: 500"></div>
+      </div>
+      <div class="fgrp"><label>विशेषज्ञता (Expertise in) *</label><input id="d-expertise" placeholder="जैसे: चर्म रोग, महिला रोग, बाल रोग, गठिया"></div>
+      <div class="fgrp"><label>संक्षिप्त परिचय (About) — सारी योग्यताएँ, डिग्री, अनुभव, पता</label><textarea id="d-about" rows="3" style="width:100%;font-family:inherit;font-size:15px;padding:11px 12px;border:1.5px solid var(--border);border-radius:12px;outline:none;" placeholder="जैसे: BHMS, MD (Homoeo) — 12 वर्ष अनुभव, चर्म व महिला रोग विशेषज्ञ, ... क्लिनिक का पता ..."></textarea></div>
+      <div class="fgrp"><label>अन्य डॉक्टरों के केस परामर्श के लिए उपलब्ध?</label>
+        <select id="d-avail"><option value="Yes">हाँ — मुझे केस भेज सकते हैं</option><option value="No">नहीं — अभी नहीं</option></select>
+      </div>
     </div>
 
     <div class="paybox">
       <h3>💰 अपना प्लान चुनें और भुगतान करें</h3>
       <div class="plan-row" style="display:flex; gap:8px; margin-bottom:12px;">
         <button id="plan-m" type="button" onclick="setPlan(299)" style="flex:1; background:#166534; color:#fff; border:2px solid #22c55e; border-radius:12px; padding:10px; font-family:inherit; font-weight:700; font-size:14px; cursor:pointer;">मासिक ₹299</button>
-        <button id="plan-l" type="button" onclick="setPlan(5999)" style="flex:1; background:#fff; color:#166534; border:2px solid #bbf7d0; border-radius:12px; padding:10px; font-family:inherit; font-weight:700; font-size:14px; cursor:pointer;">लाइफटाइम ₹5,999</button>
+        <button id="plan-l" type="button" onclick="setPlan(2999)" style="flex:1; background:#fff; color:#166534; border:2px solid #bbf7d0; border-radius:12px; padding:10px; font-family:inherit; font-weight:700; font-size:14px; cursor:pointer;">2 वर्ष ₹2,999</button>
       </div>
       <img id="pay-qr" alt="UPI QR — ₹299 ASTHL">
       <div class="upi-id">asthl@ybl</div>
@@ -133,7 +142,7 @@ function $(id) { return document.getElementById(id); }
 var UPI_ID = 'asthl@ybl';
 var PLAN = { amount: 299 };
 function updatePay() {
-  var uri = 'upi://pay?pa=' + encodeURIComponent(UPI_ID) + '&pn=' + encodeURIComponent('ASTHL') + '&am=' + PLAN.amount + '&cu=INR&tn=' + encodeURIComponent('ASTHL Doctor ID ' + (PLAN.amount === 299 ? 'Monthly' : 'Lifetime'));
+  var uri = 'upi://pay?pa=' + encodeURIComponent(UPI_ID) + '&pn=' + encodeURIComponent('ASTHL') + '&am=' + PLAN.amount + '&cu=INR&tn=' + encodeURIComponent('ASTHL Doctor ID ' + (PLAN.amount === 299 ? 'Monthly' : '2-Year'));
   $('pay-qr').src = 'https://api.qrserver.com/v1/create-qr-code/?size=220x220&margin=8&data=' + encodeURIComponent(uri);
   $('upi-btn').href = uri;
   $('upi-btn').textContent = '📱 ₹' + PLAN.amount + ' भुगतान करें (UPI)';
@@ -145,9 +154,9 @@ function setPlan(a) {
   pm.style.background = a === 299 ? '#166534' : '#fff';
   pm.style.color = a === 299 ? '#fff' : '#166534';
   pm.style.borderColor = a === 299 ? '#22c55e' : '#bbf7d0';
-  pl.style.background = a === 5999 ? '#166534' : '#fff';
-  pl.style.color = a === 5999 ? '#fff' : '#166534';
-  pl.style.borderColor = a === 5999 ? '#22c55e' : '#bbf7d0';
+  pl.style.background = a === 2999 ? '#166534' : '#fff';
+  pl.style.color = a === 2999 ? '#fff' : '#166534';
+  pl.style.borderColor = a === 2999 ? '#22c55e' : '#bbf7d0';
   updatePay();
 }
 updatePay();
@@ -156,12 +165,17 @@ $('d-mobile').addEventListener('input', function () { this.value = this.value.re
 
 $('d-submit').addEventListener('click', function () {
   var name = $('d-name').value.trim(), mob = $('d-mobile').value.trim(), qual = $('d-qual').value,
-      city = $('d-city').value.trim(), clinic = $('d-clinic').value.trim(), utr = $('d-utr').value.trim();
+      city = $('d-city').value.trim(), clinic = $('d-clinic').value.trim(), utr = $('d-utr').value.trim(),
+      exp = $('d-exp').value.trim(), fee = $('d-fee').value.trim(), expertise = $('d-expertise').value.trim(),
+      about = $('d-about').value.trim(), avail = $('d-avail').value;
   if (name.length < 2) { alert('कृपया पूरा नाम लिखें।'); return; }
   if (!/^\d{10}$/.test(mob)) { alert('सही 10 अंकों का मोबाइल नंबर लिखें।'); return; }
   if (!qual) { alert('योग्यता चुनें।'); return; }
   if (city.length < 2) { alert('शहर / जिला लिखें।'); return; }
-  var okPay = confirm('क्या आपने ₹' + PLAN.amount + (PLAN.amount === 299 ? ' (मासिक)' : ' (लाइफटाइम)') + ' का भुगतान कर दिया है? (हाँ = आगे बढ़ें)');
+  if (!exp) { alert('अनुभव (वर्ष) लिखें।'); return; }
+  if (!fee) { alert('प्रति केस फीस (₹) लिखें।'); return; }
+  if (expertise.length < 2) { alert('विशेषज्ञता (Expertise in) लिखें।'); return; }
+  var okPay = confirm('क्या आपने ₹' + PLAN.amount + (PLAN.amount === 299 ? ' (मासिक)' : ' (2 वर्ष)') + ' का भुगतान कर दिया है? (हाँ = आगे बढ़ें)');
   if (!okPay) { alert('पहले ऊपर UPI से ₹' + PLAN.amount + ' का भुगतान करें, फिर रजिस्ट्रेशन पूरा करें।'); return; }
   $('d-submit').disabled = true; $('d-submit').textContent = 'भेज रहे हैं...';
   fetch('/api/orders', {
@@ -170,7 +184,8 @@ $('d-submit').addEventListener('click', function () {
       action: 'saveOrder', type: 'doctor-registration', patientRef: mob,
       name: 'Dr. ' + name, mobile: mob, address: (city + (clinic ? ' • ' + clinic : '')),
       qual: qual, city: city, clinic: clinic,
-      pincode: '', items: 'डॉक्टर ID — ' + (PLAN.amount === 299 ? 'मासिक ₹299/माह' : 'LIFETIME ₹5,999') + ' • योग्यता: ' + qual,
+      exp: exp, fee: fee, expertise: expertise, about: about, avail: avail,
+      pincode: '', items: 'डॉक्टर ID — ' + (PLAN.amount === 299 ? 'मासिक ₹299/माह' : '2 वर्ष ₹2,999') + ' • योग्यता: ' + qual,
       amount: String(PLAN.amount), payRef: utr
     })
   }).then(function (r) { return r.json(); }).then(function (d) {
