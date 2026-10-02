@@ -1,6 +1,6 @@
 // =====================================================
-// ASTHL Chat Widget — CURRENT VERSION: v43
-// v43: Assign & Pay (case ko experienced doctor ko bhejein — search, details, QR, UTR) | v41: MEDICINE SET PATTERN (nosode/sarcode opening + constitutional + biochemic/mother-tincture supporting) + doctor short English names + differentiation rule + link-mention ban | v40: normal dose wapas + asthl.in | v38: medicine-list sheet logging + original model chain | v37: Health Alert popup (sheet se patient/doctor) | v36: same-ID case update, auto-save, mobile header fix | v35: case save me patient mobile | v32: voice v5
+// ASTHL Chat Widget — CURRENT VERSION: v46
+// v46: flash me mareez ki mukhya baat (case summary) | v45: Doctor kamaai banner + consultant medicine note + patient appointment | v44: Case flash — consultant ko Accept/Reject, kehne wale ko notification, roz reminder | v43: Assign & Pay | v41: MEDICINE SET PATTERN (nosode/sarcode opening + constitutional + biochemic/mother-tincture supporting) + doctor short English names + differentiation rule + link-mention ban | v40: normal dose wapas + asthl.in | v38: medicine-list sheet logging + original model chain | v37: Health Alert popup (sheet se patient/doctor) | v36: same-ID case update, auto-save, mobile header fix | v35: case save me patient mobile | v32: voice v5
 // Patient/Doctor categories, ek baar OTP, phir seedha chat
 // =====================================================
 
@@ -911,6 +911,12 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
   function startChat() {
     chatStarted = true;
     showHealthAlert(FULLPAGE_MODE ? 'doctor' : 'patient');
+    // v44: doctor ke liye pending case flash / accept-reject / reminder
+    var _aid = getAccessId();
+    if (_aid) {
+      setTimeout(function () { showEarnBanner(_aid); }, 1800);
+      setTimeout(function () { checkAssignments(_aid); }, 3500);
+    }
     newChatBtn.style.display = 'block';
     if (FULLPAGE_MODE) {
       document.getElementById('asthl-save-case-btn').style.display = 'inline-block';
@@ -1195,6 +1201,237 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
   });
 
   function getAccessId() { try { return localStorage.getItem('asthl_access_id') || ''; } catch (e) { return ''; } }
+
+  // ===== v45: Doctor kamaai banner + Consultant medicine note =====
+  async function showEarnBanner(accId) {
+    if (!accId) return;
+    var total = null;
+    try {
+      var d = await asPost({ action: 'getMyEarnings', consultantId: accId });
+      if (d && d.status === 'ok') total = d.total;
+    } catch (e) { return; }
+    if (total === null) return;
+    var old = document.getElementById('asthl-earn-banner');
+    if (old) old.parentNode.removeChild(old);
+    var b = document.createElement('div');
+    b.id = 'asthl-earn-banner';
+    b.style.cssText = 'background:linear-gradient(135deg,#0f766e,#0d9488);color:#fff;border-radius:12px;padding:10px 12px;margin:8px 10px 4px;font-size:13.5px;font-weight:600;line-height:1.5;box-shadow:0 3px 10px rgba(13,148,136,.3)';
+    b.innerHTML = '💰 आपकी कुल कमाई (अब तक): <b style="font-size:16px">₹' + total + '</b><br><span style="font-size:11.5px;opacity:.9">ASTHL फीस कटौती के बाद • भुगतान अगले महीने के पहले हफ़्ते में</span>';
+    if (msgContainer) msgContainer.insertBefore(b, msgContainer.firstChild);
+  }
+
+  function consultantNoteForm(a, accId, done) {
+    var ov = openModal('');
+    var box = ov.querySelector('#asthl-modal');
+    box.innerHTML =
+      '<h3 style="margin:0 0 8px;color:#0f766e">💊 दवा / सलाह लिखें — ' + asEsc(a.caseId) + '</h3>' +
+      '<div style="font-size:12.5px;color:#64748b;margin-bottom:8px;line-height:1.5">मरीज़: ' + asEsc(a.patientName || '') + ' — यह भेजने वाले डॉक्टर को दिखेगा (वही मरीज़ को दवा देगा)।</div>' +
+      '<textarea id="cn-note" rows="6" style="width:100%;font-family:inherit;font-size:14px;padding:11px;border:1.5px solid #ccfbf1;border-radius:12px;outline:none" placeholder="दवा का नाम, potency, कैसे लें, कितने दिन, सावधानी / आहार सलाह..."></textarea>' +
+      '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
+      '<button id="cn-back" style="flex:1;min-width:100px;font-family:inherit;font-size:14px;font-weight:700;padding:12px;border-radius:12px;border:none;background:#f1f5f9;color:#475569;cursor:pointer">← वापस</button>' +
+      '<button id="cn-save" style="flex:2;min-width:150px;font-family:inherit;font-size:14px;font-weight:700;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;cursor:pointer">💾 सुरक्षित करें</button>' +
+      '</div>';
+    box.querySelector('#cn-back').addEventListener('click', function () { ov.remove(); if (done) done(); });
+    box.querySelector('#cn-save').addEventListener('click', async function () {
+      var note = box.querySelector('#cn-note').value.trim();
+      if (note.length < 3) { alert('दवा / सलाह लिखें।'); return; }
+      var btn = box.querySelector('#cn-save'); btn.disabled = true; btn.textContent = 'सुरक्षित कर रहे हैं...';
+      try {
+        var d = await asPost({ action: 'saveConsultantNote', consultantId: accId, caseId: a.caseId, note: note });
+        if (d && d.status === 'ok') {
+          box.innerHTML = '<h3 style="margin:0 0 8px;color:#15803d">✅ सुरक्षित हो गया!</h3><p style="font-size:13.5px;color:#334155;line-height:1.6">यह सलाह केस <b>' + asEsc(a.caseId) + '</b> में जुड़ गई — भेजने वाले डॉक्टर को सूचना भेज दी गई है।</p>';
+          setTimeout(function () { ov.remove(); if (done) done(); }, 1300);
+        } else { alert('सेव नहीं हुआ — दोबारा कोशिश करें।'); btn.disabled = false; btn.textContent = '💾 सुरक्षित करें'; }
+      } catch (e) { alert('कनेक्शन त्रुटि।'); btn.disabled = false; btn.textContent = '💾 सुरक्षित करें'; }
+    });
+  }
+
+  function showNoteFlash(list, accId) {
+    var n = list[0];
+    var ov = openModal(
+      '<h3 style="margin:0 0 8px;color:#0f766e">💊 परामर्श डॉक्टर ने दवा / सलाह लिखी</h3>' +
+      '<div style="font-size:12.5px;color:#64748b;margin-bottom:6px">केस ' + asEsc(n.caseId) + ' • ' + asEsc(n.consultantName) + '</div>' +
+      '<div style="background:#f0fdfa;border:1.5px solid #ccfbf1;border-radius:12px;padding:12px;font-size:13.5px;color:#134e4a;line-height:1.7;white-space:pre-wrap">' + asEsc(n.note) + '</div>' +
+      '<button id="nf-ok" style="width:100%;margin-top:14px;font-family:inherit;font-size:14px;font-weight:700;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;cursor:pointer">ठीक है</button>'
+    );
+    ov.querySelector('#nf-ok').addEventListener('click', async function () {
+      ov.remove();
+      try { await asPost({ action: 'markNoteNotified', caseId: n.caseId, consultantId: n.consultantId }); } catch (e) {}
+      checkAssignments(accId);
+    });
+  }
+
+  // ===== v44: ASSIGNMENTS — consultant ko case flash + Accept/Reject =====
+  function asEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function asToday() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+  function asDaysOld(v) { var t = new Date(v); if (isNaN(t)) return 0; return Math.floor((Date.now() - t.getTime()) / 86400000); }
+  function asPost(body) {
+    return fetch(ORDERS_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function (r) { return r.json(); });
+  }
+
+  async function checkAssignments(accId) {
+    if (!accId) return;
+    var mine = [], updates = [];
+    try {
+      var d1 = await asPost({ action: 'getMyAssignments', consultantId: accId });
+      mine = (d1 && d1.assignments) || [];
+      var d2 = await asPost({ action: 'getAssignUpdates', assigningDoctor: accId });
+      updates = (d2 && d2.updates) || [];
+    } catch (e) { return; }
+
+    // 1) kehne wale doctor ko notification (accept/reject ho gaya)
+    if (updates.length) { showAssignUpdateFlash(updates, accId); return; }
+
+    // 1b) consultant ne dawa/salah likhi → kehne wale ko dikhao
+    var notes = [];
+    try {
+      var d3 = await asPost({ action: 'getConsultantNotes', assigningDoctor: accId });
+      notes = (d3 && d3.notes) || [];
+    } catch (e) {}
+    if (notes.length) { showNoteFlash(notes, accId); return; }
+
+    // 2) naya case → Accept/Reject flash (har login par, jab tak action na ho)
+    var pending = mine.filter(function (a) { return String(a.status || '').toLowerCase().indexOf('sent') !== -1; });
+    if (pending.length) { showAssignFlash(pending, accId); return; }
+
+    // 3) accept ho gaya → roz pehli login par reminder
+    var accepted = mine.filter(function (a) { return String(a.status || '').toLowerCase().indexOf('accept') !== -1; });
+    var todo = accepted.filter(function (a) {
+      var v = null; try { v = localStorage.getItem('asthl_rem_' + a.caseId); } catch (e) {}
+      return v !== asToday();
+    });
+    if (todo.length) { showAcceptedReminder(todo, accId); }
+  }
+
+  function showAssignFlash(list, accId) {
+    var ov = openModal('');
+    var box = ov.querySelector('#asthl-modal');
+    var idx = 0;
+    function renderCase() {
+      var a = list[idx];
+      var old = asDaysOld(a.date);
+      box.innerHTML =
+        '<h3 style="margin:0 0 6px;color:#134e4a">📤 नया केस मिला (' + (idx + 1) + '/' + list.length + ')</h3>' +
+        '<div style="font-size:13.5px;color:#334155;line-height:1.75">' +
+        '<b>केस ID:</b> ' + asEsc(a.caseId) + '<br>' +
+        '<b>मरीज़:</b> ' + asEsc(a.patientName || '—') + '<br>' +
+        '<b>भेजने वाले:</b> ' + asEsc(a.assigningDoctor || '—') + '<br>' +
+        '<b>परामर्श फीस:</b> ₹' + asEsc(a.fee) + '<br>' +
+        '<b>स्रोत:</b> ' + asEsc(a.source || 'Doctor Referral') + '<br>' +
+        (a.summary ? '<b>मरीज़ की मुख्य बात:</b><br><span style="background:#f0fdfa;border:1px solid #ccfbf1;border-radius:10px;padding:8px;display:block;margin:4px 0">' + asEsc(a.summary) + '</span>' : '') +
+        (old >= 3 ? '<span style="color:#b45309;font-weight:700">⏳ ' + old + ' दिन से प्रतीक्षा में</span>' : '') +
+        '</div>' +
+        '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">' +
+        '<button id="as-accept" style="flex:1;min-width:130px;font-family:inherit;font-size:14px;font-weight:700;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;cursor:pointer">✅ स्वीकार करें</button>' +
+        '<button id="as-reject" style="flex:1;min-width:130px;font-family:inherit;font-size:14px;font-weight:700;padding:12px;border-radius:12px;border:none;background:#fef2f2;color:#b91c1c;border:1.5px solid #fecaca;cursor:pointer">❌ मना करें</button>' +
+        '</div>' +
+        '<button id="as-later" style="width:100%;margin-top:8px;font-family:inherit;font-size:13px;padding:10px;border-radius:12px;border:none;background:#f1f5f9;color:#475569;cursor:pointer">बाद में देखेंगे</button>';
+      box.querySelector('#as-accept').addEventListener('click', function () { acceptForm(a, accId, function () { next(); }); });
+      box.querySelector('#as-reject').addEventListener('click', function () { rejectForm(a, accId, function () { next(); }); });
+      box.querySelector('#as-later').addEventListener('click', function () { ov.remove(); });
+    }
+    function next() { idx++; if (idx < list.length) renderCase(); else { ov.remove(); checkAssignments(accId); } }
+    renderCase();
+  }
+
+  function acceptForm(a, accId, done) {
+    var ov = openModal('');
+    var box = ov.querySelector('#asthl-modal');
+    box.innerHTML =
+      '<h3 style="margin:0 0 8px;color:#15803d">✅ केस स्वीकार करें — ' + asEsc(a.caseId) + '</h3>' +
+      '<label style="font-size:13px;font-weight:600">कितने दिन लगेंगे? *</label>' +
+      '<input id="as-days" type="number" min="1" placeholder="जैसे: 3" style="width:100%;font-family:inherit;font-size:15px;padding:11px;border:1.5px solid #ccfbf1;border-radius:12px;outline:none;margin:6px 0 12px">' +
+      '<label style="font-size:13px;font-weight:600">किस समय देखेंगे? *</label>' +
+      '<input id="as-time" placeholder="जैसे: रोज़ शाम 6 बजे" style="width:100%;font-family:inherit;font-size:15px;padding:11px;border:1.5px solid #ccfbf1;border-radius:12px;outline:none;margin:6px 0 12px">' +
+      '<label style="font-size:13px;font-weight:600">टिप्पणी (optional)</label>' +
+      '<textarea id="as-comment" rows="2" style="width:100%;font-family:inherit;font-size:14px;padding:11px;border:1.5px solid #ccfbf1;border-radius:12px;outline:none;margin:6px 0 12px" placeholder="मरीज़ से क्या पूछना है / कोई बात"></textarea>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+      '<button id="as-cancel" style="flex:1;min-width:100px;font-family:inherit;font-size:14px;font-weight:700;padding:12px;border-radius:12px;border:none;background:#f1f5f9;color:#475569;cursor:pointer">← वापस</button>' +
+      '<button id="as-ok" style="flex:2;min-width:150px;font-family:inherit;font-size:14px;font-weight:700;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;cursor:pointer">✅ स्वीकार करें</button>' +
+      '</div>';
+    box.querySelector('#as-cancel').addEventListener('click', function () { ov.remove(); });
+    box.querySelector('#as-ok').addEventListener('click', async function () {
+      var days = box.querySelector('#as-days').value.trim();
+      var time = box.querySelector('#as-time').value.trim();
+      var cm = box.querySelector('#as-comment').value.trim();
+      if (!days || !time) { alert('दिन और समय दोनों भरें।'); return; }
+      var btn = box.querySelector('#as-ok'); btn.disabled = true; btn.textContent = 'भेज रहे हैं...';
+      try {
+        var d = await asPost({ action: 'respondAssign', consultantId: accId, caseId: a.caseId, decision: 'Accepted', days: days, time: time, comment: cm });
+        if (d && d.status === 'ok') {
+          box.innerHTML = '<h3 style="margin:0 0 8px;color:#15803d">✅ केस स्वीकार हो गया!</h3><p style="font-size:13.5px;color:#334155;line-height:1.65">केस <b>' + asEsc(a.caseId) + '</b> — ' + asEsc(days) + ' दिन, ' + asEsc(time) + '।<br>भेजने वाले डॉक्टर को सूचना भेज दी गई है।</p>';
+          setTimeout(function () { ov.remove(); if (done) done(); }, 1400);
+        } else { alert('सेव नहीं हुआ — दोबारा कोशिश करें।'); btn.disabled = false; btn.textContent = '✅ स्वीकार करें'; }
+      } catch (e) { alert('कनेक्शन त्रुटि।'); btn.disabled = false; btn.textContent = '✅ स्वीकार करें'; }
+    });
+  }
+
+  function rejectForm(a, accId, done) {
+    var ov = openModal('');
+    var box = ov.querySelector('#asthl-modal');
+    box.innerHTML =
+      '<h3 style="margin:0 0 8px;color:#b91c1c">❌ केस मना करें — ' + asEsc(a.caseId) + '</h3>' +
+      '<label style="font-size:13px;font-weight:600">कारण *</label>' +
+      '<textarea id="as-reason" rows="2" style="width:100%;font-family:inherit;font-size:14px;padding:11px;border:1.5px solid #fecaca;border-radius:12px;outline:none;margin:6px 0 12px" placeholder="क्यों नहीं ले सकते"></textarea>' +
+      '<label style="font-size:13px;font-weight:600">किसे भेजें? (सुझाव — नाम/ID, optional)</label>' +
+      '<input id="as-suggest" placeholder="जैसे: Dr. Meena Sharma (ASTHL9001)" style="width:100%;font-family:inherit;font-size:15px;padding:11px;border:1.5px solid #ccfbf1;border-radius:12px;outline:none;margin:6px 0 12px">' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+      '<button id="as-cancel2" style="flex:1;min-width:100px;font-family:inherit;font-size:14px;font-weight:700;padding:12px;border-radius:12px;border:none;background:#f1f5f9;color:#475569;cursor:pointer">← वापस</button>' +
+      '<button id="as-ok2" style="flex:2;min-width:150px;font-family:inherit;font-size:14px;font-weight:700;padding:12px;border-radius:12px;border:none;background:#dc2626;color:#fff;cursor:pointer">❌ मना करें</button>' +
+      '</div>';
+    box.querySelector('#as-cancel2').addEventListener('click', function () { ov.remove(); });
+    box.querySelector('#as-ok2').addEventListener('click', async function () {
+      var reason = box.querySelector('#as-reason').value.trim();
+      var sug = box.querySelector('#as-suggest').value.trim();
+      if (reason.length < 3) { alert('कारण लिखें।'); return; }
+      var btn = box.querySelector('#as-ok2'); btn.disabled = true; btn.textContent = 'भेज रहे हैं...';
+      try {
+        var d = await asPost({ action: 'respondAssign', consultantId: accId, caseId: a.caseId, decision: 'Rejected', rejectReason: reason, suggestTo: sug, comment: '' });
+        if (d && d.status === 'ok') {
+          box.innerHTML = '<h3 style="margin:0 0 8px;color:#b91c1c">केस मना किया गया</h3><p style="font-size:13.5px;color:#334155;line-height:1.65">ASTHL को सूचना मिल गई — वे आगे की व्यवस्था करेंगे।</p>';
+          setTimeout(function () { ov.remove(); if (done) done(); }, 1400);
+        } else { alert('सेव नहीं हुआ।'); btn.disabled = false; btn.textContent = '❌ मना करें'; }
+      } catch (e) { alert('कनेक्शन त्रुटि।'); btn.disabled = false; btn.textContent = '❌ मना करें'; }
+    });
+  }
+
+  function showAssignUpdateFlash(list, accId) {
+    var a = list[0];
+    var acc = String(a.status || '').toLowerCase().indexOf('accept') !== -1;
+    var ov = openModal(
+      '<h3 style="margin:0 0 8px;color:' + (acc ? '#15803d' : '#b91c1c') + '">' + (acc ? '✅ केस स्वीकार हुआ!' : '❌ केस मना किया गया') + '</h3>' +
+      '<div style="font-size:13.5px;color:#334155;line-height:1.75">' +
+      '<b>केस:</b> ' + asEsc(a.caseId) + '<br>' +
+      '<b>डॉक्टर:</b> ' + asEsc(a.consultantName) + ' (' + asEsc(a.consultantId) + ')<br>' +
+      (acc ? ('<b>समय:</b> ' + asEsc(a.when || '')) : ('<b>कारण:</b> ' + asEsc(a.rejectReason))) +
+      '</div>' +
+      '<button id="as-ok3" style="width:100%;margin-top:14px;font-family:inherit;font-size:14px;font-weight:700;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;cursor:pointer">ठीक है</button>'
+    );
+    ov.querySelector('#as-ok3').addEventListener('click', async function () {
+      ov.remove();
+      try { await asPost({ action: 'markNotified', caseId: a.caseId, consultantId: a.consultantId }); } catch (e) {}
+      checkAssignments(accId);
+    });
+  }
+
+  function showAcceptedReminder(list, accId) {
+    var html = '<h3 style="margin:0 0 8px;color:#0f766e">🔔 आज का रिमाइंडर</h3><div style="font-size:13.5px;color:#334155;line-height:1.8">';
+    list.forEach(function (a, i) {
+      html += 'केस <b>' + asEsc(a.caseId) + '</b> — ' + asEsc(a.patientName || '') + '<br>' + asEsc(a.when || a.days || '') + '<br>' +
+        '<button class="cn-open" data-i="' + i + '" style="margin:6px 0 12px;font-family:inherit;font-size:12.5px;font-weight:700;padding:8px 12px;border-radius:10px;border:none;background:#0d9488;color:#fff;cursor:pointer">💊 दवा / सलाह लिखें</button><br>';
+      try { localStorage.setItem('asthl_rem_' + a.caseId, asToday()); } catch (e) {}
+    });
+    html += '</div><p style="font-size:12.5px;color:#64748b">इलाज पूरा होने पर ASTHL को बताएँ — तब भुगतान अगले महीने के पहले हफ़्ते में मिलेगा।</p>' +
+      '<button id="as-ok4" style="width:100%;margin-top:12px;font-family:inherit;font-size:14px;font-weight:700;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;cursor:pointer">समझ गया</button>';
+    var ov = openModal(html);
+    ov.querySelector('#as-ok4').addEventListener('click', function () { ov.remove(); });
+    var cns = ov.querySelectorAll('.cn-open');
+    for (var ci = 0; ci < cns.length; ci++) {
+      cns[ci].addEventListener('click', (function (b) {
+        return function () { consultantNoteForm(list[parseInt(b.getAttribute('data-i'), 10)], accId, function () { showAcceptedReminder(list, accId); }); };
+      })(cns[ci]));
+    }
+  }
 
   // ===== v43: ASSIGN & PAY — apna case experienced doctor ko bhejein =====
   function asUpiLink(amount, note) {

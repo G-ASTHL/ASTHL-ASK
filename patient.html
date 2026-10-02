@@ -204,6 +204,7 @@
     <div class="dot"></div>
     <div><b>ASTHL AI Based Radar System</b><br><span id="pat-info">मरीज़</span></div>
     <button class="newbtn" id="btn-new-patient" title="नया मरीज़">नया मरीज़</button>
+    <button class="newbtn" id="btn-appt" title="डॉक्टर से अपॉइंटमेंट" style="background:#fbbf24;color:#451a03;margin-left:6px">📅 डॉक्टर</button>
   </div>
   <div id="chat-log"></div>
   <div id="chat-input-area">
@@ -224,7 +225,8 @@
     projectId: "asthl-chat-otp",
     appId: "1:1060361604381:web:7cf9891b7339636c7ca5f4"
   };
-  firebase.initializeApp(firebaseConfig);
+  // v36: Firebase CDN load na ho to bhi poora page chalta rahe (pehle yahan poora page ruk jata tha)
+  try { if (window.firebase && firebase.initializeApp) { firebase.initializeApp(firebaseConfig); } } catch (e) { console.warn('Firebase init skip:', e.message); }
   var confirmationResult = null, resendTimer = null;
 
   var $ = function (id) { return document.getElementById(id); };
@@ -272,6 +274,7 @@
     $('step-otp').style.display = 'block';
     $('otp-status').textContent = 'OTP भेजा जा रहा है...';
     $('err-otp').style.display = 'none';
+    if (!window.firebase || !firebase.auth) { alert('OTP service abhi load nahi hui — dobara koshish karein.'); return; }
     var appVerifier = new firebase.auth.RecaptchaVerifier('btn-send-otp', { size: 'invisible' });
     firebase.auth().signInWithPhoneNumber('+91' + mobile, appVerifier)
       .then(function (r) {
@@ -345,7 +348,7 @@
             + '<a href="tel:+917903873282" style="flex:1;min-width:100px;text-align:center;background:#166534;color:#fff;border-radius:12px;padding:10px 8px;font-size:13.5px;font-weight:700;text-decoration:none;">\U0001F4DE Call</a>'
             + '<a href="https://wa.me/917903873282" target="_blank" rel="noopener" style="flex:1;min-width:100px;text-align:center;background:#16a34a;color:#fff;border-radius:12px;padding:10px 8px;font-size:13.5px;font-weight:700;text-decoration:none;">\U0001F4AC WhatsApp</a>'
             + '</div>'
-            + '<p style="font-size:12px;color:#64748b;margin:12px 0 0;text-align:center;line-height:1.5;">\u0905\u0917\u0930 \u0906\u092A\u0915\u094B \u0928\u0947\u0938\u0940 \u0915\u094B\u0908 \u0938\u092E\u0938\u094D\u092F\u093E \u0939\u0948 \u0924\u094B ASTHL \u092E\u0947\u0902 Call / WhatsApp \u0915\u0930\u0947\u0902: <b>+91-7903873282</b></p>'
+            + '<p style="font-size:12px;color:#64748b;margin:12px 0 0;text-align:center;line-height:1.5;">\u0905\u0917\u0930 \u0906\u092A\u0915\u094B \u0910\u0938\u0940 \u0915\u094B\u0908 \u0938\u092E\u0938\u094D\u092F\u093E \u0939\u0948 \u0924\u094B ASTHL \u092A\u0930 Call / WhatsApp \u0915\u0930\u0947\u0902: <b>+91-7903873282</b></p>'
             + '</div>';
           ov.appendChild(card);
           document.body.appendChild(ov);
@@ -374,6 +377,73 @@
     $('pat-info').textContent = patient.name + ' • ' + patient.age + ' वर्ष • ' + patient.gender + ' • ' + patient.mobile;
     messages = [{ role: 'user', parts: [{ text: PATIENT_PROMPT }] }, { role: 'model', parts: [{ text: 'नमस्ते ' + patient.name + ' जी! 👋 मैं ASTHL AI Based Radar System हूँ। अपनी समस्या बताइए — मैं होम्योपैथी में आपकी मदद करूँगा।' }] }];
     addMsg('नमस्ते ' + patient.name + ' जी! 👋 मैं ASTHL AI Based Radar System हूँ। अपनी समस्या बताइए — मैं होम्योपैथी में आपकी मदद करूँगा।', 'bot');
+    setTimeout(function () { checkApptStatus(); }, 2200);
+  }
+
+  // ===== v2: appointment status + rating =====
+  function docLabel(n) { var s = String(n || '').replace(/^\s*Dr\.?\s*/i, ''); return 'डॉ. ' + s; }
+  function apptSummary() {
+    var bits = [];
+    for (var i = 1; i < messages.length && bits.length < 4; i++) {
+      var m = messages[i];
+      if (m.role !== 'user') continue;
+      var t = (m.parts && m.parts[0] && m.parts[0].text) || m.content || '';
+      if (!t || t.length > 600) continue;   // system prompt skip
+      bits.push(t.trim());
+    }
+    var s = bits.join(' | ');
+    return s.length > 300 ? s.slice(0, 300) + '…' : s;
+  }
+  async function checkApptStatus() {
+    if (!patient || !patient.mobile) return;
+    var list = [];
+    try {
+      var r = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'getPatientAppointments', payer: patient.mobile }) });
+      var d = await r.json();
+      list = (d && d.appointments) || [];
+    } catch (e) { return; }
+    list.forEach(function (a) {
+      var st = String(a.status || '').toLowerCase();
+      if (st.indexOf('accept') !== -1) {
+        addMsg('✅ ' + docLabel(a.doctorName) + ' ने आपका अपॉइंटमेंट स्वीकार कर लिया है।\nअनुमानित समय: ' + (a.when || '—') + '\nअपॉइंटमेंट ID: ' + a.caseId, 'bot');
+        if (!a.rating) showRating(a);
+      } else if (st.indexOf('reject') !== -1) {
+        addMsg('ℹ️ आपका अपॉइंटमेंट (ID: ' + a.caseId + ') डॉक्टर द्वारा स्वीकार नहीं हो सका।\nASTHL आपके लिए दूसरा डॉक्टर देख रहा है — कृपया प्रतीक्षा करें या कॉल करें: +91-7903873282', 'bot');
+      }
+    });
+  }
+  function showRating(a) {
+    var log = $('chat-log');
+    var box = document.createElement('div');
+    box.style.cssText = 'background:#fffbeb;border:1.5px solid #fde68a;border-radius:14px;padding:12px;margin:6px 0;font-size:13.5px;color:#78350f';
+    box.innerHTML = '<b>⭐ ' + docLabel(a.doctorName) + ' को रेटिंग दें</b><div style="margin-top:8px" id="rate-stars">' +
+      [1,2,3,4,5].map(function(n){ return '<span class="rstar" data-n="' + n + '" style="font-size:24px;cursor:pointer;color:#d1d5db">★</span>'; }).join('') +
+      '</div><div style="font-size:11.5px;margin-top:6px;opacity:.8">आपकी रेटिंग से दूसरे मरीज़ों को सही डॉक्टर चुनने में मदद मिलेगी।</div>';
+    log.appendChild(box);
+    log.scrollTop = log.scrollHeight;
+    var stars = box.querySelectorAll('.rstar');
+    var picked = 0;
+    for (var i = 0; i < stars.length; i++) {
+      stars[i].addEventListener('click', (function (sp, n) {
+        return function () {
+          picked = n;
+          var all = box.querySelectorAll('.rstar');
+          for (var k = 0; k < all.length; k++) all[k].style.color = (k < n) ? '#f59e0b' : '#d1d5db';
+        };
+      })(stars[i], i + 1));
+    }
+    var btn = document.createElement('button');
+    btn.textContent = 'रेटिंग भेजें';
+    btn.style.cssText = 'margin-top:10px;font-family:inherit;font-size:13px;font-weight:700;padding:9px 14px;border-radius:10px;border:none;background:#0d9488;color:#fff;cursor:pointer';
+    btn.addEventListener('click', async function () {
+      if (!picked) { alert('पहले स्टार चुनें।'); return; }
+      btn.disabled = true; btn.textContent = 'भेज रहे हैं...';
+      try {
+        await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'saveRating', caseId: a.caseId, rating: picked, comment: '' }) });
+        box.innerHTML = '<b>🙏 धन्यवाद!</b> आपकी ' + picked + '-स्टार रेटिंग दर्ज हो गई।';
+      } catch (e) { btn.disabled = false; btn.textContent = 'रेटिंग भेजें'; alert('कनेक्शन त्रुटि।'); }
+    });
+    box.appendChild(btn);
   }
 
   $('btn-new-patient').addEventListener('click', function () {
@@ -422,6 +492,137 @@
   $('chat-send').addEventListener('click', send);
   $('chat-input').addEventListener('keydown', function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
   $('chat-input').addEventListener('input', function () { this.style.height = 'auto'; this.style.height = Math.min(this.scrollHeight, 100) + 'px'; });
+
+  // ===== v1: Patient Appointment (doctor ko fee dekar appointment) =====
+  var APPT_DOCS = [];
+  function apptEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function apptNewCaseId() {
+    var d = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return 'PA' + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + Math.floor(Math.random() * 90 + 10);
+  }
+  function apptOverlay() {
+    var ov = document.getElementById('appt-ov');
+    if (!ov) {
+      ov = document.createElement('div');
+      ov.id = 'appt-ov';
+      ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:1000000;display:flex;align-items:center;justify-content:center;padding:16px';
+      ov.innerHTML = '<div id="appt-box" style="background:#fff;border-radius:18px;max-width:430px;width:100%;max-height:86vh;overflow-y:auto;padding:20px;font-family:inherit"></div>';
+      document.body.appendChild(ov);
+      ov.addEventListener('click', function (e) { if (e.target === ov) ov.remove(); });
+    }
+    return ov.querySelector('#appt-box');
+  }
+  function apptPay(body, note) {
+    return fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }).then(function (r) { return r.json(); });
+  }
+  async function openAppt() {
+    var box = apptOverlay();
+    box.innerHTML = '<h3 style="margin:0 0 8px;color:#134e4a">📅 डॉक्टर से अपॉइंटमेंट</h3><p style="font-size:13px;color:#64748b">डॉक्टर सूची लोड हो रही है...</p>';
+    try {
+      var d = await apptPay({ action: 'listConsultants', selfId: '' });
+      APPT_DOCS = (d && d.consultants) || [];
+    } catch (e) { box.innerHTML = '<h3 style="color:#b91c1c">कनेक्शन त्रुटि</h3><p style="font-size:13px">दोबारा कोशिश करें।</p>'; return; }
+    if (!APPT_DOCS.length) {
+      box.innerHTML = '<h3 style="margin:0 0 8px;color:#134e4a">📅 डॉक्टर से अपॉइंटमेंट</h3><p style="font-size:13.5px;color:#64748b;line-height:1.6">अभी कोई डॉक्टर उपलब्ध नहीं है।<br>थोड़ी देर बाद कोशिश करें या ASTHL से संपर्क करें: +91-7903873282</p>';
+      return;
+    }
+    APPT_DOCS.sort(function (a, b) { return (parseFloat(b.exp) || 0) - (parseFloat(a.exp) || 0); });
+    var headHtml =
+      '<h3 style="margin:0 0 4px;color:#134e4a">📅 डॉक्टर से अपॉइंटमेंट</h3>' +
+      '<div style="font-size:12.5px;color:#64748b;margin-bottom:10px;line-height:1.5">डॉक्टर चुनें और परामर्श फीस भरें — फिर आपका केस उन तक पहुँच जाएगा।</div>' +
+      '<input id="appt-search" placeholder="🔍 नाम / विशेषज्ञता से खोजें" style="width:100%;font-family:inherit;font-size:14px;padding:11px 12px;border:1.5px solid #ccfbf1;border-radius:12px;outline:none;margin-bottom:10px">' +
+      '<div id="appt-list" style="max-height:46vh;overflow-y:auto"></div>';
+    var cur = APPT_DOCS, listEl = null;
+    function renderList(q) {
+      cur = APPT_DOCS;
+      if (q) { var qq = q.toLowerCase(); cur = APPT_DOCS.filter(function (d) { return (d.name + ' ' + d.expertise + ' ' + d.city).toLowerCase().indexOf(qq) !== -1; }); }
+      var h = '';
+      if (!cur.length) h = '<p style="font-size:13px;color:#64748b;padding:10px">कोई डॉक्टर नहीं मिला।</p>';
+      for (var i = 0; i < cur.length; i++) {
+        var d = cur[i];
+        h += '<div class="appt-doc" data-i="' + i + '" style="border:1.5px solid #ccfbf1;border-radius:14px;padding:12px;margin-bottom:8px;cursor:pointer">' +
+          '<b style="color:#0f766e;font-size:14.5px">' + apptEsc(d.name) + '</b>' +
+          '<div style="font-size:12.5px;color:#334155;margin-top:4px">🎓 ' + apptEsc(d.qual) + ' • ⏳ ' + apptEsc(d.exp) + ' वर्ष अनुभव</div>' +
+          '<div style="font-size:12.5px;color:#334155">🩺 ' + apptEsc(d.expertise) + '</div>' +
+          '<div style="font-size:13.5px;font-weight:700;color:#b45309;margin-top:4px">परामर्श फीस: ₹' + apptEsc(d.fee) + '</div>' +
+          '</div>';
+      }
+      listEl.innerHTML = h;
+      var items = listEl.querySelectorAll('.appt-doc');
+      for (var k = 0; k < items.length; k++) {
+        items[k].addEventListener('click', (function (idx) { return function () { showDoc(cur[idx]); }; })(k));
+      }
+    }
+    function showList() {
+      box.innerHTML = headHtml;
+      listEl = box.querySelector('#appt-list');
+      var inp = box.querySelector('#appt-search');
+      inp.addEventListener('input', function () { renderList(inp.value); });
+      renderList('');
+    }
+    function showDoc(d) {
+      box.innerHTML =
+        '<h3 style="margin:0 0 8px;color:#134e4a">👨‍⚕️ ' + apptEsc(d.name) + '</h3>' +
+        '<div style="font-size:13.5px;color:#334155;line-height:1.8">' +
+        '<b>योग्यता:</b> ' + apptEsc(d.qual) + '<br>' +
+        '<b>अनुभव:</b> ' + apptEsc(d.exp) + ' वर्ष<br>' +
+        '<b>विशेषज्ञता:</b> ' + apptEsc(d.expertise) + '<br>' +
+        (d.city ? '<b>शहर:</b> ' + apptEsc(d.city) + '<br>' : '') +
+        (d.about ? '<b>परिचय:</b> ' + apptEsc(d.about) + '<br>' : '') +
+        '<b>परामर्श फीस:</b> <span style="color:#b45309;font-weight:800">₹' + apptEsc(d.fee) + '</span>' +
+        '</div>' +
+        '<div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">' +
+        '<button id="appt-back" style="flex:1;min-width:110px;font-family:inherit;font-size:14px;font-weight:700;padding:12px;border-radius:12px;border:none;background:#f1f5f9;color:#475569;cursor:pointer">← वापस</button>' +
+        '<button id="appt-conf" style="flex:2;min-width:170px;font-family:inherit;font-size:14px;font-weight:700;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;cursor:pointer">✅ अपॉइंटमेंट लें — ₹' + apptEsc(d.fee) + '</button>' +
+        '</div>';
+      box.querySelector('#appt-back').addEventListener('click', showList);
+      box.querySelector('#appt-conf').addEventListener('click', function () { payStep(d); });
+    }
+    function payStep(d) {
+      var cid = apptNewCaseId();
+      var uri = 'upi://pay?pa=' + encodeURIComponent('asthl@ybl') + '&pn=' + encodeURIComponent('ASTHL') + '&am=' + encodeURIComponent(d.fee) + '&cu=INR&tn=' + encodeURIComponent('ASTHL Appointment ' + cid);
+      var qr = 'https://api.qrserver.com/v1/create-qr-code/?size=210x210&margin=8&data=' + encodeURIComponent(uri);
+      box.innerHTML =
+        '<h3 style="margin:0 0 6px;color:#134e4a">💰 परामर्श फीस — ₹' + apptEsc(d.fee) + '</h3>' +
+        '<div style="font-size:12.5px;color:#64748b;margin-bottom:10px">' + apptEsc(d.name) + ' • अपॉइंटमेंट ID: ' + apptEsc(cid) + '</div>' +
+        '<div style="text-align:center"><img src="' + qr + '" alt="UPI QR" onerror="this.style.display=\'none\';var w=document.getElementById(\'appt-qrw\');if(w)w.style.display=\'block\';" style="width:190px;height:190px;border:1px solid #ccfbf1;border-radius:12px">' +
+        '<div id="appt-qrw" style="display:none;font-size:12.5px;color:#b45309;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:8px;margin-top:6px">QR load nahi hua — niche wale UPI button se bhugtan karein.</div>' +
+        '<div style="font-weight:700;color:#0f766e;margin-top:6px">asthl@ybl</div></div>' +
+        '<a href="' + uri + '" style="display:block;text-align:center;margin-top:10px;background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;font-weight:700;padding:12px;border-radius:12px;text-decoration:none">📱 ₹' + apptEsc(d.fee) + ' भुगतान करें (UPI)</a>' +
+        '<input id="appt-utr" placeholder="UTR / भुगतान संदर्भ नंबर" style="width:100%;font-family:inherit;font-size:14px;padding:11px 12px;border:1.5px solid #ccfbf1;border-radius:12px;outline:none;margin-top:12px">' +
+        '<div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">' +
+        '<button id="appt-back2" style="flex:1;min-width:110px;font-family:inherit;font-size:14px;font-weight:700;padding:12px;border-radius:12px;border:none;background:#f1f5f9;color:#475569;cursor:pointer">← वापस</button>' +
+        '<button id="appt-submit" style="flex:2;min-width:150px;font-family:inherit;font-size:14px;font-weight:700;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;cursor:pointer">📩 भुगतान के बाद सबमिट करें</button>' +
+        '</div>' +
+        '<p style="font-size:11.5px;color:#64748b;margin-top:10px;line-height:1.5">ASTHL भुगतान की पुष्टि करने के बाद आपका केस डॉक्टर को भेजा जाएगा।</p>';
+      box.querySelector('#appt-back2').addEventListener('click', function () { showDoc(d); });
+      box.querySelector('#appt-submit').addEventListener('click', function () { submit(d, cid, box.querySelector('#appt-utr').value.trim()); });
+    }
+    async function submit(d, cid, utr) {
+      var btn = box.querySelector('#appt-submit');
+      btn.disabled = true; btn.textContent = 'भेज रहे हैं...';
+      try {
+        var r = await apptPay({
+          action: 'saveAssignPay', caseId: cid,
+          patientName: (patient && patient.name) || '', assigningDoctor: '',
+          consultantId: d.id, consultantName: d.name, fee: String(d.fee), utr: utr,
+          source: 'Patient Appointment', payer: (patient && patient.mobile) || '', asthlFee: 30,
+          caseSummary: apptSummary()
+        });
+        if (r && r.status === 'ok') {
+          box.innerHTML = '<h3 style="margin:0 0 8px;color:#15803d">✅ अपॉइंटमेंट अनुरोध भेज दिया गया!</h3><p style="font-size:13.5px;color:#334155;line-height:1.65">अपॉइंटमेंट ID: <b>' + apptEsc(cid) + '</b><br>ASTHL भुगतान की पुष्टि करते ही आपका केस ' + apptEsc(d.name) + ' को भेज दिया जाएगा।<br><br>कोई सवाल हो तो: +91-7903873282</p>';
+        } else {
+          alert('सेव नहीं हुआ — दोबारा कोशिश करें।');
+          btn.disabled = false; btn.textContent = '📩 भुगतान के बाद सबमिट करें';
+        }
+      } catch (e) {
+        alert('कनेक्शन त्रुटि।'); btn.disabled = false; btn.textContent = '📩 भुगतान के बाद सबमिट करें';
+      }
+    }
+    showList();
+  }
+  var apptBtn = document.getElementById('btn-appt');
+  if (apptBtn) apptBtn.addEventListener('click', openAppt);
 })();
 </script>
 <script>if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); }); }</script>

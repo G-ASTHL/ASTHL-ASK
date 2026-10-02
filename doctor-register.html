@@ -99,6 +99,7 @@
         <div class="fgrp"><label>प्रति केस फीस (₹) *</label><input id="d-fee" type="number" min="0" placeholder="परामर्श फीस — जैसे: 500"></div>
       </div>
       <div class="fgrp"><label>विशेषज्ञता (Expertise in) *</label><input id="d-expertise" placeholder="जैसे: चर्म रोग, महिला रोग, बाल रोग, गठिया"></div>
+      <div class="fgrp"><label>हफ़्ते में अधिकतम केस (Max Cases/Week)</label><input id="d-maxcases" type="number" min="1" max="50" placeholder="जैसे: 5 (खाली छोड़ें = कोई सीमा नहीं)"></div>
       <div class="fgrp"><label>संक्षिप्त परिचय (About) — सारी योग्यताएँ, डिग्री, अनुभव, पता</label><textarea id="d-about" rows="3" style="width:100%;font-family:inherit;font-size:15px;padding:11px 12px;border:1.5px solid var(--border);border-radius:12px;outline:none;" placeholder="जैसे: BHMS, MD (Homoeo) — 12 वर्ष अनुभव, चर्म व महिला रोग विशेषज्ञ, ... क्लिनिक का पता ..."></textarea></div>
       <div class="fgrp"><label>अन्य डॉक्टरों के केस परामर्श के लिए उपलब्ध?</label>
         <select id="d-avail"><option value="Yes">हाँ — मुझे केस भेज सकते हैं</option><option value="No">नहीं — अभी नहीं</option></select>
@@ -167,6 +168,7 @@ $('d-submit').addEventListener('click', function () {
   var name = $('d-name').value.trim(), mob = $('d-mobile').value.trim(), qual = $('d-qual').value,
       city = $('d-city').value.trim(), clinic = $('d-clinic').value.trim(), utr = $('d-utr').value.trim(),
       exp = $('d-exp').value.trim(), fee = $('d-fee').value.trim(), expertise = $('d-expertise').value.trim(),
+      maxcases = $('d-maxcases').value.trim(),
       about = $('d-about').value.trim(), avail = $('d-avail').value;
   if (name.length < 2) { alert('कृपया पूरा नाम लिखें।'); return; }
   if (!/^\d{10}$/.test(mob)) { alert('सही 10 अंकों का मोबाइल नंबर लिखें।'); return; }
@@ -184,7 +186,7 @@ $('d-submit').addEventListener('click', function () {
       action: 'saveOrder', type: 'doctor-registration', patientRef: mob,
       name: 'Dr. ' + name, mobile: mob, address: (city + (clinic ? ' • ' + clinic : '')),
       qual: qual, city: city, clinic: clinic,
-      exp: exp, fee: fee, expertise: expertise, about: about, avail: avail,
+      exp: exp, fee: fee, expertise: expertise, about: about, avail: avail, maxcases: maxcases,
       pincode: '', items: 'डॉक्टर ID — ' + (PLAN.amount === 299 ? 'मासिक ₹299/माह' : '2 वर्ष ₹2,999') + ' • योग्यता: ' + qual,
       amount: String(PLAN.amount), payRef: utr
     })
