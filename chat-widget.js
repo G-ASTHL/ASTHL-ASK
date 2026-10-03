@@ -975,7 +975,7 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
     else { showStep(stepCat); }
   }
   async function handleGate() {
-    var idv = gateInput.value.trim().toUpperCase();
+    var idv = gateInput.value.trim().toUpperCase().replace(/[\s\-_]/g, '');
     gateErr.classList.remove('show');
     if (!idv) { gateErr.textContent = '\u0915\u0943\u092A\u092F\u093E ASTHL ID \u0921\u093E\u0932\u0947\u0902\u0964'; gateErr.classList.add('show'); return; }
     gateBtn.disabled = true; gateBtn.textContent = '\u091C\u093E\u0901\u091A \u0939\u094B \u0930\u0939\u0940 \u0939\u0948...';
@@ -987,7 +987,7 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
         localStorage.setItem('asthl_access_id', idv);
         if (FULLPAGE_MODE) { patientInfo = null; startChat(); } else { openAfterGate(); }
       } else {
-        gateErr.textContent = data.expired ? '\u0906\u092A\u0915\u0940 ID \u0915\u0940 validity \u0916\u0924\u092E \u0939\u094B \u0917\u0908 \u0939\u0948\u0964 Renewal \u0915\u0947 \u0932\u093F\u090F \u0938\u0902\u092A\u0930\u094D\u0915 \u0915\u0930\u0947\u0902 \u2014 \u0915\u0949\u0932/\u0935\u094D\u0939\u093E\u091F\u094D\u0938\u092A\u094D\u092A +91-7903873282' : '\u0917\u0932\u0924 ID\u0964 \u0938\u0939\u0940 ID \u0921\u093E\u0932\u0947\u0902 \u092F\u093E ASTHL \u0938\u0947 \u0938\u0902\u092A\u0930\u094D\u0915 \u0915\u0930\u0947\u0902 \u2014 \u0915\u0949\u0932/\u0935\u094D\u0939\u093E\u091F\u094D\u0938\u092A\u094D\u092A +91-7903873282';
+        gateErr.textContent = data.expired ? '\u0906\u092A\u0915\u0940 ID \u0915\u0940 validity \u0916\u0924\u092E \u0939\u094B \u0917\u0908 \u0939\u0948\u0964 Renewal \u0915\u0947 \u0932\u093F\u090F \u0938\u0902\u092A\u0930\u094D\u0915 \u0915\u0930\u0947\u0902 \u2014 \u0915\u0949\u0932/\u0935\u094D\u0939\u093E\u091F\u094D\u0938\u092A\u094D\u092A +91-7903873282' : '\u0917\u0932\u0924 ID\u0964 \u0938\u0939\u0940 ID \u0921\u093E\u0932\u0947\u0902 \u2014 \u091C\u0948\u0938\u0947 DOCT0001 (\u0905\u0902\u0917\u094D\u0930\u0947\u091C\u0940 \u0905\u0915\u094D\u0937\u0930\u094B\u0902 \u092E\u0947\u0902, \u092C\u093F\u0928\u093E space)\u0964 \u092E\u0926\u0926 \u0915\u0947 \u0932\u093F\u090F \u0915\u0949\u0932/\u0935\u094D\u0939\u093E\u091F\u094D\u0938\u092A\u094D\u092A +91-7903873282';
         gateErr.classList.add('show');
       }
     } catch (err) {
