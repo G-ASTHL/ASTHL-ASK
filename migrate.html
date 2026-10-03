@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASTHL — पुराना डेटा नए डेटाबेस में लाएँ</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Noto Sans Devanagari', system-ui, sans-serif; background: #f0fdfa; color: #134e4a; padding: 16px; }
+  .card { max-width: 620px; margin: 0 auto; background: #fff; border: 1.5px solid #ccfbf1; border-radius: 20px; padding: 22px; box-shadow: 0 10px 30px rgba(13,148,136,.12); }
+  h1 { font-size: 21px; margin-bottom: 6px; }
+  .sub { color: #64748b; font-size: 13.5px; margin-bottom: 16px; line-height: 1.6; }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 5px; }
+  input { width: 100%; font-family: inherit; font-size: 14px; padding: 11px 12px; border: 1.5px solid #ccfbf1; border-radius: 12px; outline: none; }
+  input:focus { border-color: #0d9488; }
+  button { width: 100%; font-family: inherit; font-size: 15px; font-weight: 700; color: #fff; background: linear-gradient(135deg,#0d9488,#0f766e); border: none; border-radius: 14px; padding: 14px; cursor: pointer; margin-top: 14px; }
+  button:disabled { opacity: .55; }
+  button.green { background: linear-gradient(135deg,#16a34a,#15803d); }
+  #log { margin-top: 14px; font-size: 13px; line-height: 1.7; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; white-space: pre-wrap; min-height: 60px; }
+  .ok { color: #166534; font-weight: 700; }
+  .bad { color: #b91c1c; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>📥 पुराना डेटा नए डेटाबेस में लाएँ</h1>
+  <div class="sub">यह page आपके <b>Google Sheet</b> का पुराना सारा डेटा पढ़कर <b>नए database (Supabase)</b> में डाल देगा।<br>
+  <b>पहले "1) शीट से डेटा पढ़ें"</b> दबाएँ, फिर <b>"2) डेटाबेस में भेजें"</b>।</div>
+
+  <label>Apps Script का /exec URL</label>
+  <input id="execUrl" value="https://script.google.com/macros/s/AKfycbyuzg0qrd6XET1RwgMyvstd-QymfTbQcKfqm3g84cis8SHCo3T1Euj8hDZPhX7zHnfEpA/exec">
+
+  <label>Admin पासवर्ड</label>
+  <input id="pw" type="password" placeholder="पासवर्ड">
+
+  <button id="readBtn">1) शीट से डेटा पढ़ें</button>
+  <button id="sendBtn" class="green" disabled>2) डेटाबेस में भेजें</button>
+  <div id="log">तैयार…</div>
+</div>
+
+<script>
+var TABS = null;
+var $ = function (id) { return document.getElementById(id); };
+function log(msg, cls) {
+  var el = $('log');
+  el.innerHTML += '<br><span class="' + (cls || '') + '">' + msg + '</span>';
+  el.scrollTop = el.scrollHeight;
+}
+
+$('readBtn').addEventListener('click', async function () {
+  var url = $('execUrl').value.trim();
+  if (!url) { alert('URL डालें'); return; }
+  $('readBtn').disabled = true; $('readBtn').textContent = 'पढ़ रहे हैं…';
+  $('log').innerHTML = 'शीट से डेटा पढ़ा जा रहा है…';
+  try {
+    var full = url + '?action=adminGetAll&payload=' + encodeURIComponent(JSON.stringify({ action: 'adminGetAll' }));
+    var r = await fetch(full);
+    var t = (await r.text() || '').trim();
+    if (t.charAt(0) !== '{') { log('❌ शीट से जवाब नहीं आया (HTML page मिला)। Apps Script में "Who has access: Anyone" है या नहीं — देख लें।', 'bad'); return; }
+    var d = JSON.parse(t);
+    TABS = d.tabs || {};
+    var names = Object.keys(TABS);
+    log('✅ डेटा मिल गया — ' + names.length + ' tabs:', 'ok');
+    var total = 0;
+    names.forEach(function (n) {
+      var cnt = (TABS[n].rows || []).length;
+      total += cnt;
+      log('   • ' + n + ' — ' + cnt + ' rows');
+    });
+    log('कुल: ' + total + ' rows. अब "2) डेटाबेस में भेजें" दबाएँ।', 'ok');
+    $('sendBtn').disabled = false;
+  } catch (e) {
+    log('❌ त्रुटि: ' + e.message, 'bad');
+  } finally {
+    $('readBtn').disabled = false; $('readBtn').textContent = '1) शीट से डेटा पढ़ें';
+  }
+});
+
+$('sendBtn').addEventListener('click', async function () {
+  if (!TABS) { alert('पहले डेटा पढ़ें'); return; }
+  var pw = $('pw').value;
+  if (!pw) { alert('Admin पासवर्ड डालें'); return; }
+  if (!confirm('पुराना सारा डेटा डेटाबेस में भेजना है?\n(डेटाबेस की पुरानी entries हटाकर नया डाला जाएगा)')) return;
+  $('sendBtn').disabled = true; $('sendBtn').textContent = 'भेज रहे हैं…';
+  try {
+    var r = await fetch('/api/migrate', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pw, tabs: TABS, clear: true })
+    });
+    var d = await r.json();
+    if (d && d.status === 'ok') {
+      log('✅ डेटाबेस में आ गया!', 'ok');
+      Object.keys(d.imported || {}).forEach(function (k) { log('   • ' + k + ' — ' + d.imported[k] + ' rows'); });
+      log('अब admin panel खोलकर 🔎 दोबारा जाँचें दबाएँ।', 'ok');
+    } else {
+      log('❌ नहीं हुआ: ' + ((d && d.error) || 'दोबारा कोशिश करें'), 'bad');
+    }
+  } catch (e) {
+    log('❌ त्रुटि: ' + e.message, 'bad');
+  } finally {
+    $('sendBtn').disabled = false; $('sendBtn').textContent = '2) डेटाबेस में भेजें';
+  }
+});
+</script>
+</body>
+</html>
