@@ -1601,6 +1601,7 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
   function fuWhen(s) {
     try { var d = new Date(s); if (isNaN(d.getTime())) return ''; return d.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; }
   }
+  function fuEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   async function openFollowupInbox(myId) {
     var ov = openModal('<h3 style="margin:0 0 10px;color:#134e4a">💬 फॉलो-अप</h3><p style="font-size:13px;color:#64748b">लोड हो रहा है...</p>');
     var box = ov.querySelector('#asthl-modal');
@@ -1642,19 +1643,21 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
       if (!d || d.status !== 'ok') { if (first) wrap.innerHTML = '<p style="color:#b91c1c;font-size:13px">लोड नहीं हो सका। थोड़ी देर बाद कोशिश करें।</p>'; return; }
       first = false;
       var msgs = d.messages || [];
-      var freeTxt = d.free ? ('🎁 <b>फ्री फॉलो-अप</b> — ' + (d.daysLeft > 1 ? d.daysLeft + ' दिन बाकी' : (d.daysLeft === 1 ? 'कल आख़िरी दिन' : 'आज आख़िरी दिन'))) : '⏳ फ्री फॉलो-अप की अवधि (1 महीना) पूरी हो गई। नया परामर्श लेने पर फिर फ्री मिलेगा।';
+      var freeTxt = d.free ? ('🎁 <b>फ्री फॉलो-अप</b> — ' + (d.daysLeft == null ? '1 महीने तक चालू' : (d.daysLeft > 1 ? d.daysLeft + ' दिन बाकी' : (d.daysLeft === 1 ? 'कल आख़िरी दिन' : 'आज आख़िरी दिन')))) : '⏳ फ्री फॉलो-अप की अवधि (1 महीना) पूरी हो गई। नया परामर्श लेने पर फिर फ्री मिलेगा।';
       var h = '<h3 style="margin:0 0 4px;color:#134e4a">💬 फॉलो-अप — ' + asEsc(title || caseId) + '</h3>' +
         '<div style="font-size:11.5px;color:#0d9488;font-weight:600;margin-bottom:6px">केस ' + asEsc(caseId) + '</div>' +
         '<div style="font-size:12.5px;padding:7px 10px;border-radius:10px;background:' + (d.free ? '#f0fdf4' : '#fef2f2') + ';border:1px solid ' + (d.free ? '#bbf7d0' : '#fecaca') + ';color:' + (d.free ? '#166534' : '#b91c1c') + ';margin-bottom:10px;line-height:1.5">' + freeTxt + '</div>' +
         '<div id="asthl-fu-msgs" style="max-height:42vh;overflow-y:auto;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:10px">';
+      try {
       if (!msgs.length) h += '<div style="font-size:12.5px;color:#64748b;text-align:center;padding:14px">अभी कोई संदेश नहीं — नीचे लिखकर शुरू करें।</div>';
       msgs.forEach(function (m) {
         var mine = (myRole === 'Patient') ? (m.role === 'Patient') : (String(m.role || '').toUpperCase() === String(myRole || '').toUpperCase());
         var who = m.fromName || (m.role === 'Consultant' ? 'परामर्श डॉक्टर' : (m.role === 'Patient' ? 'मरीज़' : 'डॉक्टर'));
         h += '<div style="margin:6px 0;text-align:' + (mine ? 'right' : 'left') + '">' +
-          '<div style="display:inline-block;max-width:82%;text-align:left;background:' + (mine ? '#0d9488' : '#ffffff') + ';color:' + (mine ? '#ffffff' : '#1e293b') + ';border:1px solid ' + (mine ? '#0d9488' : '#e2e8f0') + ';border-radius:12px;padding:8px 11px;font-size:13.5px;line-height:1.6;white-space:pre-wrap">' + asEsc(m.text) + '</div>' +
-          '<div style="font-size:10.5px;color:#94a3b8;margin-top:2px">' + asEsc(who) + ' • ' + fuWhen(m.at) + '</div></div>';
+          '<div style="display:inline-block;max-width:82%;text-align:left;background:' + (mine ? '#0d9488' : '#ffffff') + ';color:' + (mine ? '#ffffff' : '#1e293b') + ';border:1px solid ' + (mine ? '#0d9488' : '#e2e8f0') + ';border-radius:12px;padding:8px 11px;font-size:13.5px;line-height:1.6;white-space:pre-wrap">' + fuEsc(m.text) + '</div>' +
+          '<div style="font-size:10.5px;color:#94a3b8;margin-top:2px">' + fuEsc(who) + ' • ' + fuWhen(m.at) + '</div></div>';
       });
+      } catch (fuErr) { h += '<div style="color:#b91c1c;font-size:12.5px;padding:10px;text-align:center">संदेश दिखाने में दिक्कत आई।</div>'; }
       h += '</div>';
       if (d.free) {
         h += '<div style="display:flex;gap:8px;margin-top:10px"><textarea id="asthl-fu-in" rows="2" placeholder="संदेश लिखें..." style="flex:1;font-family:inherit;font-size:13.5px;padding:10px;border:1.5px solid #cbd5e1;border-radius:12px;resize:none"></textarea>' +
@@ -1669,7 +1672,14 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
         var txt = (inp.value || '').trim();
         if (!txt) return;
         sb.disabled = true; sb.textContent = '...';
-        try { await asPost({ action: 'saveFollowup', caseId: caseId, role: myRole, fromId: myId, fromName: myId, text: txt }); inp.value = ''; await draw(); } catch (e) {}
+        var ok = false;
+        try { var sr = await asPost({ action: 'saveFollowup', caseId: caseId, role: myRole, fromId: myId, fromName: myId, text: txt }); ok = !!(sr && sr.status === 'ok'); } catch (e) { ok = false; }
+        if (ok) inp.value = '';
+        await draw();
+        if (!ok) {
+          var mbox = wrap.querySelector('#asthl-fu-msgs');
+          if (mbox) { var ed = document.createElement('div'); ed.style.cssText = 'color:#b91c1c;font-size:12.5px;padding:8px 2px;text-align:center'; ed.textContent = 'संदेश नहीं भेजा जा सका — दोबारा कोशिश करें।'; mbox.appendChild(ed); mbox.scrollTop = mbox.scrollHeight; }
+        }
         sb.disabled = false; sb.textContent = 'भेजें';
       });
     }

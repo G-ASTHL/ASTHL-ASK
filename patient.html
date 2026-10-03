@@ -424,6 +424,7 @@
     if (b) b.style.display = 'inline-block';
   }
   function fuWhen(s) { try { var d = new Date(s); if (isNaN(d.getTime())) return ''; return d.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } }
+  function fuEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   async function drawFu() {
     if (!fuCase) return;
     var inEl = document.getElementById('fu-input');
@@ -437,20 +438,22 @@
     var msgs = d.messages || [];
     var ban = document.getElementById('fu-banner');
     ban.innerHTML = d.free
-      ? ('🎁 <b>फ्री फॉलो-अप</b> — ' + (d.daysLeft > 1 ? d.daysLeft + ' दिन बाकी' : (d.daysLeft === 1 ? 'कल आख़िरी दिन' : 'आज आख़िरी दिन')) + '। अपनी स्थिति बताइए — डॉक्टर जवाब देंगे।')
+      ? ('🎁 <b>फ्री फॉलो-अप</b> — ' + (d.daysLeft == null ? '1 महीने तक चालू' : (d.daysLeft > 1 ? d.daysLeft + ' दिन बाकी' : (d.daysLeft === 1 ? 'कल आख़िरी दिन' : 'आज आख़िरी दिन'))) + '। अपनी स्थिति बताइए — डॉक्टर जवाब देंगे।')
       : '⏳ फ्री फॉलो-अप की अवधि (1 महीना) पूरी हो गई। नया अपॉइंटमेंट लेने पर फिर फ्री मिलेगा।';
     ban.style.background = d.free ? '#f0fdf4' : '#fef2f2';
     ban.style.color = d.free ? '#166534' : '#b91c1c';
     ban.style.borderColor = d.free ? '#bbf7d0' : '#fecaca';
     var h = '';
+    try {
     if (!msgs.length) h = '<div style="font-size:12.5px;color:#64748b;text-align:center;padding:16px">अभी कोई संदेश नहीं — नीचे लिखकर शुरू करें।</div>';
     msgs.forEach(function (m) {
       var mine = (m.role === 'Patient');
       var who = m.fromName || (m.role === 'Patient' ? 'आप' : 'डॉक्टर');
       h += '<div style="margin:6px 0;text-align:' + (mine ? 'right' : 'left') + '">' +
-        '<div style="display:inline-block;max-width:82%;text-align:left;background:' + (mine ? '#0d9488' : '#fff') + ';color:' + (mine ? '#fff' : '#1e293b') + ';border:1px solid ' + (mine ? '#0d9488' : '#e2e8f0') + ';border-radius:12px;padding:8px 11px;font-size:13.5px;line-height:1.6;white-space:pre-wrap">' + esc(m.text) + '</div>' +
-        '<div style="font-size:10.5px;color:#94a3b8;margin-top:2px">' + esc(who) + ' • ' + fuWhen(m.at) + '</div></div>';
+        '<div style="display:inline-block;max-width:82%;text-align:left;background:' + (mine ? '#0d9488' : '#fff') + ';color:' + (mine ? '#fff' : '#1e293b') + ';border:1px solid ' + (mine ? '#0d9488' : '#e2e8f0') + ';border-radius:12px;padding:8px 11px;font-size:13.5px;line-height:1.6;white-space:pre-wrap">' + fuEsc(m.text) + '</div>' +
+        '<div style="font-size:10.5px;color:#94a3b8;margin-top:2px">' + fuEsc(who) + ' • ' + fuWhen(m.at) + '</div></div>';
     });
+    } catch (fuErr) { h += '<div style="color:#b91c1c;font-size:12.5px;padding:10px;text-align:center">संदेश दिखाने में दिक्कत आई — बंद करके दोबारा खोलें।</div>'; }
     var box = document.getElementById('fu-msgs');
     box.innerHTML = h;
     box.scrollTop = box.scrollHeight;
@@ -477,11 +480,21 @@
       var txt = (document.getElementById('fu-input').value || '').trim();
       if (!txt || !fuCase) return;
       s.disabled = true; s.textContent = '...';
+      var ok = false;
       try {
-        await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'saveFollowup', caseId: fuCase.id, role: 'Patient', fromId: (patient && patient.mobile) || '', fromName: (patient && patient.name) || 'मरीज़', text: txt }) });
-        document.getElementById('fu-input').value = '';
-        await drawFu();
-      } catch (e) {}
+        var rr = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'saveFollowup', caseId: fuCase.id, role: 'Patient', fromId: (patient && patient.mobile) || '', fromName: (patient && patient.name) || 'मरीज़', text: txt }) });
+        var jj = await rr.json();
+        ok = !!(jj && jj.status === 'ok');
+      } catch (e) { ok = false; }
+      if (ok) document.getElementById('fu-input').value = '';
+      await drawFu();
+      if (!ok) {
+        var mb = document.getElementById('fu-msgs');
+        var ed = document.createElement('div');
+        ed.style.cssText = 'color:#b91c1c;font-size:12.5px;padding:8px 2px;text-align:center';
+        ed.textContent = 'संदेश नहीं भेजा जा सका — इंटरनेट जाँचकर दोबारा भेजें।';
+        mb.appendChild(ed); mb.scrollTop = mb.scrollHeight;
+      }
       s.disabled = false; s.textContent = 'भेजें';
     });
   }
