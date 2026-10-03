@@ -1,6 +1,6 @@
 // =====================================================
-// ASTHL Chat Widget — CURRENT VERSION: v47
-// v47: case list me '📋 परामर्श सलाह' (consultant ki salah AI chat se ALAG rehti hai) | v46: flash me mareez ki mukhya baat | v45: Doctor kamaai banner + consultant medicine note + patient appointment | v44: Case flash — consultant ko Accept/Reject, kehne wale ko notification, roz reminder | v43: Assign & Pay | v41: MEDICINE SET PATTERN (nosode/sarcode opening + constitutional + biochemic/mother-tincture supporting) + doctor short English names + differentiation rule + link-mention ban | v40: normal dose wapas + asthl.in | v38: medicine-list sheet logging + original model chain | v37: Health Alert popup (sheet se patient/doctor) | v36: same-ID case update, auto-save, mobile header fix | v35: case save me patient mobile | v32: voice v5
+// ASTHL Chat Widget — CURRENT VERSION: v48
+// v48: Assign panel me saaf message (sheet jawab na de / apni hi ID ho) | v47: case list me '📋 परामर्श सलाह' (consultant ki salah AI chat se ALAG rehti hai) | v46: flash me mareez ki mukhya baat | v45: Doctor kamaai banner + consultant medicine note + patient appointment | v44: Case flash — consultant ko Accept/Reject, kehne wale ko notification, roz reminder | v43: Assign & Pay | v41: MEDICINE SET PATTERN (nosode/sarcode opening + constitutional + biochemic/mother-tincture supporting) + doctor short English names + differentiation rule + link-mention ban | v40: normal dose wapas + asthl.in | v38: medicine-list sheet logging + original model chain | v37: Health Alert popup (sheet se patient/doctor) | v36: same-ID case update, auto-save, mobile header fix | v35: case save me patient mobile | v32: voice v5
 // Patient/Doctor categories, ek baar OTP, phir seedha chat
 // =====================================================
 
@@ -1442,16 +1442,28 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
     var ov = openModal('<h3 style="margin:0 0 8px;color:#134e4a">📤 डॉक्टर सूची लोड हो रही है...</h3><p style="font-size:13px;color:#64748b">कृपया रुकें</p>');
     var box = ov.querySelector('#asthl-modal');
     var docs = [];
+    var data = null, netErr = false;
     try {
       var res = await fetch(ORDERS_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'listConsultants', selfId: accId }) });
-      var data = await res.json();
+      data = await res.json();
+      if (!res.ok || (data && data.error && !data.consultants)) netErr = true;
       docs = (data && data.consultants) || [];
     } catch (e) {
-      box.innerHTML = '<h3 style="margin:0 0 8px;color:#b91c1c">कनेक्शन त्रुटि</h3><p style="font-size:13px;color:#334155">दोबारा कोशिश करें।</p>';
+      netErr = true;
+    }
+    if (netErr) {
+      box.innerHTML = '<h3 style="margin:0 0 8px;color:#b91c1c">⚠️ डॉक्टर सूची नहीं आ सकी</h3>' +
+        '<p style="font-size:13px;color:#334155;line-height:1.7">शीट से जवाब नहीं आया।<br>' + asEsc((data && data.error) || 'कनेक्शन त्रुटि') + '<br><br>' +
+        '<b>ASTHL से संपर्क करें:</b> कॉल/व्हाट्सप्प +91-7903873282</p>';
       return;
     }
     if (!docs.length) {
-      box.innerHTML = '<h3 style="margin:0 0 8px;color:#134e4a">📤 Assign &amp; Pay</h3><p style="font-size:13.5px;color:#64748b;line-height:1.6">अभी कोई परामर्श-योग्य डॉक्टर उपलब्ध नहीं है।<br><br>जब डॉक्टर रजिस्ट्रेशन में <b>अनुभव, फीस व विशेषज्ञता</b> भरकर परामर्श के लिए उपलब्ध होंगे, वे यहाँ दिखेंगे।</p>';
+      if (data && data.selfOnly) {
+        box.innerHTML = '<h3 style="margin:0 0 8px;color:#134e4a">📤 Assign &amp; Pay</h3>' +
+          '<p style="font-size:13.5px;color:#64748b;line-height:1.7">अभी सूची में केवल <b>आपकी ही ID (' + asEsc(data.selfId || accId) + ')</b> है — और खुद को केस assign नहीं किया जा सकता।<br><br>किसी <b>दूसरे डॉक्टर</b> को केस भेजने के लिए उनकी ID से login करें (या उनकी ID से इस केस को assign कराएँ)।</p>';
+        return;
+      }
+      box.innerHTML = '<h3 style="margin:0 0 8px;color:#134e4a">📤 Assign &amp; Pay</h3><p style="font-size:13.5px;color:#64748b;line-height:1.6">अभी कोई परामर्श-योग्य डॉक्टर उपलब्ध नहीं है।<br><br>डॉक्टर तभी सूची में आते हैं जब उनकी <b>Login ID बन चुकी हो</b>, <b>अनुभव/फीस/विशेषज्ञता</b> भरी हो और <b>उपलब्ध = हाँ</b> हो।<br><br>जाँच के लिए ASTHL: +91-7903873282</p>';
       return;
     }
     docs.sort(function (a, b) { return (parseFloat(b.exp) || 0) - (parseFloat(a.exp) || 0); });
