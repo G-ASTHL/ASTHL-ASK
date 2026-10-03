@@ -1,3 +1,5 @@
+const db = require('./_supa.js');   // v4: ab Supabase (database) par log
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -170,18 +172,19 @@ const trimmedMessages = messages.length > 30 ? [messages[0]].concat(messages.sli
 
       if (sheetUrl && !isSystemPrompt && displayMsg) {
         try {
-          await sheetLog(sheetUrl, {
-              sessionId: sessionId || 'unknown',
-              patientName: patientName || '',
-              patientAge: patientAge || '',
-              patientMobile: patientMobile || '',
-              mobileVerified: mobileVerified ? 'Yes' : 'No',
-              accessId: accessId || '',
-              category: category || '',
-              clinic: clinic || '',
-              address: (address || '').slice(0, 500),
-              userMessage: displayMsg.slice(0, 40000),
-              botReply: reply.slice(0, 40000)
+          await db.insertRow('Chat Log', {
+              'Date/Time': new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+              'Category': category || '',
+              'Patient Name': patientName || '',
+              'Age': patientAge || '',
+              'Mobile': patientMobile || '',
+              'OTP Verified': mobileVerified ? 'Yes' : 'No',
+              'Clinic Name': clinic || '',
+              'Address': (address || '').slice(0, 500),
+              'Session ID': sessionId || 'unknown',
+              'Patient Message': displayMsg.slice(0, 40000),
+              'ASTHL Response': reply.slice(0, 40000),
+              'Login ID': accessId || ''
           });
           console.log('Logged to Google Sheet:', patientName, patientMobile);
         } catch (logErr) {
