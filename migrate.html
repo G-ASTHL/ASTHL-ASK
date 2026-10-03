@@ -7,31 +7,57 @@
 <style>
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: 'Noto Sans Devanagari', system-ui, sans-serif; background: #f0fdfa; color: #134e4a; padding: 16px; }
-  .card { max-width: 620px; margin: 0 auto; background: #fff; border: 1.5px solid #ccfbf1; border-radius: 20px; padding: 22px; box-shadow: 0 10px 30px rgba(13,148,136,.12); }
+  .card { max-width: 660px; margin: 0 auto; background: #fff; border: 1.5px solid #ccfbf1; border-radius: 20px; padding: 22px; box-shadow: 0 10px 30px rgba(13,148,136,.12); }
   h1 { font-size: 21px; margin-bottom: 6px; }
-  .sub { color: #64748b; font-size: 13.5px; margin-bottom: 16px; line-height: 1.6; }
+  .sub { color: #64748b; font-size: 13.5px; margin-bottom: 14px; line-height: 1.6; }
   label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 5px; }
-  input { width: 100%; font-family: inherit; font-size: 14px; padding: 11px 12px; border: 1.5px solid #ccfbf1; border-radius: 12px; outline: none; }
+  input[type=text], input[type=password] { width: 100%; font-family: inherit; font-size: 14px; padding: 11px 12px; border: 1.5px solid #ccfbf1; border-radius: 12px; outline: none; }
   input:focus { border-color: #0d9488; }
   button { width: 100%; font-family: inherit; font-size: 15px; font-weight: 700; color: #fff; background: linear-gradient(135deg,#0d9488,#0f766e); border: none; border-radius: 14px; padding: 14px; cursor: pointer; margin-top: 14px; }
   button:disabled { opacity: .55; }
   button.green { background: linear-gradient(135deg,#16a34a,#15803d); }
-  #log { margin-top: 14px; font-size: 13px; line-height: 1.7; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; white-space: pre-wrap; min-height: 60px; }
+  #log { margin-top: 14px; font-size: 13px; line-height: 1.7; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; white-space: pre-wrap; min-height: 60px; max-height: 320px; overflow: auto; }
   .ok { color: #166534; font-weight: 700; }
   .bad { color: #b91c1c; font-weight: 700; }
+  .box { background: #fffbeb; border: 1px solid #fde68a; border-radius: 12px; padding: 11px; font-size: 12.5px; color: #78350f; line-height: 1.6; margin-top: 12px; }
+  .tab { display: flex; gap: 8px; margin-bottom: 6px; }
+  .tab button { margin-top: 0; font-size: 13px; padding: 10px; }
+  .tab button.on { outline: 3px solid #99f6e4; }
 </style>
 </head>
 <body>
 <div class="card">
   <h1>📥 पुराना डेटा नए डेटाबेस में लाएँ</h1>
   <div class="sub">यह page आपके <b>Google Sheet</b> का पुराना सारा डेटा पढ़कर <b>नए database (Supabase)</b> में डाल देगा।<br>
-  <b>पहले "1) शीट से डेटा पढ़ें"</b> दबाएँ, फिर <b>"2) डेटाबेस में भेजें"</b>।</div>
+  <b>पहले "1) शीट से डेटा पढ़ें"</b>, फिर <b>"2) डेटाबेस में भेजें"</b>।</div>
 
-  <label>Apps Script का /exec URL</label>
-  <input id="execUrl" value="https://script.google.com/macros/s/AKfycbyuzg0qrd6XET1RwgMyvstd-QymfTbQcKfqm3g84cis8SHCo3T1Euj8hDZPhX7zHnfEpA/exec">
+  <div class="tab">
+    <button id="mLink" class="on">🔗 Sheet link से (आसान, सुझाव)</button>
+    <button id="mScript">⚙️ Apps Script URL से</button>
+  </div>
+
+  <div id="linkBox">
+    <label>Google Sheet का link (जो sheet में डेटा है)</label>
+    <input id="sheetLink" type="text" placeholder="https://docs.google.com/spreadsheets/d/XXXXXXXX/edit">
+    <div class="box">
+      ⚠️ <b>ज़रूरी:</b> Sheet खोलें → <b>Share</b> → <b>General access</b> → <b>"Anyone with the link"</b> → <b>Viewer</b> → Done.<br>
+      (इससे हमारा page sheet पढ़ पाएगा — कोई Apps Script नहीं चाहिए।)
+    </div>
+  </div>
+
+  <div id="scriptBox" style="display:none">
+    <label>Apps Script का /exec URL</label>
+    <input id="execUrl" type="text" value="https://script.google.com/macros/s/AKfycbyuzg0qrd6XET1RwgMyvstd-QymfTbQcKfqm3g84cis8SHCo3T1Euj8hDZPhX7zHnfEpA/exec">
+  </div>
 
   <label>Admin पासवर्ड</label>
   <input id="pw" type="password" placeholder="पासवर्ड">
+
+  <label style="display:flex;align-items:flex-start;gap:8px;margin-top:14px;font-weight:400;background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:10px">
+    <input type="checkbox" id="clearChk" checked style="width:auto;margin-top:3px">
+    <span style="font-size:12.5px;line-height:1.6;color:#78350f"><b>पहले से पड़ी entries हटाकर नया डालें</b><br>
+    पहली बार ke liye tick ठीक है। अगर database me pehle se naya data aa chuka ho, to tick हटा दें।</span>
+  </label>
 
   <button id="readBtn">1) शीट से डेटा पढ़ें</button>
   <button id="sendBtn" class="green" disabled>2) डेटाबेस में भेजें</button>
@@ -39,67 +65,127 @@
 </div>
 
 <script>
-var TABS = null;
+var TABS = null, MODE = 'link';
 var $ = function (id) { return document.getElementById(id); };
-function log(msg, cls) {
-  var el = $('log');
-  el.innerHTML += '<br><span class="' + (cls || '') + '">' + msg + '</span>';
-  el.scrollTop = el.scrollHeight;
+var SHEETS = ['Chat Log', 'Doctor Registration', 'Medicine Order', 'Medicine Selection', 'Health Alerts', 'Case Files', 'Assign & Pay', 'Admin Log', 'Medicines', 'Patient Bills', 'Orders'];
+
+function log(msg, cls) { var el = $('log'); el.innerHTML += '<br><span class="' + (cls || '') + '">' + msg + '</span>'; el.scrollTop = el.scrollHeight; }
+function reset() { $('log').innerHTML = ''; TABS = null; $('sendBtn').disabled = true; }
+
+$('mLink').addEventListener('click', function () { MODE = 'link'; $('mLink').classList.add('on'); $('mScript').classList.remove('on'); $('linkBox').style.display = 'block'; $('scriptBox').style.display = 'none'; reset(); });
+$('mScript').addEventListener('click', function () { MODE = 'script'; $('mScript').classList.add('on'); $('mLink').classList.remove('on'); $('linkBox').style.display = 'none'; $('scriptBox').style.display = 'block'; reset(); });
+
+// ---- CSV parse (quotes theek se) ----
+function parseCSV(text) {
+  var rows = [], row = [], cur = '', q = false;
+  for (var i = 0; i < text.length; i++) {
+    var c = text[i];
+    if (q) {
+      if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; }
+      else cur += c;
+    } else {
+      if (c === '"') q = true;
+      else if (c === ',') { row.push(cur); cur = ''; }
+      else if (c === '\n') { row.push(cur); rows.push(row); row = []; cur = ''; }
+      else if (c === '\r') { }
+      else cur += c;
+    }
+  }
+  if (cur !== '' || row.length) { row.push(cur); rows.push(row); }
+  return rows;
+}
+
+function sheetIdFromLink(s) {
+  var m = String(s).match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if (m) return m[1];
+  if (/^[a-zA-Z0-9-_]{20,}$/.test(String(s).trim())) return String(s).trim();
+  return '';
+}
+
+async function readFromLink() {
+  var id = sheetIdFromLink($('sheetLink').value);
+  if (!id) { log('❌ Sheet ka link या ID डालें', 'bad'); return; }
+  log('Sheet ID: ' + id);
+  var out = {}, total = 0;
+  for (var i = 0; i < SHEETS.length; i++) {
+    var name = SHEETS[i];
+    try {
+      var url = 'https://docs.google.com/spreadsheets/d/' + id + '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent(name);
+      var r = await fetch(url);
+      var t = await r.text();
+      if (!t || t.indexOf('<') === 0 || t.indexOf('<!DOCTYPE') !== -1) { continue; }  // tab nahi mila ya access nahi
+      var rows = parseCSV(t);
+      if (!rows.length) continue;
+      var headers = rows[0].map(function (h) { return String(h || '').trim(); });
+      // aakhir ke khaali columns hatao
+      while (headers.length && headers[headers.length - 1] === '') { headers.pop(); }
+      var body = rows.slice(1).map(function (r) { return r.slice(0, headers.length); })
+        .filter(function (r) { return r.join('').trim() !== ''; });
+      out[name] = { headers: headers, rows: body };
+      total += body.length;
+      log('   • ' + name + ' — ' + body.length + ' rows', 'ok');
+    } catch (e) { }
+  }
+  if (!total) {
+    log('❌ Sheet se koi data nahi mila.', 'bad');
+    log('कारण: sheet "Anyone with the link" ke liye open nahi hai, या galat link hai.', 'bad');
+    log('करें: Sheet → Share → General access → "Anyone with the link" → Viewer → Done', 'bad');
+    return;
+  }
+  TABS = out;
+  log('✅ कुल ' + total + ' rows मिल गए — अब "2) डेटाबेस में भेजें" दबाएँ।', 'ok');
+  $('sendBtn').disabled = false;
+}
+
+async function readFromScript() {
+  var url = $('execUrl').value.trim();
+  if (!url) { log('❌ URL डालें', 'bad'); return; }
+  var full = url + '?action=adminGetAll&payload=' + encodeURIComponent(JSON.stringify({ action: 'adminGetAll' }));
+  var r = await fetch(full);
+  var t = (await r.text() || '').trim();
+  if (t.charAt(0) !== '{') {
+    log('❌ Apps Script se JSON नहीं आया (HTML page मिला)।', 'bad');
+    log('👉 तो "🔗 Sheet link से" वाला तरीका इस्तेमाल करें — वो पक्का चलता है।', 'ok');
+    return;
+  }
+  var d = JSON.parse(t);
+  TABS = d.tabs || {};
+  var names = Object.keys(TABS), total = 0;
+  names.forEach(function (n) { var c = (TABS[n].rows || []).length; total += c; log('   • ' + n + ' — ' + c + ' rows'); });
+  if (!total) { log('❌ data खाली मिला', 'bad'); return; }
+  log('✅ कुल ' + total + ' rows मिल गए — अब "2) डेटाबेस में भेजें" दबाएँ।', 'ok');
+  $('sendBtn').disabled = false;
 }
 
 $('readBtn').addEventListener('click', async function () {
-  var url = $('execUrl').value.trim();
-  if (!url) { alert('URL डालें'); return; }
   $('readBtn').disabled = true; $('readBtn').textContent = 'पढ़ रहे हैं…';
-  $('log').innerHTML = 'शीट से डेटा पढ़ा जा रहा है…';
-  try {
-    var full = url + '?action=adminGetAll&payload=' + encodeURIComponent(JSON.stringify({ action: 'adminGetAll' }));
-    var r = await fetch(full);
-    var t = (await r.text() || '').trim();
-    if (t.charAt(0) !== '{') { log('❌ शीट से जवाब नहीं आया (HTML page मिला)। Apps Script में "Who has access: Anyone" है या नहीं — देख लें।', 'bad'); return; }
-    var d = JSON.parse(t);
-    TABS = d.tabs || {};
-    var names = Object.keys(TABS);
-    log('✅ डेटा मिल गया — ' + names.length + ' tabs:', 'ok');
-    var total = 0;
-    names.forEach(function (n) {
-      var cnt = (TABS[n].rows || []).length;
-      total += cnt;
-      log('   • ' + n + ' — ' + cnt + ' rows');
-    });
-    log('कुल: ' + total + ' rows. अब "2) डेटाबेस में भेजें" दबाएँ।', 'ok');
-    $('sendBtn').disabled = false;
-  } catch (e) {
-    log('❌ त्रुटि: ' + e.message, 'bad');
-  } finally {
-    $('readBtn').disabled = false; $('readBtn').textContent = '1) शीट से डेटा पढ़ें';
-  }
+  reset(); $('log').innerHTML = 'शीट से डेटा पढ़ा जा रहा है…';
+  try { if (MODE === 'link') await readFromLink(); else await readFromScript(); }
+  catch (e) { log('❌ त्रुटि: ' + e.message, 'bad'); }
+  finally { $('readBtn').disabled = false; $('readBtn').textContent = '1) शीट से डेटा पढ़ें'; }
 });
 
 $('sendBtn').addEventListener('click', async function () {
   if (!TABS) { alert('पहले डेटा पढ़ें'); return; }
   var pw = $('pw').value;
   if (!pw) { alert('Admin पासवर्ड डालें'); return; }
-  if (!confirm('पुराना सारा डेटा डेटाबेस में भेजना है?\n(डेटाबेस की पुरानी entries हटाकर नया डाला जाएगा)')) return;
+  if (!confirm('पुराना सारा डेटा डेटाबेस में भेजना है?')) return;
   $('sendBtn').disabled = true; $('sendBtn').textContent = 'भेज रहे हैं…';
   try {
     var r = await fetch('/api/migrate', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password: pw, tabs: TABS, clear: true })
+      body: JSON.stringify({ password: pw, tabs: TABS, clear: !!($('clearChk') && $('clearChk').checked) })
     });
     var d = await r.json();
     if (d && d.status === 'ok') {
       log('✅ डेटाबेस में आ गया!', 'ok');
       Object.keys(d.imported || {}).forEach(function (k) { log('   • ' + k + ' — ' + d.imported[k] + ' rows'); });
-      log('अब admin panel खोलकर 🔎 दोबारा जाँचें दबाएँ।', 'ok');
+      log('अब ai.asthl.in/setup.html पर जाँच करें, फिर admin खोलें।', 'ok');
     } else {
       log('❌ नहीं हुआ: ' + ((d && d.error) || 'दोबारा कोशिश करें'), 'bad');
     }
-  } catch (e) {
-    log('❌ त्रुटि: ' + e.message, 'bad');
-  } finally {
-    $('sendBtn').disabled = false; $('sendBtn').textContent = '2) डेटाबेस में भेजें';
-  }
+  } catch (e) { log('❌ त्रुटि: ' + e.message, 'bad'); }
+  finally { $('sendBtn').disabled = false; $('sendBtn').textContent = '2) डेटाबेस में भेजें'; }
 });
 </script>
 </body>
