@@ -30,7 +30,7 @@ module.exports = async (req, res) => {
         body: JSON.stringify({ action: 'adminConfirmAssign', caseId: body.caseId, consultantId: body.consultantId })
       });
       const text = await r.text();
-      let data; try { data = JSON.parse(text); } catch (e) { return res.status(502).json({ error: 'Apps Script purana version hai — naya deploy karein.' }); }
+      let data; try { data = JSON.parse(text); } catch (e) { return res.status(502).json({ error: 'Apps Script purana version hai — naya deploy karein.', detail: text.slice(0, 200) }); }
       return res.status(200).json(data);
     }
 
@@ -40,7 +40,7 @@ module.exports = async (req, res) => {
         body: JSON.stringify({ action: 'adminPayoutDone', consultantId: body.consultantId || '' })
       });
       const text = await r.text();
-      let data; try { data = JSON.parse(text); } catch (e) { return res.status(502).json({ error: 'Apps Script purana version hai — naya deploy karein.' }); }
+      let data; try { data = JSON.parse(text); } catch (e) { return res.status(502).json({ error: 'Apps Script purana version hai — naya deploy karein.', detail: text.slice(0, 200) }); }
       return res.status(200).json(data);
     }
 
@@ -50,7 +50,7 @@ module.exports = async (req, res) => {
         body: JSON.stringify({ action: 'adminTransferAssign', caseId: body.caseId, oldConsultantId: body.oldConsultantId || '', newConsultantId: body.newConsultantId, newConsultantName: body.newConsultantName || '' })
       });
       const text = await r.text();
-      let data; try { data = JSON.parse(text); } catch (e) { return res.status(502).json({ error: 'Apps Script purana version hai — naya deploy karein.' }); }
+      let data; try { data = JSON.parse(text); } catch (e) { return res.status(502).json({ error: 'Apps Script purana version hai — naya deploy karein.', detail: text.slice(0, 200) }); }
       return res.status(200).json(data);
     }
 
@@ -60,7 +60,7 @@ module.exports = async (req, res) => {
         body: JSON.stringify(Object.assign({ action: action }, body))
       });
       const text = await r.text();
-      let data; try { data = JSON.parse(text); } catch (e) { return res.status(502).json({ error: 'Apps Script purana version hai — naya deploy karein.' }); }
+      let data; try { data = JSON.parse(text); } catch (e) { return res.status(502).json({ error: 'Apps Script purana version hai — naya deploy karein.', detail: text.slice(0, 200) }); }
       return res.status(200).json(data);
     }
 
