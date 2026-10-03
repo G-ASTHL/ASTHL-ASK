@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASTHL — Database Setup Checker</title>
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Noto Sans Devanagari', system-ui, sans-serif; background: #f0fdfa; color: #134e4a; padding: 16px; }
+  .card { max-width: 640px; margin: 0 auto; background: #fff; border: 1.5px solid #ccfbf1; border-radius: 20px; padding: 22px; box-shadow: 0 10px 30px rgba(13,148,136,.12); }
+  h1 { font-size: 21px; margin-bottom: 6px; }
+  .sub { color: #64748b; font-size: 13.5px; margin-bottom: 16px; line-height: 1.6; }
+  label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 5px; }
+  input { width: 100%; font-family: inherit; font-size: 15px; padding: 12px; border: 1.5px solid #ccfbf1; border-radius: 12px; outline: none; }
+  button { width: 100%; font-family: inherit; font-size: 15px; font-weight: 700; color: #fff; background: linear-gradient(135deg,#0d9488,#0f766e); border: none; border-radius: 14px; padding: 14px; cursor: pointer; margin-top: 14px; }
+  .chk { display: flex; gap: 10px; align-items: flex-start; padding: 11px 0; border-bottom: 1px solid #f1f5f9; font-size: 13.5px; }
+  .chk .ic { font-size: 17px; line-height: 1.2; }
+  .chk .hint { color: #64748b; font-size: 12.5px; margin-top: 3px; line-height: 1.5; }
+  .okname { color: #166534; font-weight: 700; }
+  .badname { color: #b91c1c; font-weight: 700; }
+  #out { margin-top: 14px; }
+  .big { text-align: center; font-size: 15px; font-weight: 800; padding: 12px; border-radius: 12px; margin-top: 12px; }
+  .big.ok { background: #f0fdf4; color: #166534; }
+  .big.bad { background: #fffbeb; color: #b45309; }
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>🔎 Database Setup Checker</h1>
+  <div class="sub">Ye page batayega ki naya database (Supabase) ki setting poori hui hai ya nahi — kya baaki hai, wo bhi likh dega.</div>
+  <label>Admin पासवर्ड</label>
+  <input id="pw" type="password" placeholder="पासवर्ड">
+  <button id="go">जाँच करें</button>
+  <div id="out"></div>
+</div>
+<script>
+var $ = function (id) { return document.getElementById(id); };
+$('go').addEventListener('click', async function () {
+  var pw = $('pw').value;
+  if (!pw) { alert('पासवर्ड डालें'); return; }
+  $('go').disabled = true; $('go').textContent = 'जाँच हो रही है…';
+  $('out').innerHTML = '';
+  try {
+    var r = await fetch('/api/setup-check', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw }) });
+    var d = await r.json();
+    if (!r.ok) { $('out').innerHTML = '<div class="big bad">' + (d.error || 'जाँच नहीं हो सकी') + '</div>'; return; }
+    var h = '';
+    (d.checks || []).forEach(function (c) {
+      h += '<div class="chk"><div class="ic">' + (c.ok ? '✅' : '❌') + '</div><div><div class="' + (c.ok ? 'okname' : 'badname') + '">' + c.name + '</div><div class="hint">' + (c.hint || '') + '</div></div></div>';
+    });
+    if (d.counts && Object.keys(d.counts).length) {
+      h += '<div class="chk"><div class="ic">📊</div><div><div class="okname">Data ki ginti</div><div class="hint">';
+      Object.keys(d.counts).forEach(function (k) { h += k + ': ' + d.counts[k] + ' rows<br>'; });
+      h += '</div></div></div>';
+    }
+    h += '<div class="big ' + (d.ready ? 'ok' : 'bad') + '">' + (d.ready ? '🎉 Sab theek hai! Ab admin panel chalega.' : '⚠️ Upar likhe kaam baaki hain — wo karne ke baad dobara jाँचें') + '</div>';
+    $('out').innerHTML = h;
+  } catch (e) {
+    $('out').innerHTML = '<div class="big bad">कनेक्शन त्रुटि: ' + e.message + '</div>';
+  } finally {
+    $('go').disabled = false; $('go').textContent = 'जाँच करें';
+  }
+});
+</script>
+</body>
+</html>
