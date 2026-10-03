@@ -206,6 +206,7 @@ function loadData() {
         $('atable').innerHTML = '<div class="empty" style="text-align:left;line-height:1.7">' +
           '<b style="color:#b91c1c;font-size:15px">⚠️ डेटा नहीं आया</b><br>' + esc((res.d && res.d.error) || '') +
           ((res.d && res.d.detail) ? '<br><br><b>शीट का जवाब (screenshot bhej dein):</b><br><code style="font-size:11px;word-break:break-all;background:#f8fafc;padding:6px;border-radius:8px;display:block">' + esc(res.d.detail) + '</code>' : '') +
+          ((res.d && res.d.urlTail) ? '<br><b>Vercel me joda gaya Sheet URL ka ant:</b> <code style="background:#f8fafc;padding:3px 6px;border-radius:6px">…' + esc(res.d.urlTail) + '</code><br><span style="font-size:12px">यह Apps Script ke <b>नए deployment ke /exec URL</b> ke आख़िरी अक्षरों से मिलाना चाहिए। न मिले तो Vercel का GOOGLE_SHEET_URL बदलें।</span>' : '') +
           '<br><br><b>सबसे आम वजह:</b> Apps Script का <b>नया version deploy नहीं हुआ</b>।<br>' +
           'script.google.com → अपना project → पुराना code हटाकर नया <b>google-sheet-script.js (v24)</b> paste करें → <b>Deploy → Manage deployments → ✏️ Edit → Version: New version → Deploy</b>।<br>' +
           'फिर ऊपर <b>🔎 दोबारा जाँचें</b> दबाएँ।</div>';
