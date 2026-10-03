@@ -49,6 +49,14 @@
   tr:nth-child(even) td { background: #f8fefe; }
   .apt td, .apt th { min-width: 76px; font-size: 12px; }
   .apt td { max-width: 190px; }
+  .layout { display: flex; gap: 14px; align-items: flex-start; }
+  .side { display: flex; flex-direction: column; gap: 8px; min-width: 200px; max-width: 230px; }
+  .side button { font-family: inherit; font-size: 13.5px; font-weight: 600; text-align: left; border: 1.5px solid var(--line); background: #fff; color: var(--dark); border-radius: 12px; padding: 11px 13px; cursor: pointer; display: flex; justify-content: space-between; gap: 8px; }
+  .side button .cnt { background: #f0fdfa; color: var(--dark); border-radius: 999px; padding: 1px 8px; font-size: 11.5px; }
+  .side button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .side button.on .cnt { background: rgba(255,255,255,.25); color: #fff; }
+  .main { flex: 1; min-width: 0; }
+  @media (max-width: 760px) { .layout { flex-direction: column; } .side { flex-direction: row; max-width: none; width: 100%; overflow-x: auto; padding-bottom: 4px; } .side button { white-space: nowrap; } }
   #queue { margin-bottom: 16px; }
   #queue h3 { font-size: 16px; color: var(--dark); margin-bottom: 8px; }
   .qcards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
@@ -93,13 +101,20 @@
     <div id="queue"></div>
     <div class="cards" id="cards"></div>
     <div class="earn" id="earn"></div>
-    <div class="tabs" id="tabs"></div>
-    <div class="tools">
-      <input id="asearch" placeholder="🔍 कुछ भी खोजें (नाम, नंबर, केस ID, UTR...)">
-      <button id="acsv">⬇️ CSV डाउनलोड</button>
+    <div class="layout">
+      <aside class="side" id="tabs"></aside>
+      <main class="main">
+        <div class="tools">
+          <input id="asearch" placeholder="🔍 कुछ भी खोजें (नाम, नंबर, केस ID, UTR...)">
+          <button id="acsv">⬇️ CSV डाउनलोड</button>
+          <button id="arecheck">🔎 दोबारा जाँचें</button>
+          <button id="areport">📊 महीने की रिपोर्ट</button>
+          <button id="abulk" style="display:none;background:#16a34a;color:#fff;border:none">✅ चुने हुए verify करें</button>
+        </div>
+        <div class="tablebox"><div id="atable" class="empty">लोड हो रहा है...</div></div>
+        <div class="note" id="anote"></div>
+      </main>
     </div>
-    <div class="tablebox"><div id="atable" class="empty">लोड हो रहा है...</div></div>
-    <div class="note" id="anote"></div>
   </div>
 </div>
 
@@ -114,6 +129,18 @@ var COMMISSION = 13; // ASTHL commission % (baad me 23 kar sakte hain)
 
 function $(id) { return document.getElementById(id); }
 function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+var DROPDOWN = {
+  'Doctor Registration': { 'Payment Status': ['Pending', 'Verified', 'Rejected'], 'Plan': ['Monthly ₹299', '2-Year ₹2,999'], 'Available': ['Yes', 'No'] },
+  'Medicine Order': { 'Payment Status': ['Pending', 'Verified', 'Rejected'], 'Delivered': ['No', 'Yes'] },
+  'Assign & Pay': { 'Payment Status': ['Pending', 'Confirmed'], 'Admin Confirmed': ['No', 'Yes'], 'Status': ['Awaiting Confirmation', 'Sent to Consultant', 'Accepted', 'Rejected'], 'Payout Done': ['No', 'Yes'], 'Asthl Fee %': ['13', '23', '30'] },
+  'Health Alerts': { 'Audience': ['All', 'Patient', 'Doctor'], 'Active': ['Yes', 'No'] },
+  'Medicine Selection': { 'Delivered': ['No', 'Yes'] },
+  'Case Files': { 'Status': ['Open', 'Closed'], 'Public': ['Yes', 'No'] }
+};
+function ddOptions(sheet, header) {
+  var d = DROPDOWN[sheet];
+  return (d && d[header]) ? d[header] : null;
+}
 function rowNum(r) { return r[r.length - 1]; }
 function waLink(mobile, text) {
   var d = String(mobile || '').replace(/\D/g, '').slice(-10);
@@ -175,8 +202,24 @@ function loadData() {
   fetch(apiUrl(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'getAll', password: PW }) })
     .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
     .then(function (res) {
-      if (!res.ok) { $('atable').innerHTML = '<div class="empty">' + esc((res.d && res.d.error) || 'डेटा नहीं आया।') + '</div>'; return; }
+      if (!res.ok) {
+        $('atable').innerHTML = '<div class="empty" style="text-align:left;line-height:1.7">' +
+          '<b style="color:#b91c1c;font-size:15px">⚠️ डेटा नहीं आया</b><br>' + esc((res.d && res.d.error) || '') +
+          ((res.d && res.d.detail) ? '<br><br><b>शीट का जवाब (screenshot bhej dein):</b><br><code style="font-size:11px;word-break:break-all;background:#f8fafc;padding:6px;border-radius:8px;display:block">' + esc(res.d.detail) + '</code>' : '') +
+          '<br><br><b>सबसे आम वजह:</b> Apps Script का <b>नया version deploy नहीं हुआ</b>।<br>' +
+          'script.google.com → अपना project → पुराना code हटाकर नया <b>google-sheet-script.js (v24)</b> paste करें → <b>Deploy → Manage deployments → ✏️ Edit → Version: New version → Deploy</b>।<br>' +
+          'फिर ऊपर <b>🔎 दोबारा जाँचें</b> दबाएँ।</div>';
+        return;
+      }
       DATA = res.d.tabs || {};
+      if (!Object.keys(DATA).length) {
+        $('atable').innerHTML = '<div class="empty" style="text-align:left;line-height:1.7">' +
+          '<b style="color:#b45309;font-size:15px">⚠️ शीट खाली जवाब दे रही है</b><br>' +
+          'मतलब Apps Script का <b>नया version deploy नहीं हुआ</b> (पुराना code चल रहा है)।<br><br>' +
+          'script.google.com → project → पूरा code हटाकर <b>google-sheet-script.js (v24)</b> paste करें → <b>Deploy → Manage deployments → Edit → New version → Deploy</b>।<br>' +
+          'फिर <b>🔎 दोबारा जाँचें</b> दबाएँ।</div>';
+        return;
+      }
       renderTabs(); renderQueue(); renderCards(); renderEarn(); renderTable();
       $('anote').textContent = 'अंतिम अपडेट: ' + fmtDate(res.d.serverTime) + ' • हर टैब के आख़िरी 400 रिकॉर्ड दिखते हैं';
     })
@@ -189,7 +232,7 @@ function renderTabs() {
   var names = Object.keys(DATA);
   var html = '';
   names.forEach(function (n) {
-    html += '<button class="' + (n === TAB ? 'on' : '') + '" onclick="setTab(\'' + esc(n) + '\')">' + esc(n) + ' (' + rows(n).length + ')</button>';
+    html += '<button class="' + (n === TAB ? 'on' : '') + '" onclick="setTab(\'' + esc(n) + '\')"><span>' + esc(n) + '</span><span class="cnt">' + rows(n).length + '</span></button>';
   });
   $('tabs').innerHTML = html;
 }
@@ -207,8 +250,16 @@ function renderQueue() {
   var pendPay = ap.filter(function (r) { return String(r[8] || '').toLowerCase().indexOf('confirm') === -1 && String(r[9] || '').toLowerCase().indexOf('yes') === -1; });
   var overdue = ap.filter(function (r) { return String(r[10] || '').toLowerCase().indexOf('sent') !== -1 && daysOld(r[0]) > 7; });
   var np = netPayable();
+  var expI = headers('Doctor Registration').indexOf('Plan Expiry');
+  var dueRenew = docs.filter(function (r) {
+    if (!expI || expI < 0) return false;
+    var e = new Date(r[expI]);
+    if (isNaN(e)) return false;
+    return (e.getTime() - Date.now()) < 7 * 86400000;
+  });
   var items = [
     { t: 'नए डॉक्टर — verify + ID देना', n: newDocs.length, tab: 'Doctor Registration', ok: 'सब verify हो गए' },
+    { t: '🔁 Renewal due (7 दिन में)', n: dueRenew.length, tab: 'Doctor Registration', ok: 'कोई renewal बाक़ी नहीं' },
     { t: 'दवा ऑर्डर — भुगतान verify', n: newOrds.length, tab: 'Medicine Order', ok: 'सब verify हो गए' },
     { t: 'केस भुगतान — पुष्टि करना', n: pendPay.length, tab: 'Assign & Pay', ok: 'कोई बाक़ी नहीं' },
     { t: '7 दिन से लंबित केस', n: overdue.length, tab: 'Assign & Pay', ok: 'कोई लंबित नहीं' }
@@ -331,6 +382,15 @@ function verifyDoctor(mobile) {
     })
     .catch(function () { alert('कनेक्शन त्रुटि।'); });
 }
+function saveCell(row, headerName, value, quiet) {
+  fetch(apiUrl(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'adminSetCell', password: PW, sheet: TAB, row: row, col: headerName, value: value }) })
+    .then(function (r) { return r.json(); })
+    .then(function (d) {
+      if (d && d.status === 'ok') { if (!quiet) alert('✅ हो गया'); loadData(); }
+      else alert('नहीं हुआ: ' + ((d && d.error) || ''));
+    })
+    .catch(function () { alert('कनेक्शन त्रुटि।'); });
+}
 function editCell(row, colIdx, headerName, curVal) {
   if (!row || isNaN(colIdx)) return;
   var v = prompt('"' + headerName + '" ki value badlein:\n(row ' + row + ')', curVal || '');
@@ -342,6 +402,68 @@ function editCell(row, colIdx, headerName, curVal) {
       else alert('नहीं हुआ: ' + ((d && d.error) || ''));
     })
     .catch(function () { alert('कनेक्शन त्रुटि।'); });
+}
+async function bulkVerify() {
+  var sel = [];
+  var chks = $('atable').querySelectorAll('.rowchk');
+  for (var i = 0; i < chks.length; i++) if (chks[i].checked) sel.push({ row: chks[i].getAttribute('data-row'), mob: chks[i].getAttribute('data-mob') });
+  if (!sel.length) return;
+  if (!confirm(sel.length + ' entries verify karni hain?')) return;
+  var okN = 0;
+  for (var j = 0; j < sel.length; j++) {
+    try {
+      var body = (TAB === 'Doctor Registration')
+        ? { action: 'adminVerifyDoctor', password: PW, mobile: sel[j].mob }
+        : { action: 'adminSetCell', password: PW, sheet: TAB, row: sel[j].row, col: 'Payment Status', value: 'Verified' };
+      var r = await fetch(apiUrl(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      var d = await r.json();
+      if (d && d.status === 'ok') okN++;
+    } catch (e) {}
+  }
+  alert('✅ ' + okN + ' / ' + sel.length + ' verify ho gaye');
+  loadData();
+}
+function monthReport() {
+  var ap = rows('Assign & Pay'), mo = rows('Medicine Order'), docs = rows('Doctor Registration');
+  var m = new Date().getMonth(), y = new Date().getFullYear();
+  function inMonth(v) { var d = new Date(v); return !isNaN(d) && d.getMonth() === m && d.getFullYear() === y; }
+  var fee = 0, asthl = 0, nCases = 0;
+  ap.forEach(function (r) {
+    if (!inMonth(r[0])) return;
+    var paid = String(r[8] || '').toLowerCase().indexOf('confirm') !== -1 || String(r[9] || '').toLowerCase().indexOf('yes') !== -1;
+    if (!paid) return;
+    if (String(r[10] || '').toLowerCase().indexOf('reject') !== -1) return;
+    var f = parseFloat(String(r[6] || '0').replace(/[^0-9.]/g, '')) || 0;
+    var p = parseFloat(String(r[18] || '13').replace(/[^0-9.]/g, '')); if (isNaN(p)) p = 13;
+    fee += f; asthl += f * p / 100; nCases++;
+  });
+  var ord = 0, ordAmt = 0;
+  mo.forEach(function (r) {
+    if (!inMonth(r[0])) return;
+    ord++; ordAmt += parseFloat(String(r[7] || '0').replace(/[^0-9.]/g, '')) || 0;
+  });
+  var newDocs = docs.filter(function (r) { return inMonth(r[0]); }).length;
+  var L = [];
+  L.push('ASTHL MONTHLY REPORT');
+  L.push('Month,' + (m + 1) + '/' + y);
+  L.push('');
+  L.push('CASE / CONSULTATION');
+  L.push('Paid cases,' + nCases);
+  L.push('Total fees (gross),' + Math.round(fee));
+  L.push('ASTHL deduction,' + Math.round(asthl));
+  L.push('Doctors ko deay (net),' + Math.round(fee - asthl));
+  L.push('');
+  L.push('MEDICINE ORDERS');
+  L.push('Orders,' + ord);
+  L.push('Order amount (total),' + Math.round(ordAmt));
+  L.push('');
+  L.push('DOCTORS');
+  L.push('New registrations,' + newDocs);
+  var blob = new Blob(['\ufeff' + L.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  var a2 = document.createElement('a');
+  a2.href = URL.createObjectURL(blob);
+  a2.download = 'ASTHL-Report-' + (m + 1) + '-' + y + '.csv';
+  a2.click();
 }
 function payoutDone(cid) {
   if (!confirm('क्या इस डॉक्टर को भुगतान कर दिया?\n\n"हाँ" दबाते ही उनकी कमाई reset (0) हो जाएगी।')) return;
@@ -364,13 +486,15 @@ function renderTable() {
   var isAP = (TAB === 'Assign & Pay');
   var isDR = (TAB === 'Doctor Registration');
   var AP_COLS = ['Date/Time', 'Case ID', 'Patient Name', 'Source', 'Consultant Name', 'Fee', 'UTR', 'Payment Status', 'Status', 'Accept Days & Time', 'Reject Reason/Suggestion', 'Rating'];
-  var DR_COLS = ['Date/Time', 'Name', 'Mobile (WhatsApp)', 'Qualification', 'City/District', 'Login ID Given', 'Payment Status', 'Amount', 'Experience (Years)', 'Expertise', 'Rate/Case', 'Plan', 'Max Cases/Week'];
+  var DR_COLS = ['Date/Time', 'Name', 'Mobile (WhatsApp)', 'Qualification', 'City/District', 'Login ID Given', 'Payment Status', 'Amount', 'Experience (Years)', 'Expertise', 'Rate/Case', 'Plan', 'Plan Expiry', 'Max Cases/Week'];
   var idxs = [];
   if (isAP) { AP_COLS.forEach(function (n) { var i = hs.indexOf(n); if (i >= 0) idxs.push(i); }); }
   else if (isDR) { DR_COLS.forEach(function (n) { var i = hs.indexOf(n); if (i >= 0) idxs.push(i); }); }
   else { hs.forEach(function (_, i) { idxs.push(i); }); }
   var html = '<table' + (isAP ? ' class="apt"' : '') + '><thead><tr>';
-  if (isAP || isDR) html += '<th>काम</th>';
+  var isMO = (TAB === 'Medicine Order');
+  if (isDR || isMO) html += '<th style="width:34px">☑</th>';
+  if (isAP || isDR || isMO) html += '<th>काम</th>';
   idxs.forEach(function (i) { html += '<th>' + esc(hs[i]) + '</th>'; });
   html += '</tr></thead><tbody>';
   rs.slice().reverse().forEach(function (r) {
@@ -378,6 +502,21 @@ function renderTable() {
     var sent = String(r[10] || '').toLowerCase().indexOf('sent') !== -1;
     var od = sent && daysOld(r[0]) > 7;
     html += '<tr' + (od ? ' style="background:#fef2f2"' : '') + '>';
+    if (isDR || isMO) {
+      html += '<td><input type="checkbox" class="rowchk" data-row="' + esc(rowNum(r)) + '" data-mob="' + esc(String(r[hs.indexOf('Mobile (WhatsApp)')] || r[hs.indexOf('Mobile/ID')] || '')) + '" style="width:18px;height:18px"></td>';
+    }
+    if (isMO) {
+      var stM = String(r[hs.indexOf('Payment Status')] || '').toLowerCase();
+      var nmM = String(r[hs.indexOf('Name')] || '');
+      var mobM = String(r[hs.indexOf('Mobile/ID')] || '');
+      var amtM = String(r[hs.indexOf('Total Cost')] || '');
+      if (stM.indexOf('verif') === -1) {
+        html += '<td><button class="okbtn" data-row="' + esc(rowNum(r)) + '" style="font-family:inherit;font-size:12px;font-weight:700;padding:7px 10px;border-radius:9px;border:none;background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;cursor:pointer;white-space:nowrap">✅ Verify करें</button></td>';
+      } else {
+        var rmsg = 'नमस्ते ' + nmM + ' 🙏\nआपका भुगतान (₹' + amtM + ') मिल गया — आपकी दवा जल्द भेज दी जाएगी।\nधन्यवाद — ASTHL (A Step Towards Healthy Life)\n+91-7903873282';
+        html += '<td>' + (waBtn(mobM, rmsg, '📲 Receipt भेजें') || '✓') + '</td>';
+      }
+    }
     if (isDR) {
       var idI = hs.indexOf('Login ID Given'), stI = hs.indexOf('Payment Status');
       var lid = String(r[idI] || '').trim(), st = String(r[stI] || '').toLowerCase();
@@ -400,12 +539,26 @@ function renderTable() {
           : (od ? '<b style="color:#b91c1c">⚠️ 7 दिन+</b>' : '✓ पुष्ट'))) + '</td>';
     }
     idxs.forEach(function (i) {
-      var v = r[i];
-      if (v instanceof Object || (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v))) v = fmtDate(v);
       var raw = String(r[i] == null ? '' : r[i]);
-      var s = esc(v);
-      if (s.length > 260) s = s.slice(0, 260) + '…';
-      html += '<td class="edt" data-r="' + esc(rowNum(r)) + '" data-c="' + i + '" data-h="' + esc(hs[i]) + '" data-v="' + esc(raw).slice(0, 200) + '" style="cursor:pointer" title="बदलने के लिए क्लिक करें">' + s + '</td>';
+      var opts = ddOptions(TAB, hs[i]);
+      if (opts) {
+        var sel = '<select class="dd" data-r="' + esc(rowNum(r)) + '" data-h="' + esc(hs[i]) + '" style="font-family:inherit;font-size:12.5px;padding:6px 8px;border:1.5px solid #ccfbf1;border-radius:9px;background:#fff;color:#134e4a;max-width:170px">';
+        var found = false;
+        opts.forEach(function (o) {
+          var is = (String(o).toLowerCase() === raw.trim().toLowerCase());
+          if (is) found = true;
+          sel += '<option value="' + esc(o) + '"' + (is ? ' selected' : '') + '>' + esc(o) + '</option>';
+        });
+        if (!found && raw.trim()) sel += '<option value="' + esc(raw) + '" selected>' + esc(raw) + '</option>';
+        sel += '</select>';
+        html += '<td>' + sel + '</td>';
+      } else {
+        var v = r[i];
+        if (v instanceof Object || (typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T/.test(v))) v = fmtDate(v);
+        var s = esc(v);
+        if (s.length > 260) s = s.slice(0, 260) + '…';
+        html += '<td class="edt" data-r="' + esc(rowNum(r)) + '" data-c="' + i + '" data-h="' + esc(hs[i]) + '" data-v="' + esc(raw).slice(0, 200) + '" style="cursor:pointer" title="बदलने के लिए क्लिक करें">' + s + '</td>';
+      }
     });
     html += '</tr>';
   });
@@ -417,11 +570,32 @@ function renderTable() {
       return function () { confirmAssign(b.getAttribute('data-case'), b.getAttribute('data-cid')); };
     })(cbs[ci]));
   }
+  var obs = $('atable').querySelectorAll('.okbtn');
+  for (var oi = 0; oi < obs.length; oi++) {
+    obs[oi].addEventListener('click', (function (b) {
+      return function () { saveCell(b.getAttribute('data-row'), 'Payment Status', 'Verified', true); };
+    })(obs[oi]));
+  }
+  var chks = $('atable').querySelectorAll('.rowchk');
+  var bulkBtn = $('abulk');
+  function syncBulk() {
+    var any = false;
+    for (var z = 0; z < chks.length; z++) { if (chks[z].checked) { any = true; break; } }
+    bulkBtn.style.display = any ? 'inline-block' : 'none';
+  }
+  for (var ci2 = 0; ci2 < chks.length; ci2++) { chks[ci2].addEventListener('change', syncBulk); }
+  bulkBtn.style.display = 'none';
   var vfs = $('atable').querySelectorAll('.vfbtn');
   for (var vi = 0; vi < vfs.length; vi++) {
     vfs[vi].addEventListener('click', (function (b) {
       return function () { verifyDoctor(b.getAttribute('data-mob')); };
     })(vfs[vi]));
+  }
+  var dds = $('atable').querySelectorAll('select.dd');
+  for (var di = 0; di < dds.length; di++) {
+    dds[di].addEventListener('change', (function (s) {
+      return function () { saveCell(s.getAttribute('data-r'), s.getAttribute('data-h'), s.value, true); };
+    })(dds[di]));
   }
   var eds = $('atable').querySelectorAll('td.edt');
   for (var ei = 0; ei < eds.length; ei++) {
@@ -470,6 +644,9 @@ $('arefresh').addEventListener('click', loadData);
 $('alogout').addEventListener('click', function () { try { localStorage.removeItem('asthl_admin_pw'); } catch (e) {} location.reload(); });
 $('asearch').addEventListener('input', renderTable);
 $('acsv').addEventListener('click', downloadCSV);
+$('arecheck').addEventListener('click', loadData);
+$('abulk').addEventListener('click', bulkVerify);
+$('areport').addEventListener('click', monthReport);
 
 // auto-login (remember)
 try {
