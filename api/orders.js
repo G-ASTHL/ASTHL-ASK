@@ -1,5 +1,5 @@
-// ASTHL Orders API — medicine orders, doctor registrations, medicine list, patient bills
-// (Google Sheet ke through — Apps Script GOOGLE_SHEET_URL se)
+// ASTHL Orders API — medicine orders, doctor registrations, medicine list, patient bills, assign & pay
+// v2: POST pehle, jawab JSON na ho to GET se dobara (Google kabhi POST par HTML de deta hai)
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -10,38 +10,56 @@ module.exports = async (req, res) => {
 
   try {
     const sheetUrl = process.env.GOOGLE_SHEET_URL;
-    if (!sheetUrl) {
-      return res.status(500).json({ error: 'GOOGLE_SHEET_URL not set on server' });
-    }
+    if (!sheetUrl) return res.status(500).json({ error: 'GOOGLE_SHEET_URL not set on server' });
 
-    const { action } = req.body || {};
-    if (!action || !['saveOrder', 'listMedicines', 'getPatientBill', 'getHealthAlert', 'saveMedSelection', 'listConsultants', 'saveAssignPay', 'getMyAssignments', 'respondAssign', 'getAssignUpdates', 'markNotified', 'saveConsultantNote', 'getConsultantNotes', 'markNoteNotified', 'getMyEarnings', 'saveRating', 'getPatientAppointments'].includes(action)) {
-      return res.status(400).json({ error: 'Invalid action' });
-    }
+    const body = req.body || {};
+    const action = body.action;
+    const ALLOWED = ['saveOrder', 'listMedicines', 'getPatientBill', 'getHealthAlert', 'saveMedSelection',
+      'listConsultants', 'saveAssignPay', 'getMyAssignments', 'respondAssign', 'getAssignUpdates', 'markNotified',
+      'saveConsultantNote', 'getConsultantNotes', 'markNoteNotified', 'getMyEarnings', 'saveRating', 'getPatientAppointments'];
+    if (!action || ALLOWED.indexOf(action) === -1) return res.status(400).json({ error: 'Invalid action' });
 
-    console.log('Orders action:', action);
+    const out = await callSheet(sheetUrl, body);
+    if (out.ok) return res.status(200).json(out.data);
 
-    const sheetResponse = await fetch(sheetUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify(req.body)
+    return res.status(502).json({
+      error: 'शीट का Apps Script जवाब नहीं दे रहा — नया version deploy करें (Version: New version + Who has access: Anyone)।',
+      detail: out.detail || '',
+      detail2: out.detail2 || '',
+      urlTail: sheetUrl.slice(-10),
+      finalUrl: out.finalUrl || '',
+      http: out.http || 0
     });
-
-    if (!sheetResponse.ok) {
-      console.error('Apps Script error:', sheetResponse.status);
-      return res.status(502).json({ error: 'शीट से जवाब नहीं आया। थोड़ी देर बाद कोशिश करें।' });
-    }
-
-    const text = await sheetResponse.text();
-    try {
-      const data = JSON.parse(text);
-      return res.status(200).json(data);
-    } catch (parseErr) {
-      console.error('Apps Script ne non-JSON bheja:', text.slice(0, 200));
-      return res.status(502).json({ error: 'शीट का Apps Script पुराना वर्शन है — नया google-sheet-script.js डिप्लॉय करें।' });
-    }
   } catch (err) {
-    console.error('Orders API error:', err.message);
     return res.status(500).json({ error: 'सर्वर त्रुटि। थोड़ी देर बाद कोशिश करें।' });
   }
 };
+
+async function callSheet(sheetUrl, payload) {
+  try {
+    const r = await fetch(sheetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+    const t = (await r.text() || '').trim();
+    if (t.startsWith('{') || t.startsWith('[')) {
+      try { return { ok: true, data: JSON.parse(t), via: 'POST' }; } catch (e) {}
+    }
+    const url = sheetUrl + '?action=' + encodeURIComponent(payload.action || '') + '&payload=' + encodeURIComponent(JSON.stringify(payload));
+    const r2 = await fetch(url);
+    const t2 = (await r2.text() || '').trim();
+    if (t2.startsWith('{') || t2.startsWith('[')) {
+      try { return { ok: true, data: JSON.parse(t2), via: 'GET' }; } catch (e) {}
+    }
+    return {
+      ok: false,
+      detail: t.slice(0, 250),
+      detail2: t2.slice(0, 250),
+      finalUrl: String(r2.url || r.url || '').slice(0, 100),
+      http: r.status
+    };
+  } catch (e) {
+    return { ok: false, detail: 'fetch error: ' + e.message };
+  }
+}

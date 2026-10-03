@@ -1,7 +1,5 @@
-// ASTHL Admin API — admin.asthl.in ke liye
-// IMPORTANT: password SERVER par check hota hai (frontend me nahi) — taaki koi dekh na sake.
-// Password Vercel → Settings → Environment Variables me ADMIN_PASSWORD rakhein.
-// (Agar set na ho to niche wala default chalega — baad me badal sakte hain.)
+// ASTHL Admin API — admin.asthl.in / ai.asthl.in/admin ke liye
+// v2: POST pehle, jawab JSON na ho to GET se dobara (Google kabhi POST par HTML de deta hai)
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -23,65 +21,52 @@ module.exports = async (req, res) => {
     const action = body.action || 'getAll';
     if (action === 'ping') return res.status(200).json({ status: 'ok' });
 
-    if (action === 'adminConfirmAssign') {
-      const r = await fetch(sheetUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action: 'adminConfirmAssign', caseId: body.caseId, consultantId: body.consultantId })
-      });
-      const text = await r.text();
-      let data; try { data = JSON.parse(text); } catch (e) { return res.status(502).json({ error: 'Apps Script purana version hai — naya deploy karein.', detail: text.slice(0, 300), urlTail: sheetUrl.slice(-10), http: r.status, finalUrl: String(r.url || '').slice(0, 90), redirected: !!r.redirected }); }
-      return res.status(200).json(data);
-    }
+    const sheetAction = (action === 'getAll') ? 'adminGetAll' : action;
+    const payload = Object.assign({}, body, { action: sheetAction });
 
-    if (action === 'adminPayoutDone') {
-      const r = await fetch(sheetUrl, {
-        method: 'POST', headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action: 'adminPayoutDone', consultantId: body.consultantId || '' })
-      });
-      const text = await r.text();
-      let data; try { data = JSON.parse(text); } catch (e) { return res.status(502).json({ error: 'Apps Script purana version hai — naya deploy karein.', detail: text.slice(0, 300), urlTail: sheetUrl.slice(-10), http: r.status, finalUrl: String(r.url || '').slice(0, 90), redirected: !!r.redirected }); }
-      return res.status(200).json(data);
-    }
+    const out = await callSheet(sheetUrl, payload);
+    if (out.ok) return res.status(200).json(out.data);
 
-    if (action === 'adminTransferAssign') {
-      const r = await fetch(sheetUrl, {
-        method: 'POST', headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action: 'adminTransferAssign', caseId: body.caseId, oldConsultantId: body.oldConsultantId || '', newConsultantId: body.newConsultantId, newConsultantName: body.newConsultantName || '' })
-      });
-      const text = await r.text();
-      let data; try { data = JSON.parse(text); } catch (e) { return res.status(502).json({ error: 'Apps Script purana version hai — naya deploy karein.', detail: text.slice(0, 300), urlTail: sheetUrl.slice(-10), http: r.status, finalUrl: String(r.url || '').slice(0, 90), redirected: !!r.redirected }); }
-      return res.status(200).json(data);
-    }
-
-    if (action === 'adminSetCell' || action === 'adminVerifyDoctor') {
-      const r = await fetch(sheetUrl, {
-        method: 'POST', headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify(Object.assign({ action: action }, body))
-      });
-      const text = await r.text();
-      let data; try { data = JSON.parse(text); } catch (e) { return res.status(502).json({ error: 'Apps Script purana version hai — naya deploy karein.', detail: text.slice(0, 300), urlTail: sheetUrl.slice(-10), http: r.status, finalUrl: String(r.url || '').slice(0, 90), redirected: !!r.redirected }); }
-      return res.status(200).json(data);
-    }
-
-    if (action === 'getAll') {
-      const r = await fetch(sheetUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain' },
-        body: JSON.stringify({ action: 'adminGetAll' })
-      });
-      const text = await r.text();
-      let data;
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        return res.status(502).json({ error: 'शीट का Apps Script पुराना वर्शन है — नया google-sheet-script.js डिप्लॉय करें।', detail: text.slice(0, 300), urlTail: sheetUrl.slice(-10), http: r.status, finalUrl: String(r.url || '').slice(0, 90), redirected: !!r.redirected });
-      }
-      return res.status(200).json(data);
-    }
-
-    return res.status(400).json({ error: 'Unknown action' });
+    return res.status(502).json({
+      error: 'शीट का Apps Script जवाब नहीं दे रहा — नया version deploy करें (Version: New version + Who has access: Anyone)।',
+      detail: out.detail || '',
+      detail2: out.detail2 || '',
+      urlTail: sheetUrl.slice(-10),
+      finalUrl: out.finalUrl || '',
+      http: out.http || 0
+    });
   } catch (err) {
     return res.status(500).json({ error: 'Server error: ' + err.message });
   }
 };
+
+// POST -> JSON? warna GET fallback
+async function callSheet(sheetUrl, payload) {
+  try {
+    const r = await fetch(sheetUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(payload)
+    });
+    const t = (await r.text() || '').trim();
+    if (t.startsWith('{') || t.startsWith('[')) {
+      try { return { ok: true, data: JSON.parse(t), via: 'POST' }; } catch (e) {}
+    }
+    // GET fallback (v29 script ise support karta hai)
+    const url = sheetUrl + '?action=' + encodeURIComponent(payload.action || '') + '&payload=' + encodeURIComponent(JSON.stringify(payload));
+    const r2 = await fetch(url);
+    const t2 = (await r2.text() || '').trim();
+    if (t2.startsWith('{') || t2.startsWith('[')) {
+      try { return { ok: true, data: JSON.parse(t2), via: 'GET' }; } catch (e) {}
+    }
+    return {
+      ok: false,
+      detail: t.slice(0, 250),
+      detail2: t2.slice(0, 250),
+      finalUrl: String(r2.url || r.url || '').slice(0, 100),
+      http: r.status
+    };
+  } catch (e) {
+    return { ok: false, detail: 'fetch error: ' + e.message };
+  }
+}
