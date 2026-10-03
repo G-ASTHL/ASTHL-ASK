@@ -170,22 +170,18 @@ const trimmedMessages = messages.length > 30 ? [messages[0]].concat(messages.sli
 
       if (sheetUrl && !isSystemPrompt && displayMsg) {
         try {
-          await fetch(sheetUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+          await sheetLog(sheetUrl, {
               sessionId: sessionId || 'unknown',
               patientName: patientName || '',
               patientAge: patientAge || '',
               patientMobile: patientMobile || '',
               mobileVerified: mobileVerified ? 'Yes' : 'No',
-          accessId: accessId || '',
+              accessId: accessId || '',
               category: category || '',
               clinic: clinic || '',
               address: (address || '').slice(0, 500),
               userMessage: displayMsg.slice(0, 40000),
               botReply: reply.slice(0, 40000)
-            })
           });
           console.log('Logged to Google Sheet:', patientName, patientMobile);
         } catch (logErr) {
@@ -221,4 +217,18 @@ function parseExpiry(s) {
   if (m) return new Date(m[3] + '-' + String(m[2]).padStart(2, '0') + '-' + String(m[1]).padStart(2, '0') + 'T23:59:59+05:30');
   const d = new Date(s);
   return isNaN(d.getTime()) ? null : d;
+}
+
+// v37: sheet me log bhejna — Google kabhi HTML de de to dobara koshish (3 baar)
+async function sheetLog(sheetUrl, payload) {
+  const body = JSON.stringify(payload);
+  for (let i = 0; i < 3; i++) {
+    try {
+      const r = await fetch(sheetUrl, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: body });
+      const t = (await r.text() || '').trim();
+      if (t.charAt(0) === '{') return true;
+    } catch (e) {}
+    await new Promise(function (z) { setTimeout(z, 250); });
+  }
+  return false;
 }
