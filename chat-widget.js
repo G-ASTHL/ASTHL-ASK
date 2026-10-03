@@ -313,7 +313,7 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
     #asthl-chat-window-header .info .name { font-size: 14px; font-weight: 600; }
     #asthl-chat-window-header .info .status { font-size: 11px; opacity: 0.9; display: flex; align-items: center; gap: 4px; }
     #asthl-chat-window-header .info .status .dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; }
-    #asthl-new-chat-btn { background: rgba(255,255,255,0.2); border: none; border-radius: 12px; padding: 5px 10px; font-size: 11px; color: white; cursor: pointer; font-family: inherit; font-weight: 500; display: none; flex-shrink: 0; margin-right: 6px; transition: background 0.15s; } #asthl-new-chat-btn:hover { background: rgba(255,255,255,0.4); } #asthl-save-case-btn, #asthl-cases-btn, #asthl-report-btn { background: rgba(255,255,255,0.2); border: none; border-radius: 12px; padding: 5px 8px; font-size: 11px; color: white; cursor: pointer; font-family: inherit; font-weight: 500; flex-shrink: 0; margin-right: 4px; display: none; } #asthl-save-case-btn:hover, #asthl-cases-btn:hover, #asthl-report-btn:hover { background: rgba(255,255,255,0.4); } .asthl-case-row.closed { opacity: 0.75; background: #f1f5f9; } .asthl-case-row.closed .asthl-case-tg { opacity: 1; } .asthl-case-tg { flex-shrink: 0; margin-left: 10px; border: none; border-radius: 10px; padding: 6px 13px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,0.18); } .asthl-case-tg[data-tg="close"] { background: #16a34a; color: #ffffff; } .asthl-case-tg[data-tg="close"]:hover { background: #15803d; } .asthl-case-tg[data-tg="open"] { background: #ea580c; color: #ffffff; } .asthl-case-tg[data-tg="open"]:hover { background: #c2410c; } .asthl-case-pb { flex-shrink: 0; margin-left: 6px; border: 1.5px solid #94a3b8; background: #ffffff; color: #334155; border-radius: 10px; padding: 6px 11px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; } .asthl-case-pb[data-pb="public"] { background: #7c3aed; border-color: #7c3aed; color: #ffffff; } .asthl-case-pb[data-pb="public"]:hover { background: #6d28d9; } .asthl-case-pb[data-pb="private"]:hover { background: #f1f5f9; } .asthl-case-row.closed .asthl-case-pb { opacity: 1; } .asthl-case-as { flex-shrink: 0; margin-left: 6px; border: none; background: linear-gradient(135deg,#0d9488,#0f766e); color: #ffffff; border-radius: 10px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; box-shadow: 0 1px 4px rgba(13,148,136,0.35); } .asthl-case-as:hover { background: #0f766e; } .asthl-case-row.closed .asthl-case-as { opacity: 1; } .asthl-case-note { flex-shrink: 0; margin-left: 6px; border: 1.5px solid #f59e0b; background: #fffbeb; color: #92400e; border-radius: 10px; padding: 6px 11px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; } .asthl-case-note:hover { background: #fef3c7; } .asthl-case-flag { flex-shrink: 0; margin-left: 6px; border-radius: 999px; padding: 5px 10px; font-size: 11.5px; font-weight: 700; white-space: nowrap; } .asthl-case-flag.pend { background: #fffbeb; color: #b45309; border: 1.5px solid #fde68a; } .asthl-case-flag.ok { background: #f0fdf4; color: #166534; border: 1.5px solid #bbf7d0; } .asthl-case-flag.bad { background: #fef2f2; color: #b91c1c; border: 1.5px solid #fecaca; }
+    #asthl-new-chat-btn { background: rgba(255,255,255,0.2); border: none; border-radius: 12px; padding: 5px 10px; font-size: 11px; color: white; cursor: pointer; font-family: inherit; font-weight: 500; display: none; flex-shrink: 0; margin-right: 6px; transition: background 0.15s; } #asthl-new-chat-btn:hover { background: rgba(255,255,255,0.4); } #asthl-save-case-btn, #asthl-cases-btn, #asthl-report-btn, #asthl-fu-btn { background: rgba(255,255,255,0.2); border: none; border-radius: 12px; padding: 5px 8px; font-size: 11px; color: white; cursor: pointer; font-family: inherit; font-weight: 500; flex-shrink: 0; margin-right: 4px; display: none; } #asthl-save-case-btn:hover, #asthl-cases-btn:hover, #asthl-report-btn:hover, #asthl-fu-btn:hover { background: rgba(255,255,255,0.4); } .asthl-case-row.closed { opacity: 0.75; background: #f1f5f9; } .asthl-case-row.closed .asthl-case-tg { opacity: 1; } .asthl-case-tg { flex-shrink: 0; margin-left: 10px; border: none; border-radius: 10px; padding: 6px 13px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,0.18); } .asthl-case-tg[data-tg="close"] { background: #16a34a; color: #ffffff; } .asthl-case-tg[data-tg="close"]:hover { background: #15803d; } .asthl-case-tg[data-tg="open"] { background: #ea580c; color: #ffffff; } .asthl-case-tg[data-tg="open"]:hover { background: #c2410c; } .asthl-case-pb { flex-shrink: 0; margin-left: 6px; border: 1.5px solid #94a3b8; background: #ffffff; color: #334155; border-radius: 10px; padding: 6px 11px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; } .asthl-case-pb[data-pb="public"] { background: #7c3aed; border-color: #7c3aed; color: #ffffff; } .asthl-case-pb[data-pb="public"]:hover { background: #6d28d9; } .asthl-case-pb[data-pb="private"]:hover { background: #f1f5f9; } .asthl-case-row.closed .asthl-case-pb { opacity: 1; } .asthl-case-as { flex-shrink: 0; margin-left: 6px; border: none; background: linear-gradient(135deg,#0d9488,#0f766e); color: #ffffff; border-radius: 10px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; box-shadow: 0 1px 4px rgba(13,148,136,0.35); } .asthl-case-as:hover { background: #0f766e; } .asthl-case-row.closed .asthl-case-as { opacity: 1; } .asthl-case-note { flex-shrink: 0; margin-left: 6px; border: 1.5px solid #f59e0b; background: #fffbeb; color: #92400e; border-radius: 10px; padding: 6px 11px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; } .asthl-case-note:hover { background: #fef3c7; } .asthl-case-flag { flex-shrink: 0; margin-left: 6px; border-radius: 999px; padding: 5px 10px; font-size: 11.5px; font-weight: 700; white-space: nowrap; } .asthl-case-flag.pend { background: #fffbeb; color: #b45309; border: 1.5px solid #fde68a; } .asthl-case-flag.ok { background: #f0fdf4; color: #166534; border: 1.5px solid #bbf7d0; } .asthl-case-flag.bad { background: #fef2f2; color: #b91c1c; border: 1.5px solid #fecaca; } .asthl-case-fu { flex-shrink: 0; margin-left: 6px; border: none; background: linear-gradient(135deg,#7c3aed,#6d28d9); color: #ffffff; border-radius: 10px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; box-shadow: 0 1px 4px rgba(124,58,237,0.35); } .asthl-case-fu:hover { background: #6d28d9; }
     #asthl-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; z-index: 1000000; padding: 16px; }
     #asthl-modal { background: #ffffff; border-radius: 16px; max-width: 420px; width: 100%; max-height: 80dvh; overflow-y: auto; padding: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
     .asthl-case-row { border: 1px solid #ccfbf1; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; background: #f0fdfa; }
@@ -392,7 +392,7 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
     #asthl-chat-send svg { width: 18px; height: 18px; fill: white; }
     #asthl-chat-disclaimer { font-size: 11px; color: #0f766e; text-align: center; padding: 6px 10px; background: #f0fdfa; font-weight: 500; border-top: 1px solid #ccfbf1; }
     @media (max-width: 600px) { #asthl-chat-window { width: 100vw; height: 100dvh; right: 0; bottom: 0; border-radius: 0; border: none; } #asthl-flash { right: 10px; left: 10px; max-width: none; } #asthl-chat-btn { bottom: 16px; right: 16px; } }
-  @media (max-width: 600px) { #asthl-chat-window-header { flex-wrap: wrap; row-gap: 5px; padding: 10px 12px; } #asthl-save-case-btn, #asthl-cases-btn, #asthl-report-btn, #asthl-new-chat-btn { font-size: 10px; padding: 4px 7px; margin-right: 2px; } }
+  @media (max-width: 600px) { #asthl-chat-window-header { flex-wrap: wrap; row-gap: 5px; padding: 10px 12px; } #asthl-save-case-btn, #asthl-cases-btn, #asthl-report-btn, #asthl-fu-btn, #asthl-new-chat-btn { font-size: 10px; padding: 4px 7px; margin-right: 2px; } }
   `;
   document.head.appendChild(style);
 
@@ -422,6 +422,7 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
       </div>
       <button id="asthl-save-case-btn">💾 Save</button>
       <button id="asthl-cases-btn">📂 Cases</button>
+      <button id="asthl-fu-btn">💬 फॉलो-अप</button>
       <button id=\"asthl-report-btn\">📄 Report</button>
       <button id="asthl-new-chat-btn">⟳ नयी चैट</button>
       <span class="close" id="asthl-chat-close">&times;</span>
@@ -921,6 +922,7 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
     if (FULLPAGE_MODE) {
       document.getElementById('asthl-save-case-btn').style.display = 'inline-block';
       document.getElementById('asthl-cases-btn').style.display = 'inline-block';
+      document.getElementById('asthl-fu-btn').style.display = 'inline-block';
       document.getElementById('asthl-report-btn').style.display = 'inline-block';
     }
     clearInterval(resendTimer);
@@ -1170,6 +1172,8 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
   // ===== CASE FILES: save + load (sirf Vercel page) =====
   var saveCaseBtn = document.getElementById('asthl-save-case-btn');
   var casesBtn = document.getElementById('asthl-cases-btn');
+  var fuBtn = document.getElementById('asthl-fu-btn');
+  if (fuBtn) fuBtn.addEventListener('click', function () { var fid = getAccessId(); if (!fid) { alert('पहले ID से login करें।'); return; } openFollowupInbox(fid); });
   var loadedCaseId = null;
   var reportBtn = document.getElementById('asthl-report-btn');
   if (reportBtn) reportBtn.addEventListener('click', function() {
@@ -1429,7 +1433,7 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
     var html = '<h3 style="margin:0 0 8px;color:#0f766e">🔔 आज का रिमाइंडर</h3><div style="font-size:13.5px;color:#334155;line-height:1.8">';
     list.forEach(function (a, i) {
       html += 'केस <b>' + asEsc(a.caseId) + '</b> — ' + asEsc(a.patientName || '') + '<br>' + asEsc(a.when || a.days || '') + '<br>' +
-        '<button class="cn-open" data-i="' + i + '" style="margin:6px 0 12px;font-family:inherit;font-size:12.5px;font-weight:700;padding:8px 12px;border-radius:10px;border:none;background:#0d9488;color:#fff;cursor:pointer">💊 दवा / सलाह लिखें</button><br>';
+        '<button class="cn-open" data-i="' + i + '" style="margin:6px 0 6px;font-family:inherit;font-size:12.5px;font-weight:700;padding:8px 12px;border-radius:10px;border:none;background:#0d9488;color:#fff;cursor:pointer">💊 दवा / सलाह लिखें</button>' + '<button class="fu-open" data-i="' + i + '" style="margin:6px 0 12px 6px;font-family:inherit;font-size:12.5px;font-weight:700;padding:8px 12px;border-radius:10px;border:none;background:linear-gradient(135deg,#7c3aed,#6d28d9);color:#fff;cursor:pointer">💬 फॉलो-अप</button><br>';
       try { localStorage.setItem('asthl_rem_' + a.caseId, asToday()); } catch (e) {}
     });
     html += '</div><p style="font-size:12.5px;color:#64748b">इलाज पूरा होने पर ASTHL को बताएँ — तब भुगतान अगले महीने के पहले हफ़्ते में मिलेगा।</p>' +
@@ -1441,6 +1445,12 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
       cns[ci].addEventListener('click', (function (b) {
         return function () { consultantNoteForm(list[parseInt(b.getAttribute('data-i'), 10)], accId, function () { showAcceptedReminder(list, accId); }); };
       })(cns[ci]));
+    }
+    var fus = ov.querySelectorAll('.fu-open');
+    for (var fi = 0; fi < fus.length; fi++) {
+      fus[fi].addEventListener('click', (function (b) {
+        return function () { var a = list[parseInt(b.getAttribute('data-i'), 10)]; ov.remove(); openFollowup(a.caseId, a.patientName || a.caseId, 'Consultant', accId); };
+      })(fus[fi]));
     }
   }
 
@@ -1586,6 +1596,90 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
     showList();
   }
 
+  // ===== v50: FREE FOLLOW-UP (1 mahina, dono taraf se baat) =====
+  var fuTimer = null;
+  function fuWhen(s) {
+    try { var d = new Date(s); if (isNaN(d.getTime())) return ''; return d.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; }
+  }
+  async function openFollowupInbox(myId) {
+    var ov = openModal('<h3 style="margin:0 0 10px;color:#134e4a">💬 फॉलो-अप</h3><p style="font-size:13px;color:#64748b">लोड हो रहा है...</p>');
+    var box = ov.querySelector('#asthl-modal');
+    var d = null;
+    try { d = await asPost({ action: 'getFollowupInbox', id: myId }); } catch (e) {}
+    var th = (d && d.threads) || [];
+    if (!th.length) {
+      box.innerHTML = '<h3 style="margin:0 0 8px;color:#134e4a">💬 फॉलो-अप</h3>' +
+        '<p style="font-size:13.5px;color:#475569;line-height:1.7">अभी कोई चालू फॉलो-अप नहीं है।<br><br>' +
+        'जब कोई <b>परामर्श डॉक्टर केस स्वीकार</b> कर लेता है (या मरीज़ का <b>अपॉइंटमेंट स्वीकृत</b> होता है), तो उस केस पर <b>1 महीने तक फ्री फॉलो-अप</b> मिलता है — दोनों तरफ़ से संदेश भेज सकते हैं।</p>';
+      return;
+    }
+    var html = '<h3 style="margin:0 0 6px;color:#134e4a">💬 फॉलो-अप — चालू केस</h3>' +
+      '<div style="font-size:12px;color:#64748b;margin-bottom:10px;line-height:1.5">🎁 हर केस पर <b>1 महीने तक फ्री</b> — दोनों तरफ़ से संदेश भेज सकते हैं।</div>';
+    th.forEach(function (x, i) {
+      html += '<div class="asthl-fu-row" data-i="' + i + '" style="border:1px solid #ccfbf1;border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer;background:#f0fdfa">' +
+        '<b>' + asEsc(x.patientName || x.caseId) + '</b> <span style="font-size:11px;color:#0d9488;font-weight:600">' + asEsc(x.caseId) + '</span>' +
+        '<div style="font-size:12.5px;color:#475569;margin-top:2px">' + (x.role === 'Consultant' ? 'आप परामर्श डॉक्टर हैं' : (x.role === 'Patient' ? 'आप मरीज़ हैं' : 'आप केस भेजने वाले हैं')) + (x.other ? ' • ' + asEsc(x.other) : '') + '</div>' +
+        (x.last ? '<div style="font-size:12px;color:#64748b;margin-top:4px">' + asEsc(String(x.last).slice(0, 60)) + '</div>' : '') +
+        '<div style="font-size:11px;color:#94a3b8;margin-top:3px">' + (x.msgs ? x.msgs + ' संदेश' : 'कोई संदेश नहीं — शुरू करें') + '</div></div>';
+    });
+    box.innerHTML = html;
+    var rows = box.querySelectorAll('.asthl-fu-row');
+    for (var i = 0; i < rows.length; i++) {
+      rows[i].addEventListener('click', (function (r) {
+        return function () { var x = th[parseInt(r.getAttribute('data-i'), 10)]; ov.remove(); openFollowup(x.caseId, x.patientName || x.caseId, x.role, myId); };
+      })(rows[i]));
+    }
+  }
+  async function openFollowup(caseId, title, myRole, myId) {
+    if (fuTimer) { clearInterval(fuTimer); fuTimer = null; }
+    var ov = openModal('<h3 style="margin:0 0 6px;color:#134e4a">💬 फॉलो-अप</h3><div id="asthl-fu-wrap"><p style="font-size:13px;color:#64748b">लोड हो रहा है...</p></div>');
+    var wrap = ov.querySelector('#asthl-fu-wrap');
+    var first = true;
+    async function draw() {
+      var keep = ''; var oldIn = wrap.querySelector('#asthl-fu-in'); if (oldIn) keep = oldIn.value;
+      var d = null;
+      try { d = await asPost({ action: 'getFollowups', caseId: caseId }); } catch (e) {}
+      if (!d || d.status !== 'ok') { if (first) wrap.innerHTML = '<p style="color:#b91c1c;font-size:13px">लोड नहीं हो सका। थोड़ी देर बाद कोशिश करें।</p>'; return; }
+      first = false;
+      var msgs = d.messages || [];
+      var freeTxt = d.free ? ('🎁 <b>फ्री फॉलो-अप</b> — ' + (d.daysLeft > 1 ? d.daysLeft + ' दिन बाकी' : (d.daysLeft === 1 ? 'कल आख़िरी दिन' : 'आज आख़िरी दिन'))) : '⏳ फ्री फॉलो-अप की अवधि (1 महीना) पूरी हो गई। नया परामर्श लेने पर फिर फ्री मिलेगा।';
+      var h = '<h3 style="margin:0 0 4px;color:#134e4a">💬 फॉलो-अप — ' + asEsc(title || caseId) + '</h3>' +
+        '<div style="font-size:11.5px;color:#0d9488;font-weight:600;margin-bottom:6px">केस ' + asEsc(caseId) + '</div>' +
+        '<div style="font-size:12.5px;padding:7px 10px;border-radius:10px;background:' + (d.free ? '#f0fdf4' : '#fef2f2') + ';border:1px solid ' + (d.free ? '#bbf7d0' : '#fecaca') + ';color:' + (d.free ? '#166534' : '#b91c1c') + ';margin-bottom:10px;line-height:1.5">' + freeTxt + '</div>' +
+        '<div id="asthl-fu-msgs" style="max-height:42vh;overflow-y:auto;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:10px">';
+      if (!msgs.length) h += '<div style="font-size:12.5px;color:#64748b;text-align:center;padding:14px">अभी कोई संदेश नहीं — नीचे लिखकर शुरू करें।</div>';
+      msgs.forEach(function (m) {
+        var mine = (myRole === 'Patient') ? (m.role === 'Patient') : (String(m.role || '').toUpperCase() === String(myRole || '').toUpperCase());
+        var who = m.fromName || (m.role === 'Consultant' ? 'परामर्श डॉक्टर' : (m.role === 'Patient' ? 'मरीज़' : 'डॉक्टर'));
+        h += '<div style="margin:6px 0;text-align:' + (mine ? 'right' : 'left') + '">' +
+          '<div style="display:inline-block;max-width:82%;text-align:left;background:' + (mine ? '#0d9488' : '#ffffff') + ';color:' + (mine ? '#ffffff' : '#1e293b') + ';border:1px solid ' + (mine ? '#0d9488' : '#e2e8f0') + ';border-radius:12px;padding:8px 11px;font-size:13.5px;line-height:1.6;white-space:pre-wrap">' + asEsc(m.text) + '</div>' +
+          '<div style="font-size:10.5px;color:#94a3b8;margin-top:2px">' + asEsc(who) + ' • ' + fuWhen(m.at) + '</div></div>';
+      });
+      h += '</div>';
+      if (d.free) {
+        h += '<div style="display:flex;gap:8px;margin-top:10px"><textarea id="asthl-fu-in" rows="2" placeholder="संदेश लिखें..." style="flex:1;font-family:inherit;font-size:13.5px;padding:10px;border:1.5px solid #cbd5e1;border-radius:12px;resize:none"></textarea>' +
+          '<button id="asthl-fu-send" style="font-family:inherit;font-size:13.5px;font-weight:700;padding:0 16px;border:none;border-radius:12px;background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;cursor:pointer">भेजें</button></div>';
+      }
+      wrap.innerHTML = h;
+      var mm = wrap.querySelector('#asthl-fu-msgs'); if (mm) mm.scrollTop = mm.scrollHeight;
+      if (keep) { var ni = wrap.querySelector('#asthl-fu-in'); if (ni) ni.value = keep; }
+      var sb = wrap.querySelector('#asthl-fu-send');
+      if (sb) sb.addEventListener('click', async function () {
+        var inp = wrap.querySelector('#asthl-fu-in');
+        var txt = (inp.value || '').trim();
+        if (!txt) return;
+        sb.disabled = true; sb.textContent = '...';
+        try { await asPost({ action: 'saveFollowup', caseId: caseId, role: myRole, fromId: myId, fromName: myId, text: txt }); inp.value = ''; await draw(); } catch (e) {}
+        sb.disabled = false; sb.textContent = 'भेजें';
+      });
+    }
+    await draw();
+    fuTimer = setInterval(function () {
+      if (!document.body.contains(ov)) { clearInterval(fuTimer); fuTimer = null; return; }
+      draw();
+    }, 15000);
+  }
+
   function openModal(html) {
     var ov = document.createElement('div');
     ov.id = 'asthl-modal-overlay';
@@ -1656,11 +1750,17 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
         var ad = await asPost({ action: 'getAssignSummary', assigningDoctor: accId });
         ((ad && ad.rows) || []).forEach(function (x) { if (!assignMap[x.caseId]) assignMap[x.caseId] = x; });
       } catch (e) {}
+      // v50: follow-up threads (jinka free window chalu hai)
+      var fuMap = {};
+      try {
+        var fd = await asPost({ action: 'getFollowupInbox', id: accId });
+        ((fd && fd.threads) || []).forEach(function (x) { fuMap[x.caseId] = x; });
+      } catch (e) {}
       var html = '<h3 style=\"margin:0 0 10px;color:#134e4a\">📂 \u0938\u0947\u0935 \u0915\u093F\u090F \u0939\u0941\u090F \u0915\u0947\u0938 \u2014 ID: ' + accId + '</h3>';
       for (var i = 0; i < cases.length; i++) {
         var c = cases[i];
 var isClosed = (c.caseStatus === 'Closed');
-        html += '<div class="asthl-case-row' + (isClosed ? ' closed' : '') + '" data-cid="' + c.caseId + '"><b>' + c.name + '</b> <span class="asthl-case-pub">' + (c.isPublic ? '🌐 Public' : '') + (isClosed ? ' ✅ बंद' : '') + '</span><span class="asthl-case-meta">' + c.issue + '</span><span class="asthl-case-id">' + c.caseId + '</span>' + (isClosed ? '<button class="asthl-case-tg" data-tg="open">🔄 खोलें</button>' : '<button class="asthl-case-tg" data-tg="close">✅ बंद करें</button>') + (c.isPublic ? '<button class="asthl-case-pb" data-pb="private">🔒 Private</button>' : '<button class="asthl-case-pb" data-pb="public">🌐 Public</button>') + '<button class="asthl-case-as">📤 Assign &amp; Pay</button>' + (noteMap[c.caseId] ? '<button class="asthl-case-note" data-cid="' + c.caseId + '">📋 परामर्श सलाह</button>' : '') + (assignMap[c.caseId] ? (function (fl) { return '<span class="asthl-case-flag ' + fl.c + '">' + fl.t + '</span>'; })(asFlagText(assignMap[c.caseId])) : '') + '</div>';
+        html += '<div class="asthl-case-row' + (isClosed ? ' closed' : '') + '" data-cid="' + c.caseId + '"><b>' + c.name + '</b> <span class="asthl-case-pub">' + (c.isPublic ? '🌐 Public' : '') + (isClosed ? ' ✅ बंद' : '') + '</span><span class="asthl-case-meta">' + c.issue + '</span><span class="asthl-case-id">' + c.caseId + '</span>' + (isClosed ? '<button class="asthl-case-tg" data-tg="open">🔄 खोलें</button>' : '<button class="asthl-case-tg" data-tg="close">✅ बंद करें</button>') + (c.isPublic ? '<button class="asthl-case-pb" data-pb="private">🔒 Private</button>' : '<button class="asthl-case-pb" data-pb="public">🌐 Public</button>') + '<button class="asthl-case-as">📤 Assign &amp; Pay</button>' + (noteMap[c.caseId] ? '<button class="asthl-case-note" data-cid="' + c.caseId + '">📋 परामर्श सलाह</button>' : '') + (fuMap[c.caseId] ? '<button class="asthl-case-fu" data-cid="' + c.caseId + '">💬 फॉलो-अप</button>' : '') + (assignMap[c.caseId] ? (function (fl) { return '<span class="asthl-case-flag ' + fl.c + '">' + fl.t + '</span>'; })(asFlagText(assignMap[c.caseId])) : '') + '</div>';
       }
       ov.querySelector('#asthl-modal').innerHTML = html;
       var rows = ov.querySelectorAll('.asthl-case-row');
@@ -1705,6 +1805,18 @@ var isClosed = (c.caseStatus === 'Closed');
             openAssignPanel(cid, cname, accId);
           };
         })(asBtns[ab], asBtns[ab].closest('.asthl-case-row')));
+      }
+      var fuBtns = ov.querySelectorAll('.asthl-case-fu');
+      for (var fb = 0; fb < fuBtns.length; fb++) {
+        fuBtns[fb].addEventListener('click', (function(btn, row) {
+          return function(ev) {
+            ev.stopPropagation();
+            var cid = row.getAttribute('data-cid');
+            var cname = row.querySelector('b') ? row.querySelector('b').textContent : cid;
+            ov.remove();
+            openFollowup(cid, cname, 'Doctor', accId);
+          };
+        })(fuBtns[fb], fuBtns[fb].closest('.asthl-case-row')));
       }
       var pbBtns = ov.querySelectorAll('.asthl-case-pb');
       for (var p = 0; p < pbBtns.length; p++) {

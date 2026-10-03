@@ -205,6 +205,7 @@
     <div><b>ASTHL AI Based Radar System</b><br><span id="pat-info">मरीज़</span></div>
     <button class="newbtn" id="btn-new-patient" title="नया मरीज़">नया मरीज़</button>
     <button class="newbtn" id="btn-appt" title="डॉक्टर से अपॉइंटमेंट" style="background:#fbbf24;color:#451a03;margin-left:6px">📅 डॉक्टर</button>
+    <button class="newbtn" id="btn-fu" title="डॉक्टर से फ्री फॉलो-अप (1 महीना)" style="background:#7c3aed;color:#fff;margin-left:6px;display:none">💬 फॉलो-अप</button>
   </div>
   <div id="chat-log"></div>
   <div id="chat-input-area">
@@ -408,11 +409,84 @@
       if (st.indexOf('accept') !== -1) {
         addMsg('✅ ' + docLabel(a.doctorName) + ' ने आपका अपॉइंटमेंट स्वीकार कर लिया है।\nअनुमानित समय: ' + (a.when || '—') + '\nअपॉइंटमेंट ID: ' + a.caseId, 'bot');
         if (!a.rating) showRating(a);
+        showFuBtn(a.caseId, a.doctorName);
       } else if (st.indexOf('reject') !== -1) {
         addMsg('ℹ️ आपका अपॉइंटमेंट (ID: ' + a.caseId + ') डॉक्टर द्वारा स्वीकार नहीं हो सका।\nASTHL आपके लिए दूसरा डॉक्टर देख रहा है — कृपया प्रतीक्षा करें या कॉल करें: +91-7903873282', 'bot');
       }
     });
   }
+
+  // ===== v50: फ्री फॉलो-अप (डॉक्टर के साथ, 1 महीना) =====
+  var fuCase = null, fuTimer = null;
+  function showFuBtn(caseId, doctorName) {
+    fuCase = { id: caseId, doc: doctorName || '' };
+    var b = document.getElementById('btn-fu');
+    if (b) b.style.display = 'inline-block';
+  }
+  function fuWhen(s) { try { var d = new Date(s); if (isNaN(d.getTime())) return ''; return d.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }); } catch (e) { return ''; } }
+  async function drawFu() {
+    if (!fuCase) return;
+    var inEl = document.getElementById('fu-input');
+    var keep = inEl ? inEl.value : '';
+    var d = null;
+    try {
+      var r = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'getFollowups', caseId: fuCase.id }) });
+      d = await r.json();
+    } catch (e) {}
+    if (!d || d.status !== 'ok') return;
+    var msgs = d.messages || [];
+    var ban = document.getElementById('fu-banner');
+    ban.innerHTML = d.free
+      ? ('🎁 <b>फ्री फॉलो-अप</b> — ' + (d.daysLeft > 1 ? d.daysLeft + ' दिन बाकी' : (d.daysLeft === 1 ? 'कल आख़िरी दिन' : 'आज आख़िरी दिन')) + '। अपनी स्थिति बताइए — डॉक्टर जवाब देंगे।')
+      : '⏳ फ्री फॉलो-अप की अवधि (1 महीना) पूरी हो गई। नया अपॉइंटमेंट लेने पर फिर फ्री मिलेगा।';
+    ban.style.background = d.free ? '#f0fdf4' : '#fef2f2';
+    ban.style.color = d.free ? '#166534' : '#b91c1c';
+    ban.style.borderColor = d.free ? '#bbf7d0' : '#fecaca';
+    var h = '';
+    if (!msgs.length) h = '<div style="font-size:12.5px;color:#64748b;text-align:center;padding:16px">अभी कोई संदेश नहीं — नीचे लिखकर शुरू करें।</div>';
+    msgs.forEach(function (m) {
+      var mine = (m.role === 'Patient');
+      var who = m.fromName || (m.role === 'Patient' ? 'आप' : 'डॉक्टर');
+      h += '<div style="margin:6px 0;text-align:' + (mine ? 'right' : 'left') + '">' +
+        '<div style="display:inline-block;max-width:82%;text-align:left;background:' + (mine ? '#0d9488' : '#fff') + ';color:' + (mine ? '#fff' : '#1e293b') + ';border:1px solid ' + (mine ? '#0d9488' : '#e2e8f0') + ';border-radius:12px;padding:8px 11px;font-size:13.5px;line-height:1.6;white-space:pre-wrap">' + esc(m.text) + '</div>' +
+        '<div style="font-size:10.5px;color:#94a3b8;margin-top:2px">' + esc(who) + ' • ' + fuWhen(m.at) + '</div></div>';
+    });
+    var box = document.getElementById('fu-msgs');
+    box.innerHTML = h;
+    box.scrollTop = box.scrollHeight;
+    if (keep && inEl) inEl.value = keep;
+    document.getElementById('fu-send-row').style.display = d.free ? 'flex' : 'none';
+  }
+  function openPatientFollowup() {
+    if (!fuCase) return;
+    document.getElementById('fu-panel').style.display = 'flex';
+    drawFu();
+    if (fuTimer) clearInterval(fuTimer);
+    fuTimer = setInterval(function () {
+      if (document.getElementById('fu-panel').style.display === 'none') { clearInterval(fuTimer); return; }
+      drawFu();
+    }, 15000);
+  }
+  function fuInit() {
+    var b = document.getElementById('btn-fu');
+    if (b) b.addEventListener('click', openPatientFollowup);
+    var c = document.getElementById('fu-close');
+    if (c) c.addEventListener('click', function () { document.getElementById('fu-panel').style.display = 'none'; });
+    var s = document.getElementById('fu-send');
+    if (s) s.addEventListener('click', async function () {
+      var txt = (document.getElementById('fu-input').value || '').trim();
+      if (!txt || !fuCase) return;
+      s.disabled = true; s.textContent = '...';
+      try {
+        await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'saveFollowup', caseId: fuCase.id, role: 'Patient', fromId: (patient && patient.mobile) || '', fromName: (patient && patient.name) || 'मरीज़', text: txt }) });
+        document.getElementById('fu-input').value = '';
+        await drawFu();
+      } catch (e) {}
+      s.disabled = false; s.textContent = 'भेजें';
+    });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fuInit); else fuInit();
+
   function showRating(a) {
     var log = $('chat-log');
     var box = document.createElement('div');
@@ -627,5 +701,21 @@
 })();
 </script>
 <script>if ('serviceWorker' in navigator) { window.addEventListener('load', function () { navigator.serviceWorker.register('/sw.js').catch(function () {}); }); }</script>
+
+<!-- ===== v50: फ्री फॉलो-अप (डॉक्टर के साथ, 1 महीना) ===== -->
+<div id="fu-panel" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:1000000;align-items:flex-end;justify-content:center">
+  <div style="background:#fff;width:100%;max-width:560px;max-height:88vh;border-radius:18px 18px 0 0;display:flex;flex-direction:column;overflow:hidden">
+    <div style="background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;padding:12px 14px;display:flex;align-items:center;gap:8px">
+      <b style="flex:1;font-size:15px">💬 डॉक्टर से फॉलो-अप</b>
+      <span id="fu-close" style="cursor:pointer;font-size:22px;line-height:1">&times;</span>
+    </div>
+    <div id="fu-banner" style="font-size:12.5px;padding:8px 14px;background:#f0fdf4;color:#166534;border-bottom:1px solid #bbf7d0"></div>
+    <div id="fu-msgs" style="flex:1;overflow-y:auto;padding:12px 14px;background:#f8fafc;min-height:170px"></div>
+    <div id="fu-send-row" style="display:flex;gap:8px;padding:10px 12px;border-top:1px solid #e2e8f0;background:#fff">
+      <textarea id="fu-input" rows="1" placeholder="संदेश लिखें..." style="flex:1;font-family:inherit;font-size:14px;padding:10px;border:1.5px solid #cbd5e1;border-radius:12px;resize:none"></textarea>
+      <button id="fu-send" style="font-family:inherit;font-size:14px;font-weight:700;padding:0 16px;border:none;border-radius:12px;background:linear-gradient(135deg,#0d9488,#0f766e);color:#fff;cursor:pointer">भेजें</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
