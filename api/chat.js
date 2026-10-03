@@ -25,7 +25,29 @@ module.exports = async (req, res) => {
       if (until && Date.now() <= until.getTime()) { ok = true; continue; }
       expired = true; // date beet chuki ya samajh nahi aayi
     }
-    return res.status(200).json({ access: ok, expired: expired && !ok });
+    if (ok) return res.status(200).json({ access: true, expired: false, from: 'access_ids' });
+    // v5: ACCESS_IDS me na mile to DATABASE me dekho — admin ne jo doctor verify kiya hai
+    // (isse naya DOCT0001 turant login kar sakta hai, ACCESS_IDS me daalne ki zaroorat nahi)
+    try {
+      if (db.ready()) {
+        const r = await db.getRows('Doctor Registration', { limit: 500, order: 'asc' });
+        for (const row of (r.data || [])) {
+          const d = row.data || {};
+          const lid = String(d['Login ID Given'] || '').trim().toUpperCase();
+          if (lid && lid === idv) {
+            const expRaw = d['Plan Expiry'];
+            if (expRaw) {
+              const exp = new Date(expRaw);
+              if (!isNaN(exp) && exp.getTime() < Date.now()) {
+                return res.status(200).json({ access: false, expired: true, from: 'db' });
+              }
+            }
+            return res.status(200).json({ access: true, expired: false, from: 'db', name: d['Name'] || '' });
+          }
+        }
+      }
+    } catch (e) { console.error('DB login check error:', e.message); }
+    return res.status(200).json({ access: false, expired: expired });
   }
 
   res.setHeader('Content-Type', 'application/json');
