@@ -283,6 +283,26 @@ async function handle(action, b) {
       return { json: { status: 'ok' } };
     }
 
+    case 'getAssignSummary': {
+      // ek case ka assign status (ya mere saare) — case list me badge dikhane ke liye
+      const r = await db.getRows('Assign & Pay', { limit: 500 });
+      const me = String(b.assigningDoctor || '').trim().toUpperCase();
+      const wantCase = String(b.caseId || '').trim();
+      const out = [];
+      (r.data || []).forEach(function (row) {
+        const d = row.data;
+        if (me && String(d['Assigning Doctor'] || '').trim().toUpperCase() !== me) return;
+        if (wantCase && String(d['Case ID'] || '').trim() !== wantCase) return;
+        out.push({
+          caseId: String(d['Case ID'] || ''), consultantName: String(d['Consultant Name'] || ''),
+          consultantId: String(d['Consultant ID'] || ''), status: String(d['Status'] || ''),
+          paymentStatus: String(d['Payment Status'] || ''), when: String(d['Accept Days & Time'] || ''),
+          rejectReason: String(d['Reject Reason/Suggestion'] || ''), source: String(d['Source'] || '')
+        });
+      });
+      return { json: { status: 'ok', rows: out } };
+    }
+
     case 'getMyEarnings': {
       const r = await db.getRows('Assign & Pay', { limit: 500 });
       const me = String(b.consultantId || '').trim().toUpperCase();

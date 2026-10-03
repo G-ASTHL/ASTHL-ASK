@@ -17,14 +17,22 @@ module.exports = async (req, res) => {
     if (!db.ready()) return res.status(500).json({ error: 'Database settings (SUPABASE_URL / SUPABASE_KEY) Vercel me set nahi hain' });
 
     const all = await db.getRows('Case Files', { limit: 400, order: 'asc' });
+    const nm = function (d) { return String(d['Patient Name'] || d['Name'] || ''); };
     const mine = (all.data || []).filter(function (r) { return String(r.data['Login ID'] || '').trim().toUpperCase() === accessId.toUpperCase(); });
 
     if (action === 'list') {
-      const cases = mine.map(function (r) {
+      // v2: apne cases + PUBLIC cases (jo sabko dikhte hain) — sheet jaisa hi
+      const cases = (all.data || []).filter(function (r) {
+        const d = r.data;
+        const own = String(d['Login ID'] || '').trim().toUpperCase() === accessId.toUpperCase();
+        const pub = String(d['Public'] || 'No').trim().toLowerCase() === 'yes';
+        return own || pub;
+      }).map(function (r) {
         const d = r.data;
         return {
-          caseId: String(d['Case ID'] || ''), name: String(d['Name'] || ''), issue: String(d['Issue'] || ''),
-          caseStatus: String(d['Status'] || 'Open'), isPublic: (String(d['Public'] || 'No') === 'Yes')
+          caseId: String(d['Case ID'] || ''), name: nm(d), issue: String(d['Issue'] || ''),
+          caseStatus: String(d['Status'] || 'Open'), isPublic: (String(d['Public'] || 'No') === 'Yes'),
+          own: String(d['Login ID'] || '').trim().toUpperCase() === accessId.toUpperCase()
         };
       }).reverse();
       return res.status(200).json({ status: 'ok', cases: cases });
@@ -36,7 +44,7 @@ module.exports = async (req, res) => {
       if (b.caseId) {
         for (const r of mine) {
           if (String(r.data['Case ID'] || '').trim() === String(b.caseId).trim()) {
-            const patch = Object.assign({}, r.data, { 'Name': b.name || '', 'Issue': b.issue || '', 'Conversation': b.conversation || '[]' });
+            const patch = Object.assign({}, r.data, { 'Patient Name': b.name || '', 'Issue': b.issue || '', 'Conversation': b.conversation || '[]' });
             await db.updateRow(r.id, patch);
             const um = digits(b.mobile);
             if (um) await updateMedOrderMobile(accessId, b.name, um);
@@ -55,7 +63,7 @@ module.exports = async (req, res) => {
       });
       const caseId = prefix + today + (serial < 10 ? '0' + serial : String(serial));
       await db.insertRow('Case Files', {
-        'Case ID': caseId, 'Login ID': accessId, 'Name': b.name || '', 'Issue': b.issue || '',
+        'Case ID': caseId, 'Login ID': accessId, 'Patient Name': b.name || '', 'Issue': b.issue || '',
         'Public': 'No', 'Date/Time': new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
         'Conversation': b.conversation || '[]', 'Status': 'Open'
       });
