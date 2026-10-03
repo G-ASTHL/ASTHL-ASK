@@ -1,7 +1,7 @@
 // ASTHL Admin API — ab Supabase (database) par
 const db = require('./_supa.js');
 
-const SHEETS = ['Chat Log', 'Medicine Order', 'Doctor Registration', 'Medicine Selection', 'Health Alerts', 'Case Files', 'Assign & Pay', 'Admin Log', 'Medicines', 'Patient Bills', 'Orders'];
+const SHEETS = ['Chat Log', 'Medicine Order', 'Doctor Registration', 'Medicine Selection', 'Health Alerts', 'Case Files', 'Assign & Pay', 'Follow Ups', 'Admin Log', 'Medicines', 'Patient Bills', 'Orders'];
 function digits(s) { return String(s == null ? '' : s).replace(/\D/g, ''); }
 function last10(s) { return digits(s).slice(-10); }
 
@@ -114,6 +114,21 @@ module.exports = async (req, res) => {
         }
       }
       return res.status(200).json({ status: 'error', error: 'Yeh case assignment nahi mila' });
+    }
+
+    if (action === 'adminAddRow') {
+      const data = body.data || {};
+      if (data['Date/Time'] === undefined) data['Date/Time'] = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' });
+      const r = await db.insertRow(body.sheet, data);
+      await logAdmin('addRow', body.sheet, '', '', '', JSON.stringify(data).slice(0, 250));
+      return res.status(200).json({ status: r.ok ? 'ok' : 'error', error: r.error || '' });
+    }
+
+    if (action === 'adminDeleteRow') {
+      const row = await db.getRowById(body.id);
+      await db.deleteRow(body.id);
+      await logAdmin('deleteRow', (row && row.data && row.data['Case ID']) ? 'row ' + body.id : 'row ' + body.id, body.id, '', JSON.stringify((row && row.data) || {}).slice(0, 250), '');
+      return res.status(200).json({ status: 'ok' });
     }
 
     if (action === 'adminPayoutDone') {

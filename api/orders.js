@@ -16,7 +16,8 @@ module.exports = async (req, res) => {
   const action = body.action;
   const ALLOWED = ['saveOrder', 'listMedicines', 'getPatientBill', 'getHealthAlert', 'saveMedSelection',
     'listConsultants', 'saveAssignPay', 'getMyAssignments', 'respondAssign', 'getAssignUpdates', 'markNotified',
-    'saveConsultantNote', 'getConsultantNotes', 'markNoteNotified', 'getMyEarnings', 'saveRating', 'getPatientAppointments'];
+    'saveConsultantNote', 'getConsultantNotes', 'markNoteNotified', 'getMyEarnings', 'saveRating', 'getPatientAppointments', 'getAssignSummary',
+    'saveFollowup', 'getFollowups', 'getFollowupInbox'];
   if (!action || ALLOWED.indexOf(action) === -1) return res.status(400).json({ error: 'Invalid action' });
 
   if (!db.ready()) return res.status(500).json({ error: 'Database settings (SUPABASE_URL / SUPABASE_KEY) Vercel me set nahi hain' });
@@ -197,6 +198,8 @@ async function handle(action, b) {
         patch['Status'] = 'Accepted';
         patch['Accept Days & Time'] = String(b.days || '') + ' दिन, ' + String(b.time || '');
         patch['Comments'] = String(b.comment || '');
+        // v50: accept hone se 1 mahine tak FREE follow-up (dono taraf se baat)
+        patch['Follow-up Till'] = new Date(Date.now() + 30 * 86400000).toISOString();
       } else {
         patch['Status'] = 'Rejected';
         patch['Reject Reason/Suggestion'] = String(b.rejectReason || '') + (b.suggestTo ? ' | सुझाव: ' + b.suggestTo : '');
@@ -350,6 +353,81 @@ async function handle(action, b) {
         });
       });
       return { json: { status: 'ok', appointments: out } };
+    }
+
+    // ===== v50: FREE FOLLOW-UP (1 mahina, dono taraf se baat) =====
+    case 'saveFollowup': {
+      const cid = String(b.caseId || '').trim();
+      const txt = String(b.text || '').trim();
+      if (!cid || !txt) return { json: { status: 'error', error: 'Case ID aur message zaroori hai' } };
+      await db.insertRow('Follow Ups', {
+        'Case ID': cid, 'Role': String(b.role || ''), 'From ID': String(b.fromId || ''),
+        'From Name': String(b.fromName || b.fromId || ''), 'Text': txt.slice(0, 3000),
+        'Date/Time': new Date().toISOString(), 'Seen': 'No'
+      });
+      return { json: { status: 'ok' } };
+    }
+
+    case 'getFollowups': {
+      const cid = String(b.caseId || '').trim();
+      const fr = await db.getRows('Follow Ups', { limit: 1000 });
+      const msgs = [];
+      (fr.data || []).forEach(function (row) {
+        const d = row.data;
+        if (String(d['Case ID'] || '').trim() !== cid) return;
+        msgs.push({ role: String(d['Role'] || ''), fromId: String(d['From ID'] || ''), fromName: String(d['From Name'] || ''), text: String(d['Text'] || ''), at: String(d['Date/Time'] || '') });
+      });
+      msgs.sort(function (x, y) { return String(x.at).localeCompare(String(y.at)); });
+      const ar = await db.getRows('Assign & Pay', { limit: 500 });
+      let till = '', consultantName = '', assigningDoctor = '', patientName = '', source = '';
+      (ar.data || []).forEach(function (row) {
+        const d = row.data;
+        if (String(d['Case ID'] || '').trim() !== cid) return;
+        consultantName = String(d['Consultant Name'] || ''); assigningDoctor = String(d['Assigning Doctor'] || '');
+        patientName = String(d['Patient Name'] || ''); source = String(d['Source'] || '');
+        const t = String(d['Follow-up Till'] || '');
+        if (t) till = t;
+        else if (row.created_at) till = new Date(new Date(row.created_at).getTime() + 30 * 86400000).toISOString();
+      });
+      let daysLeft = null, free = true;
+      if (till) { daysLeft = Math.ceil((new Date(till).getTime() - Date.now()) / 86400000); free = daysLeft >= 0; }
+      return { json: { status: 'ok', messages: msgs, till: till, daysLeft: daysLeft, free: free, consultantName: consultantName, assigningDoctor: assigningDoctor, patientName: patientName, source: source } };
+    }
+
+    case 'getFollowupInbox': {
+      const me = String(b.id || '').trim().toUpperCase();
+      const ar = await db.getRows('Assign & Pay', { limit: 500 });
+      const mineCases = {};
+      (ar.data || []).forEach(function (row) {
+        const d = row.data;
+        const isCons = String(d['Consultant ID'] || '').trim().toUpperCase() === me && me !== '';
+        const isDoc = String(d['Assigning Doctor'] || '').trim().toUpperCase() === me && me !== '';
+        const isPat = last10(d['Payer']) === last10(b.id) && last10(b.id) !== '';
+        if (!isCons && !isDoc && !isPat) return;
+        if (String(d['Status'] || '').toLowerCase().indexOf('accept') === -1) return;
+        const cid = String(d['Case ID'] || '');
+        if (!cid) return;
+        mineCases[cid] = {
+          caseId: cid, patientName: String(d['Patient Name'] || ''),
+          other: isCons ? String(d['Assigning Doctor'] || '') : String(d['Consultant Name'] || ''),
+          role: isCons ? 'Consultant' : (isDoc ? 'Doctor' : 'Patient'),
+          source: String(d['Source'] || '')
+        };
+      });
+      const fr = await db.getRows('Follow Ups', { limit: 1000 });
+      const last = {}, count = {};
+      (fr.data || []).forEach(function (row) {
+        const d = row.data; const cid = String(d['Case ID'] || '');
+        if (!mineCases[cid]) return;
+        const at = String(d['Date/Time'] || '');
+        if (!last[cid] || at > last[cid].at) last[cid] = { at: at, text: String(d['Text'] || '') };
+        count[cid] = (count[cid] || 0) + 1;
+      });
+      const out = Object.keys(mineCases).map(function (cid) {
+        const m = mineCases[cid];
+        return { caseId: cid, patientName: m.patientName, other: m.other, role: m.role, source: m.source, msgs: count[cid] || 0, last: (last[cid] && last[cid].text) || '', lastAt: (last[cid] && last[cid].at) || '' };
+      });
+      return { json: { status: 'ok', threads: out } };
     }
   }
   return { json: { error: 'Unknown action' }, code: 400 };
