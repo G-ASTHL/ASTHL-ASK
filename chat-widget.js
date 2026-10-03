@@ -1,6 +1,6 @@
 // =====================================================
-// ASTHL Chat Widget — CURRENT VERSION: v48
-// v48: Assign panel me saaf message (sheet jawab na de / apni hi ID ho) | v47: case list me '📋 परामर्श सलाह' (consultant ki salah AI chat se ALAG rehti hai) | v46: flash me mareez ki mukhya baat | v45: Doctor kamaai banner + consultant medicine note + patient appointment | v44: Case flash — consultant ko Accept/Reject, kehne wale ko notification, roz reminder | v43: Assign & Pay | v41: MEDICINE SET PATTERN (nosode/sarcode opening + constitutional + biochemic/mother-tincture supporting) + doctor short English names + differentiation rule + link-mention ban | v40: normal dose wapas + asthl.in | v38: medicine-list sheet logging + original model chain | v37: Health Alert popup (sheet se patient/doctor) | v36: same-ID case update, auto-save, mobile header fix | v35: case save me patient mobile | v32: voice v5
+// ASTHL Chat Widget — CURRENT VERSION: v49
+// v49: case list me assign status badge (pending/ho gaya) + panel me 'pehle hi assign' notice | v48: Assign panel me saaf message (sheet jawab na de / apni hi ID ho) | v47: case list me '📋 परामर्श सलाह' (consultant ki salah AI chat se ALAG rehti hai) | v46: flash me mareez ki mukhya baat | v45: Doctor kamaai banner + consultant medicine note + patient appointment | v44: Case flash — consultant ko Accept/Reject, kehne wale ko notification, roz reminder | v43: Assign & Pay | v41: MEDICINE SET PATTERN (nosode/sarcode opening + constitutional + biochemic/mother-tincture supporting) + doctor short English names + differentiation rule + link-mention ban | v40: normal dose wapas + asthl.in | v38: medicine-list sheet logging + original model chain | v37: Health Alert popup (sheet se patient/doctor) | v36: same-ID case update, auto-save, mobile header fix | v35: case save me patient mobile | v32: voice v5
 // Patient/Doctor categories, ek baar OTP, phir seedha chat
 // =====================================================
 
@@ -313,7 +313,7 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
     #asthl-chat-window-header .info .name { font-size: 14px; font-weight: 600; }
     #asthl-chat-window-header .info .status { font-size: 11px; opacity: 0.9; display: flex; align-items: center; gap: 4px; }
     #asthl-chat-window-header .info .status .dot { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; }
-    #asthl-new-chat-btn { background: rgba(255,255,255,0.2); border: none; border-radius: 12px; padding: 5px 10px; font-size: 11px; color: white; cursor: pointer; font-family: inherit; font-weight: 500; display: none; flex-shrink: 0; margin-right: 6px; transition: background 0.15s; } #asthl-new-chat-btn:hover { background: rgba(255,255,255,0.4); } #asthl-save-case-btn, #asthl-cases-btn, #asthl-report-btn { background: rgba(255,255,255,0.2); border: none; border-radius: 12px; padding: 5px 8px; font-size: 11px; color: white; cursor: pointer; font-family: inherit; font-weight: 500; flex-shrink: 0; margin-right: 4px; display: none; } #asthl-save-case-btn:hover, #asthl-cases-btn:hover, #asthl-report-btn:hover { background: rgba(255,255,255,0.4); } .asthl-case-row.closed { opacity: 0.75; background: #f1f5f9; } .asthl-case-row.closed .asthl-case-tg { opacity: 1; } .asthl-case-tg { flex-shrink: 0; margin-left: 10px; border: none; border-radius: 10px; padding: 6px 13px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,0.18); } .asthl-case-tg[data-tg="close"] { background: #16a34a; color: #ffffff; } .asthl-case-tg[data-tg="close"]:hover { background: #15803d; } .asthl-case-tg[data-tg="open"] { background: #ea580c; color: #ffffff; } .asthl-case-tg[data-tg="open"]:hover { background: #c2410c; } .asthl-case-pb { flex-shrink: 0; margin-left: 6px; border: 1.5px solid #94a3b8; background: #ffffff; color: #334155; border-radius: 10px; padding: 6px 11px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; } .asthl-case-pb[data-pb="public"] { background: #7c3aed; border-color: #7c3aed; color: #ffffff; } .asthl-case-pb[data-pb="public"]:hover { background: #6d28d9; } .asthl-case-pb[data-pb="private"]:hover { background: #f1f5f9; } .asthl-case-row.closed .asthl-case-pb { opacity: 1; } .asthl-case-as { flex-shrink: 0; margin-left: 6px; border: none; background: linear-gradient(135deg,#0d9488,#0f766e); color: #ffffff; border-radius: 10px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; box-shadow: 0 1px 4px rgba(13,148,136,0.35); } .asthl-case-as:hover { background: #0f766e; } .asthl-case-row.closed .asthl-case-as { opacity: 1; } .asthl-case-note { flex-shrink: 0; margin-left: 6px; border: 1.5px solid #f59e0b; background: #fffbeb; color: #92400e; border-radius: 10px; padding: 6px 11px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; } .asthl-case-note:hover { background: #fef3c7; }
+    #asthl-new-chat-btn { background: rgba(255,255,255,0.2); border: none; border-radius: 12px; padding: 5px 10px; font-size: 11px; color: white; cursor: pointer; font-family: inherit; font-weight: 500; display: none; flex-shrink: 0; margin-right: 6px; transition: background 0.15s; } #asthl-new-chat-btn:hover { background: rgba(255,255,255,0.4); } #asthl-save-case-btn, #asthl-cases-btn, #asthl-report-btn { background: rgba(255,255,255,0.2); border: none; border-radius: 12px; padding: 5px 8px; font-size: 11px; color: white; cursor: pointer; font-family: inherit; font-weight: 500; flex-shrink: 0; margin-right: 4px; display: none; } #asthl-save-case-btn:hover, #asthl-cases-btn:hover, #asthl-report-btn:hover { background: rgba(255,255,255,0.4); } .asthl-case-row.closed { opacity: 0.75; background: #f1f5f9; } .asthl-case-row.closed .asthl-case-tg { opacity: 1; } .asthl-case-tg { flex-shrink: 0; margin-left: 10px; border: none; border-radius: 10px; padding: 6px 13px; font-size: 12.5px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; box-shadow: 0 1px 4px rgba(0,0,0,0.18); } .asthl-case-tg[data-tg="close"] { background: #16a34a; color: #ffffff; } .asthl-case-tg[data-tg="close"]:hover { background: #15803d; } .asthl-case-tg[data-tg="open"] { background: #ea580c; color: #ffffff; } .asthl-case-tg[data-tg="open"]:hover { background: #c2410c; } .asthl-case-pb { flex-shrink: 0; margin-left: 6px; border: 1.5px solid #94a3b8; background: #ffffff; color: #334155; border-radius: 10px; padding: 6px 11px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; } .asthl-case-pb[data-pb="public"] { background: #7c3aed; border-color: #7c3aed; color: #ffffff; } .asthl-case-pb[data-pb="public"]:hover { background: #6d28d9; } .asthl-case-pb[data-pb="private"]:hover { background: #f1f5f9; } .asthl-case-row.closed .asthl-case-pb { opacity: 1; } .asthl-case-as { flex-shrink: 0; margin-left: 6px; border: none; background: linear-gradient(135deg,#0d9488,#0f766e); color: #ffffff; border-radius: 10px; padding: 6px 12px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; box-shadow: 0 1px 4px rgba(13,148,136,0.35); } .asthl-case-as:hover { background: #0f766e; } .asthl-case-row.closed .asthl-case-as { opacity: 1; } .asthl-case-note { flex-shrink: 0; margin-left: 6px; border: 1.5px solid #f59e0b; background: #fffbeb; color: #92400e; border-radius: 10px; padding: 6px 11px; font-size: 12px; font-weight: 700; cursor: pointer; font-family: inherit; white-space: nowrap; } .asthl-case-note:hover { background: #fef3c7; } .asthl-case-flag { flex-shrink: 0; margin-left: 6px; border-radius: 999px; padding: 5px 10px; font-size: 11.5px; font-weight: 700; white-space: nowrap; } .asthl-case-flag.pend { background: #fffbeb; color: #b45309; border: 1.5px solid #fde68a; } .asthl-case-flag.ok { background: #f0fdf4; color: #166534; border: 1.5px solid #bbf7d0; } .asthl-case-flag.bad { background: #fef2f2; color: #b91c1c; border: 1.5px solid #fecaca; }
     #asthl-modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; z-index: 1000000; padding: 16px; }
     #asthl-modal { background: #ffffff; border-radius: 16px; max-width: 420px; width: 100%; max-height: 80dvh; overflow-y: auto; padding: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
     .asthl-case-row { border: 1px solid #ccfbf1; border-radius: 10px; padding: 10px 12px; margin-bottom: 8px; cursor: pointer; display: flex; flex-direction: column; gap: 2px; background: #f0fdfa; }
@@ -1261,6 +1261,17 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
     });
   }
 
+  // ===== v49: case list me assign status badge =====
+  function asFlagText(a) {
+    var st = String(a.status || '');
+    var who = String(a.consultantName || '').replace(/^\s*Dr\.?\s*/i, '');
+    if (st === 'Accepted') return { t: '✅ ' + who + ' को assign' + (a.when ? ' — ' + a.when : ''), c: 'ok' };
+    if (st === 'Rejected') return { t: '❌ ' + who + ' ने मना किया', c: 'bad' };
+    if (st === 'Sent to Consultant') return { t: '⏳ ' + who + ' — जवाब बाकी', c: 'pend' };
+    if (st === 'Awaiting Confirmation') return { t: '⏳ ' + who + ' — भुगतान पुष्टि बाकी', c: 'pend' };
+    return { t: '📤 ' + who, c: 'pend' };
+  }
+
   // ===== v44: ASSIGNMENTS — consultant ko case flash + Accept/Reject =====
   function asEsc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function asToday() { var d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
@@ -1467,8 +1478,21 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
       return;
     }
     docs.sort(function (a, b) { return (parseFloat(b.exp) || 0) - (parseFloat(a.exp) || 0); });
+    var existing = null;
+    try {
+      var sd = await asPost({ action: 'getAssignSummary', caseId: caseId });
+      existing = ((sd && sd.rows) || [])[0] || null;
+    } catch (e) {}
+    var existBox = '';
+    if (existing) {
+      var fl = asFlagText(existing);
+      existBox = '<div style="background:' + (fl.c === 'ok' ? '#f0fdf4' : (fl.c === 'bad' ? '#fef2f2' : '#fffbeb')) + ';border:1.5px solid ' + (fl.c === 'ok' ? '#bbf7d0' : (fl.c === 'bad' ? '#fecaca' : '#fde68a')) + ';border-radius:12px;padding:10px;margin-bottom:10px;font-size:12.5px;line-height:1.6;color:#334155">' +
+        '<b>ℹ️ यह केस पहले ही भेजा जा चुका है</b><br>' + fl.t + (existing.paymentStatus ? ' • भुगतान: ' + asEsc(existing.paymentStatus) : '') +
+        '<br><span style="font-size:11.5px;color:#64748b">नीचे से दोबारा किसी और डॉक्टर को भी भेज सकते हैं।</span></div>';
+    }
     var headHtml =
       '<h3 style="margin:0 0 4px;color:#134e4a">📤 Assign &amp; Pay</h3>' +
+      existBox +
       '<div style="font-size:12.5px;color:#64748b;margin-bottom:10px;line-height:1.5">केस: <b>' + esc(caseName) + '</b><br>ID: ' + esc(caseId) + ' • सबसे ऊपर सबसे अनुभवी डॉक्टर</div>' +
       '<input id="as-search" placeholder="🔍 नाम / ID / विशेषज्ञता से खोजें" style="width:100%;font-family:inherit;font-size:14px;padding:11px 12px;border:1.5px solid #ccfbf1;border-radius:12px;outline:none;margin-bottom:10px">' +
       '<div id="as-list" style="max-height:44vh;overflow-y:auto"></div>';
@@ -1626,11 +1650,17 @@ MEDICINE-LIST: Medicine1 | Medicine2 | Medicine3 | Medicine4 | Medicine5
         var nd = await asPost({ action: 'getConsultantNotes', assigningDoctor: accId, all: true });
         ((nd && nd.notes) || []).forEach(function (n) { noteMap[n.caseId] = n; });
       } catch (e) {}
+      // v49: assign status (pending / ho gaya)
+      var assignMap = {};
+      try {
+        var ad = await asPost({ action: 'getAssignSummary', assigningDoctor: accId });
+        ((ad && ad.rows) || []).forEach(function (x) { if (!assignMap[x.caseId]) assignMap[x.caseId] = x; });
+      } catch (e) {}
       var html = '<h3 style=\"margin:0 0 10px;color:#134e4a\">📂 \u0938\u0947\u0935 \u0915\u093F\u090F \u0939\u0941\u090F \u0915\u0947\u0938 \u2014 ID: ' + accId + '</h3>';
       for (var i = 0; i < cases.length; i++) {
         var c = cases[i];
 var isClosed = (c.caseStatus === 'Closed');
-        html += '<div class="asthl-case-row' + (isClosed ? ' closed' : '') + '" data-cid="' + c.caseId + '"><b>' + c.name + '</b> <span class="asthl-case-pub">' + (c.isPublic ? '🌐 Public' : '') + (isClosed ? ' ✅ बंद' : '') + '</span><span class="asthl-case-meta">' + c.issue + '</span><span class="asthl-case-id">' + c.caseId + '</span>' + (isClosed ? '<button class="asthl-case-tg" data-tg="open">🔄 खोलें</button>' : '<button class="asthl-case-tg" data-tg="close">✅ बंद करें</button>') + (c.isPublic ? '<button class="asthl-case-pb" data-pb="private">🔒 Private</button>' : '<button class="asthl-case-pb" data-pb="public">🌐 Public</button>') + '<button class="asthl-case-as">📤 Assign &amp; Pay</button>' + (noteMap[c.caseId] ? '<button class="asthl-case-note" data-cid="' + c.caseId + '">📋 परामर्श सलाह</button>' : '') + '</div>';
+        html += '<div class="asthl-case-row' + (isClosed ? ' closed' : '') + '" data-cid="' + c.caseId + '"><b>' + c.name + '</b> <span class="asthl-case-pub">' + (c.isPublic ? '🌐 Public' : '') + (isClosed ? ' ✅ बंद' : '') + '</span><span class="asthl-case-meta">' + c.issue + '</span><span class="asthl-case-id">' + c.caseId + '</span>' + (isClosed ? '<button class="asthl-case-tg" data-tg="open">🔄 खोलें</button>' : '<button class="asthl-case-tg" data-tg="close">✅ बंद करें</button>') + (c.isPublic ? '<button class="asthl-case-pb" data-pb="private">🔒 Private</button>' : '<button class="asthl-case-pb" data-pb="public">🌐 Public</button>') + '<button class="asthl-case-as">📤 Assign &amp; Pay</button>' + (noteMap[c.caseId] ? '<button class="asthl-case-note" data-cid="' + c.caseId + '">📋 परामर्श सलाह</button>' : '') + (assignMap[c.caseId] ? (function (fl) { return '<span class="asthl-case-flag ' + fl.c + '">' + fl.t + '</span>'; })(asFlagText(assignMap[c.caseId])) : '') + '</div>';
       }
       ov.querySelector('#asthl-modal').innerHTML = html;
       var rows = ov.querySelectorAll('.asthl-case-row');
